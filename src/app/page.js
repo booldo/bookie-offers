@@ -1,103 +1,55 @@
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
 import Image from "next/image";
+
+const flags = [
+  { src: "/assets/flags.png", name: "World Wide", path: "/" },
+  { src: "/assets/ghana-circle.png", name: "Ghana", path: "/gh" },
+  { src: "/assets/nigeria-cirle.png", name: "Nigeria", path: "/ng" },
+];
 
 export default function Home() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.js
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="min-h-screen bg-[#fafbfc] flex flex-col">
+      <Navbar />
+      <main className="max-w-7xl mx-auto px-4 py-10 flex flex-col items-center flex-1">
+        <h1 className="text-2xl sm:text-3xl font-bold text-center text-gray-900 mb-4">
+          No Bias. No Hype.
+        </h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-center text-gray-900 mb-8">
+          Just Betting Options.
+        </h1>
+        <p className="text-center text-gray-600 mb-8">
+          Booldo is built to help you bet smarter. We show you all the top bookmakers and offers, even those we<br />
+          don't partner with, so you can decide with confidence. No noisy tips. No clutter. Just clear, honest info.
+        </p>
+        <div className="flex flex-col gap-4 w-full">
+          {flags.filter(flag => flag.name !== "World Wide").map((flag) => (
+            <div
+              key={flag.name}
+              className="flex items-center justify-between bg-white rounded-xl p-4 shadow-sm border border-gray-100 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:border-gray-200 cursor-pointer"
+            >
+              <div className="flex items-center gap-4">
+                <Image src={flag.src} alt={flag.name} width={36} height={36} className="rounded-full" />
+                <div>
+                  <div className="font-semibold text-gray-900">{flag.name}</div>
+                  <div className="text-sm text-gray-500">Discover local offers and bookies</div>
+                </div>
+              </div>
+              <a
+                href={flag.path}
+                className="inline-flex items-center text-sm font-semibold text-gray-900 hover:underline"
+              >
+                View Offers
+                <svg className="ml-1" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </a>
+            </div>
+          ))}
         </div>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      <Footer />
     </div>
   );
 }
