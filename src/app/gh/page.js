@@ -100,13 +100,19 @@ export default function GhanaHome() {
       });
   }, []);
 
-  // Filter logic (updated: selectedAdvanced matches only paymentMethods)
+  // Filter logic (case-insensitive, robust)
   const filteredOffers = offers.filter((offer) => {
-    if (selectedBookmakers.length > 0 && !selectedBookmakers.includes(offer.bookmaker)) return false;
-    if (selectedBonusTypes.length > 0 && !selectedBonusTypes.includes(offer.bonusType)) return false;
+    // Normalize for case-insensitive comparison
+    const offerBookmaker = offer.bookmaker ? offer.bookmaker.toLowerCase() : "";
+    const offerBonusType = offer.bonusType ? offer.bonusType.toLowerCase() : "";
+    const offerPaymentMethods = Array.isArray(offer.paymentMethods) ? offer.paymentMethods.map(pm => pm.toLowerCase()) : [];
+
+    if (selectedBookmakers.length > 0 && !selectedBookmakers.some(bm => bm.toLowerCase() === offerBookmaker)) return false;
+    if (selectedBonusTypes.length > 0 && !selectedBonusTypes.some(bt => bt.toLowerCase() === offerBonusType)) return false;
     if (selectedAdvanced.length > 0) {
       // Advanced filter: match if any selectedAdvanced is in offer.paymentMethods
-      const paymentMatch = offer.paymentMethods && offer.paymentMethods.some(pm => selectedAdvanced.includes(pm));
+      const selectedAdvancedLower = selectedAdvanced.map(a => a.toLowerCase());
+      const paymentMatch = offerPaymentMethods.some(pm => selectedAdvancedLower.includes(pm));
       if (!paymentMatch) return false;
     }
     return true;

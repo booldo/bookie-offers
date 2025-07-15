@@ -1,4 +1,4 @@
-import Navbar from "../components/Navbar";
+import HomeNavbar from "../components/HomeNavbar";
 import Footer from "../components/Footer";
 import Image from "next/image";
 
@@ -11,7 +11,7 @@ const flags = [
 export default function Home() {
   return (
     <div className="min-h-screen bg-[#fafbfc] flex flex-col">
-      <Navbar />
+      <HomeNavbar />
       <main className="max-w-7xl mx-auto px-4 py-10 flex flex-col items-center flex-1">
         <h1 className="text-2xl sm:text-3xl font-bold text-center text-gray-900 mb-4">
           No Bias. No Hype.
