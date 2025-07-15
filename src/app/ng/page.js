@@ -72,7 +72,7 @@ const advancedOptions = [
     ]
   }
 ];
-const sortOptions = ["Latest", "Expiring Soon", "Highest Value"];
+const sortOptions = ["Latest", "Expiring Soon", "Lowest Minimum Deposit", "Most Popular"];
 
 export default function NigeriaHome() {
   const router = useRouter();
@@ -83,12 +83,64 @@ export default function NigeriaHome() {
   const [selectedBookmakers, setSelectedBookmakers] = useState([]);
   const [selectedAdvanced, setSelectedAdvanced] = useState([]);
   const [sortBy, setSortBy] = useState("Latest");
+  const [bonusTypeOptions, setBonusTypeOptions] = useState([]);
+  const [bookmakerOptions, setBookmakerOptions] = useState([]);
+  const [advancedOptions, setAdvancedOptions] = useState([]);
 
   useEffect(() => {
     setLoading(true);
     fetchOffers()
       .then((data) => {
         setOffers(data);
+        // Compute bonus type counts and unique bonus types
+        const bonusTypeCount = {};
+        data.forEach(offer => {
+          const bt = offer.bonusType || "Other";
+          bonusTypeCount[bt] = (bonusTypeCount[bt] || 0) + 1;
+        });
+        const bonusOptions = Object.entries(bonusTypeCount).map(([name, count]) => ({ name, count }));
+        setBonusTypeOptions(bonusOptions);
+        // Compute bookmaker counts and unique bookmakers
+        const bookmakerCount = {};
+        data.forEach(offer => {
+          const bm = offer.bookmaker || "Other";
+          bookmakerCount[bm] = (bookmakerCount[bm] || 0) + 1;
+        });
+        const bmOptions = Object.entries(bookmakerCount).map(([name, count]) => ({ name, count }));
+        setBookmakerOptions(bmOptions);
+        // Compute payment method counts
+        const paymentMethodCount = {};
+        data.forEach(offer => {
+          if (Array.isArray(offer.paymentMethods)) {
+            offer.paymentMethods.forEach(pm => {
+              paymentMethodCount[pm] = (paymentMethodCount[pm] || 0) + 1;
+            });
+          }
+        });
+        const paymentMethods = [
+          "Bank Transfer",
+          "Credit Card",
+          "Debit Card",
+          "E-Wallet",
+          "Mobile Money",
+          "Cryptocurrency"
+        ];
+        const paymentSubcategories = paymentMethods.map(name => ({ name, count: paymentMethodCount[name] || 0 }));
+        // Advanced options with counts for payment methods
+        setAdvancedOptions([
+          {
+            name: "Payment Method",
+            subcategories: paymentSubcategories
+          },
+          {
+            name: "License",
+            subcategories: [
+              { name: "Licensed" },
+              { name: "Unlicensed" },
+              { name: "Pending License" }
+            ]
+          }
+        ]);
         setLoading(false);
       })
       .catch((err) => {
@@ -114,6 +166,33 @@ export default function NigeriaHome() {
     }
     return true;
   });
+
+  // Sorting logic
+  let sortedOffers = [...filteredOffers];
+  if (sortBy === "Latest") {
+    sortedOffers.sort((a, b) => new Date(b.published) - new Date(a.published));
+  } else if (sortBy === "Expiring Soon") {
+    sortedOffers.sort((a, b) => new Date(a.expires) - new Date(b.expires));
+  } else if (sortBy === "Lowest Minimum Deposit") {
+    sortedOffers.sort((a, b) => {
+      const aMin = a.minDeposit !== undefined && a.minDeposit !== null ? Number(a.minDeposit) : Infinity;
+      const bMin = b.minDeposit !== undefined && b.minDeposit !== null ? Number(b.minDeposit) : Infinity;
+      return aMin - bMin;
+    });
+  } else if (sortBy === "Most Popular") {
+    // Count frequency of each bookmaker in filteredOffers
+    const freq = {};
+    filteredOffers.forEach(offer => {
+      const bm = offer.bookmaker || "Unknown";
+      freq[bm] = (freq[bm] || 0) + 1;
+    });
+    // Sort offers by bookmaker frequency (descending), then by published date (desc)
+    sortedOffers.sort((a, b) => {
+      const freqDiff = (freq[b.bookmaker || "Unknown"] || 0) - (freq[a.bookmaker || "Unknown"] || 0);
+      if (freqDiff !== 0) return freqDiff;
+      return new Date(b.published) - new Date(a.published);
+    });
+  }
 
   return (
     <div className="min-h-screen bg-[#fafbfc] flex flex-col">
@@ -142,7 +221,7 @@ export default function NigeriaHome() {
         {/* Best Offers Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mt-8 mb-4 gap-4">
           <div className="flex items-center gap-2">
-            <h2 className="text-xl font-semibold text-gray-900">Best Offers <span className="text-gray-400 font-normal">150</span></h2>
+            <h2 className="text-xl font-semibold text-gray-900">Best Offers <span className="text-gray-400 font-normal">{offers.length}</span></h2>
           </div>
           <div className="flex items-center gap-2">
             <label className="text-sm text-gray-500 mr-1">Sort By:</label>
@@ -161,8 +240,8 @@ export default function NigeriaHome() {
         {/* Filters */}
         <div className="flex flex-wrap gap-2 mb-6">
           <MultiSelectDropdown label="Bonus Type" options={bonusTypeOptions} selected={selectedBonusTypes} setSelected={setSelectedBonusTypes} showCount={true} />
-          <MultiSelectDropdown label="Bookmaker" options={bookmakerOptions} selected={selectedBookmakers} setSelected={setSelectedBookmakers} showCount={false} />
-          <MultiSelectDropdown label="Advanced" options={advancedOptions} selected={selectedAdvanced} setSelected={setSelectedAdvanced} showCount={false} nested={true} />
+          <MultiSelectDropdown label="Bookmaker" options={bookmakerOptions} selected={selectedBookmakers} setSelected={setSelectedBookmakers} showCount={true} />
+          <MultiSelectDropdown label="Advanced" options={advancedOptions} selected={selectedAdvanced} setSelected={setSelectedAdvanced} showCount={true} nested={true} />
         </div>
         {/* Selected Filters Tags and Clear Filter */}
         {(selectedBonusTypes.length > 0 || selectedBookmakers.length > 0 || selectedAdvanced.length > 0) && (
@@ -222,14 +301,14 @@ export default function NigeriaHome() {
         <div className="flex flex-col gap-4 mb-6">
           {loading && <div className="text-center text-gray-400">Loading offers...</div>}
           {error && <div className="text-center text-red-500">{error}</div>}
-          {!loading && !error && filteredOffers.length === 0 && (
+          {!loading && !error && sortedOffers.length === 0 && (
             <div className="text-center text-gray-400">No offers found.</div>
           )}
-          {!loading && !error && filteredOffers.map((offer, idx) => (
+          {!loading && !error && sortedOffers.map((offer, idx) => (
             <div
               key={offer._id || offer.id}
               className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex flex-col sm:flex-row sm:items-center justify-between transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:border-gray-200 cursor-pointer"
-              onClick={() => router.push(`/ng/welcome-offers?offerId=${offer.id}`)}
+              onClick={() => router.push(`/ng/offers?offerId=${offer.id}`)}
             >
               <div className="flex items-center gap-4">
                 {offer.logo ? (

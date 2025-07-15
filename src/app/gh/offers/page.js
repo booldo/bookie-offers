@@ -84,7 +84,7 @@ function OfferDetailsInner() {
             Offers
           </Link>
           <span className="mx-1">/</span>
-          <span className="text-gray-700 font-medium">Welcome Bonus</span>
+          <span className="text-gray-700 font-medium">{offer?.bonusType || "Bonus"}</span>
         </div>
                     {/* Banner */}
             {loading && <div className="text-center text-gray-400">Loading offer...</div>}
@@ -159,7 +159,12 @@ function OfferDetailsInner() {
             <div className="font-semibold text-lg text-gray-900 mb-3">More Offers</div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {moreOffers.map((o) => (
-                <div key={o._id || o.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex flex-col justify-between">
+                <Link
+                  key={o._id || o.id}
+                  href={`?offerId=${o.id}`}
+                  scroll={false}
+                  className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex flex-col justify-between transition cursor-pointer hover:bg-gray-50 hover:shadow-lg hover:scale-[1.03] focus:outline-none focus:ring-2 focus:ring-green-500"
+                >
                   <div className="flex items-center gap-2 mb-1">
                     {o.logo ? (
                       <Image src={urlFor(o.logo).width(28).height(28).url()} alt={o.bookmaker} width={28} height={28} className="rounded-md" />
@@ -175,7 +180,7 @@ function OfferDetailsInner() {
                     <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
                     Expires: {o.expires}
                   </span>
-                </div>
+                </Link>
               ))}
             </div>
             <div className="flex justify-center mt-6">
