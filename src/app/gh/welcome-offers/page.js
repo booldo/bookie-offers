@@ -1,4 +1,5 @@
 "use client";
+import React, { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Navbar from "../../../components/Navbar";
 import Footer from "../../../components/Footer";
@@ -125,7 +126,7 @@ const staticOffers = [
   }
 ];
 
-export default function OfferDetails() {
+function OfferDetailsInner() {
   const params = useSearchParams();
   const offerId = parseInt(params.get("offerId"), 10);
   const offer = staticOffers.find(o => o.id === offerId) || staticOffers[0];
@@ -222,4 +223,12 @@ export default function OfferDetails() {
       <Footer />
     </div>
   );
-} 
+}
+
+export default function OfferDetails() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <OfferDetailsInner />
+    </Suspense>
+  );
+}
