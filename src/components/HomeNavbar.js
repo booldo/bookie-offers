@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
 
 const flags = [
   { src: "/assets/flags.png", name: "World Wide", path: "/" },
@@ -55,7 +56,9 @@ export default function HomeNavbar() {
             )}
         </button>
         {/* Logo */}
-        <Image src="/assets/logo.png" alt="Booldo Logo" width={80} height={80} />
+        <Link href="/">
+          <Image src="/assets/logo.png" alt="Booldo Logo" width={80} height={80} className="cursor-pointer" />
+        </Link>
       </div>
       {/* Flag dropdown */}
       <div className="flex items-center gap-4">
@@ -90,10 +93,10 @@ export default function HomeNavbar() {
       {menuOpen && (
         <div className="fixed left-0 right-0 top-[64px] w-full bg-white shadow-2xl z-50 rounded-b-xl animate-slide-down">
           <div className="flex flex-col gap-6 px-10 py-10 text-gray-800 text-base font-medium">
-            <a href="#" className="hover:underline">Briefly</a>
+            <a href="/briefly" className="hover:underline">Briefly</a>
             <a href="#" className="hover:underline">Calculator</a>
-            <a href="#" className="hover:underline">About Us</a>
-            <a href="#" className="hover:underline">Contact Us</a>
+            <a href="/about" className="hover:underline">About Us</a>
+            <a href="/contact" className="hover:underline">Contact Us</a>
           </div>
         </div>
       )}

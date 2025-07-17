@@ -166,11 +166,11 @@ function OfferDetailsInner() {
                 className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex flex-col justify-between transition cursor-pointer hover:bg-gray-50 hover:shadow-lg hover:scale-[1.03] focus:outline-none focus:ring-2 focus:ring-green-500"
               >
                 <div className="flex items-center gap-2 mb-1">
-                  {o.logo ? (
-                    <Image src={urlFor(o.logo).width(28).height(28).url()} alt={o.bookmaker} width={28} height={28} className="rounded-md" />
-                  ) : (
-                    <div className="w-7 h-7 bg-gray-100 rounded-md" />
-                  )}
+                    {o.logo ? (
+                      <Image src={urlFor(o.logo).width(28).height(28).url()} alt={o.bookmaker} width={28} height={28} className="rounded-md" />
+                    ) : (
+                      <div className="w-7 h-7 bg-gray-100 rounded-md" />
+                    )}
                   <span className="font-semibold text-gray-900 text-base">{o.bookmaker}</span>
                   <span className="ml-auto text-xs text-gray-500">Published: {o.published}</span>
                 </div>
