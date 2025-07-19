@@ -4,8 +4,8 @@ import Image from "next/image";
 
 const flags = [
   { src: "/assets/flags.png", name: "World Wide", path: "/" },
-  { src: "/assets/ghana-circle.png", name: "Ghana", path: "/gh" },
-  { src: "/assets/nigeria-cirle.png", name: "Nigeria", path: "/ng" },
+  { src: "/assets/ghana_flag.png", name: "Ghana", path: "/gh" },
+  { src: "/assets/nigeria_flag.png", name: "Nigeria", path: "/ng" },
 ];
 
 export default function Home() {

@@ -3,7 +3,7 @@
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import MultiSelectDropdown from "../../components/BonusTypeDropdown";
 import { useRouter } from "next/navigation";
 import { client } from "../../sanity/lib/client";
@@ -29,6 +29,36 @@ const fetchOffers = async () => {
     howItWorks
   }`;
   return await client.fetch(query);
+};
+
+// Fetch banners from Sanity
+const fetchBanners = async () => {
+  const query = `*[_type == "banner" && country == "Nigeria" && isActive == true] | order(order asc) {
+    _id,
+    title,
+    image,
+    country,
+    order
+  }`;
+  
+  try {
+    const banners = await client.fetch(query);
+    // If no active banners, get all Nigeria banners
+    if (banners.length === 0) {
+      const allBanners = await client.fetch(`*[_type == "banner" && country == "Nigeria"] | order(order asc) {
+        _id,
+        title,
+        image,
+        country,
+        order
+      }`);
+      return allBanners;
+    }
+    return banners;
+  } catch (error) {
+    console.error('Error fetching Nigeria banners:', error);
+    return [];
+  }
 };
 
 const bonusTypeOptions = [
@@ -77,6 +107,7 @@ const sortOptions = ["Latest", "Expiring Soon", "Lowest Minimum Deposit", "Most 
 export default function NigeriaHome() {
   const router = useRouter();
   const [offers, setOffers] = useState([]);
+  const [banners, setBanners] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedBonusTypes, setSelectedBonusTypes] = useState([]);
@@ -86,15 +117,45 @@ export default function NigeriaHome() {
   const [bonusTypeOptions, setBonusTypeOptions] = useState([]);
   const [bookmakerOptions, setBookmakerOptions] = useState([]);
   const [advancedOptions, setAdvancedOptions] = useState([]);
+  const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
+  const sortDropdownRef = useRef();
+  const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
+  const bannerIntervalRef = useRef();
+
+  // Close sort dropdown on outside click
+  useEffect(() => {
+    function handleClick(e) {
+      if (sortDropdownRef.current && !sortDropdownRef.current.contains(e.target)) {
+        setSortDropdownOpen(false);
+      }
+    }
+    if (sortDropdownOpen) document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [sortDropdownOpen]);
+
+  // Auto-advance banner carousel
+  useEffect(() => {
+    if (banners.length > 1) {
+      bannerIntervalRef.current = setInterval(() => {
+        setCurrentBannerIndex((prev) => (prev + 1) % banners.length);
+      }, 5000); // Change banner every 5 seconds
+    }
+    return () => {
+      if (bannerIntervalRef.current) {
+        clearInterval(bannerIntervalRef.current);
+      }
+    };
+  }, [banners.length]);
 
   useEffect(() => {
     setLoading(true);
-    fetchOffers()
-      .then((data) => {
-        setOffers(data);
+    Promise.all([fetchOffers(), fetchBanners()])
+      .then(([offersData, bannersData]) => {
+        setOffers(offersData);
+        setBanners(bannersData);
         // Compute bonus type counts and unique bonus types
         const bonusTypeCount = {};
-        data.forEach(offer => {
+        offersData.forEach(offer => {
           const bt = offer.bonusType || "Other";
           bonusTypeCount[bt] = (bonusTypeCount[bt] || 0) + 1;
         });
@@ -102,7 +163,7 @@ export default function NigeriaHome() {
         setBonusTypeOptions(bonusOptions);
         // Compute bookmaker counts and unique bookmakers
         const bookmakerCount = {};
-        data.forEach(offer => {
+        offersData.forEach(offer => {
           const bm = offer.bookmaker || "Other";
           bookmakerCount[bm] = (bookmakerCount[bm] || 0) + 1;
         });
@@ -110,7 +171,7 @@ export default function NigeriaHome() {
         setBookmakerOptions(bmOptions);
         // Compute payment method counts
         const paymentMethodCount = {};
-        data.forEach(offer => {
+        offersData.forEach(offer => {
           if (Array.isArray(offer.paymentMethods)) {
             offer.paymentMethods.forEach(pm => {
               paymentMethodCount[pm] = (paymentMethodCount[pm] || 0) + 1;
@@ -144,7 +205,7 @@ export default function NigeriaHome() {
         setLoading(false);
       })
       .catch((err) => {
-        setError("Failed to load offers");
+        setError("Failed to load data");
         setLoading(false);
       });
   }, []);
@@ -194,28 +255,88 @@ export default function NigeriaHome() {
     });
   }
 
+  const goToBanner = (index) => {
+    setCurrentBannerIndex(index);
+    // Reset auto-advance timer
+    if (bannerIntervalRef.current) {
+      clearInterval(bannerIntervalRef.current);
+    }
+    bannerIntervalRef.current = setInterval(() => {
+      setCurrentBannerIndex((prev) => (prev + 1) % banners.length);
+    }, 5000);
+  };
+
+  const nextBanner = () => {
+    goToBanner((currentBannerIndex + 1) % banners.length);
+  };
+
+  const prevBanner = () => {
+    goToBanner(currentBannerIndex === 0 ? banners.length - 1 : currentBannerIndex - 1);
+  };
+
   return (
     <div className="min-h-screen bg-[#fafbfc] flex flex-col">
       <Navbar />
       <main className="max-w-6xl mx-auto w-full px-2 sm:px-4 flex-1">
-        {/* Banner */}
+        {/* Banner Carousel */}
         <div className="w-full mt-8 flex flex-col items-center">
-          <div className="w-full rounded-xl overflow-hidden shadow-sm">
+          <div className="w-full rounded-xl overflow-hidden shadow-sm relative">
+            {banners.length > 0 ? (
+              <>
             <Image
-              src="/assets/ng-nigeria.png"
-              alt="Nigeria Banner"
+                  src={urlFor(banners[currentBannerIndex].image).width(1200).height(400).url()}
+                  alt={banners[currentBannerIndex].title}
               width={1200}
-              height={200}
-              className="w-full h-48 object-cover"
+                  height={400}
+                  className="w-full h-32 sm:h-56 md:h-64 object-contain sm:object-cover"
               priority
             />
+                {/* Navigation Arrows */}
+                {banners.length > 1 && (
+                  <>
+                    <button
+                      onClick={prevBanner}
+                      className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-all duration-200"
+                      aria-label="Previous banner"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={nextBanner}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-all duration-200"
+                      aria-label="Next banner"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </>
+                )}
+
+              </>
+            ) : (
+              <div className="w-full h-48 bg-gray-200 rounded-xl flex items-center justify-center">
+                <span className="text-gray-500">No banners available</span>
+              </div>
+            )}
           </div>
           {/* Carousel dots */}
+          {banners.length > 0 && (
           <div className="flex justify-center mt-2 gap-2">
-            <span className="w-2 h-2 bg-gray-300 rounded-full inline-block" />
-            <span className="w-2 h-2 bg-gray-300 rounded-full inline-block" />
-            <span className="w-2 h-2 bg-gray-400 rounded-full inline-block" />
+              {banners.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => goToBanner(index)}
+                  className={`w-2 h-2 rounded-full transition-all duration-200 ${
+                    index === currentBannerIndex ? 'bg-gray-600' : 'bg-gray-300'
+                  }`}
+                  aria-label={`Go to banner ${index + 1}`}
+                />
+              ))}
           </div>
+          )}
         </div>
 
         {/* Best Offers Header */}
@@ -224,31 +345,83 @@ export default function NigeriaHome() {
             <h2 className="text-xl font-semibold text-gray-900">Best Offers <span className="text-gray-400 font-normal">{offers.length}</span></h2>
           </div>
           <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-500 mr-1">Sort By:</label>
-            <select
-              className="border border-gray-200 rounded-md px-2 py-1 text-sm focus:outline-none"
-              value={sortBy}
-              onChange={e => setSortBy(e.target.value)}
+            <label className="text-sm text-gray-600 font-medium mr-2">Sort By:</label>
+            <div className="relative" ref={sortDropdownRef}>
+              <button
+                type="button"
+                className="appearance-none bg-white border border-gray-200 rounded-lg px-4 py-2.5 text-sm font-medium text-gray-900 focus:outline-none hover:border-gray-400 hover:shadow-sm transition-all duration-200 cursor-pointer min-w-[140px] sm:min-w-[160px] shadow-sm flex items-center justify-between"
+                onClick={() => setSortDropdownOpen(!sortDropdownOpen)}
+              >
+                <span>{sortBy}</span>
+                <svg className={`w-4 h-4 text-gray-500 transition-transform ${sortDropdownOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {sortDropdownOpen && (
+                <>
+                  {/* Mobile: Full-width bottom sheet */}
+                  <div className="fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-2xl shadow-2xl border-t border-gray-200 py-4 max-h-[60vh] overflow-y-auto animate-slide-up sm:hidden" style={{ left: 0, right: 0 }}>
+                    <div className="px-4 pb-2">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3">Sort By</h3>
+                      <div className="flex flex-col gap-1">
+                        {sortOptions.map(option => (
+                          <button
+                            key={option}
+                            className={`w-full text-left px-3 py-3 rounded-lg transition ${
+                              sortBy === option 
+                                ? 'bg-blue-50 text-blue-700 font-medium' 
+                                : 'text-gray-700 hover:bg-gray-50'
+                            }`}
+                            onClick={() => {
+                              setSortBy(option);
+                              setSortDropdownOpen(false);
+                            }}
             >
+                            {option}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  {/* Desktop: Normal popover */}
+                  <div className="hidden sm:block">
+                    <div className="absolute z-50 mt-2 w-full bg-white rounded-xl shadow-xl border border-gray-100 py-2 animate-fade-in">
               {sortOptions.map(option => (
-                <option key={option} value={option}>{option}</option>
+                        <button
+                          key={option}
+                          className={`w-full text-left px-4 py-2 text-sm transition ${
+                            sortBy === option 
+                              ? 'bg-blue-50 text-blue-700 font-medium' 
+                              : 'text-gray-700 hover:bg-gray-50'
+                          }`}
+                          onClick={() => {
+                            setSortBy(option);
+                            setSortDropdownOpen(false);
+                          }}
+                        >
+                          {option}
+                        </button>
               ))}
-            </select>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="flex flex-wrap gap-2 mb-6">
+        <div className="flex flex-nowrap gap-2 mb-6">
           <MultiSelectDropdown label="Bonus Type" options={bonusTypeOptions} selected={selectedBonusTypes} setSelected={setSelectedBonusTypes} showCount={true} />
           <MultiSelectDropdown label="Bookmaker" options={bookmakerOptions} selected={selectedBookmakers} setSelected={setSelectedBookmakers} showCount={true} />
           <MultiSelectDropdown label="Advanced" options={advancedOptions} selected={selectedAdvanced} setSelected={setSelectedAdvanced} showCount={true} nested={true} />
         </div>
         {/* Selected Filters Tags and Clear Filter */}
         {(selectedBonusTypes.length > 0 || selectedBookmakers.length > 0 || selectedAdvanced.length > 0) && (
-          <div className="flex flex-wrap items-center gap-2 justify-between mb-4">
+          <div className="flex flex-wrap items-center gap-2 justify-between mb-4 text-xs sm:text-sm">
             <div className="flex flex-wrap gap-2">
               {selectedBonusTypes.map((type) => (
-                <span key={type} className="flex items-center bg-gray-100 text-gray-700 rounded-full px-3 py-1 text-sm font-medium">
+                <span key={type} className="flex items-center bg-gray-100 text-gray-700 rounded-full px-2 sm:px-3 py-1 font-medium">
                   {type}
                   <button
                     className="ml-1 text-gray-400 hover:text-gray-700 focus:outline-none"
@@ -260,7 +433,7 @@ export default function NigeriaHome() {
                 </span>
               ))}
               {selectedBookmakers.map((bm) => (
-                <span key={bm} className="flex items-center bg-gray-100 text-gray-700 rounded-full px-3 py-1 text-sm font-medium">
+                <span key={bm} className="flex items-center bg-gray-100 text-gray-700 rounded-full px-2 sm:px-3 py-1 font-medium">
                   {bm}
                   <button
                     className="ml-1 text-gray-400 hover:text-gray-700 focus:outline-none"
@@ -272,7 +445,7 @@ export default function NigeriaHome() {
                 </span>
               ))}
               {selectedAdvanced.map((adv) => (
-                <span key={adv} className="flex items-center bg-gray-100 text-gray-700 rounded-full px-3 py-1 text-sm font-medium">
+                <span key={adv} className="flex items-center bg-gray-100 text-gray-700 rounded-full px-2 sm:px-3 py-1 font-medium">
                   {adv}
                   <button
                     className="ml-1 text-gray-400 hover:text-gray-700 focus:outline-none"
@@ -285,7 +458,7 @@ export default function NigeriaHome() {
               ))}
             </div>
             <button
-              className="ml-auto text-sm text-gray-500 underline hover:text-gray-700 font-medium"
+              className="ml-auto text-xs sm:text-sm text-gray-500 underline hover:text-gray-700 font-medium"
               onClick={() => {
                 setSelectedBonusTypes([]);
                 setSelectedBookmakers([]);
@@ -296,7 +469,6 @@ export default function NigeriaHome() {
             </button>
           </div>
         )}
-
         {/* Offer Cards */}
         <div className="flex flex-col gap-4 mb-6">
           {loading && <div className="text-center text-gray-400">Loading offers...</div>}
@@ -307,24 +479,24 @@ export default function NigeriaHome() {
           {!loading && !error && sortedOffers.map((offer, idx) => (
             <div
               key={offer._id || offer.id}
-              className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex flex-col sm:flex-row sm:items-center justify-between transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:border-gray-200 cursor-pointer"
+              className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:border-gray-200 cursor-pointer"
               onClick={() => router.push(`/ng/offers?offerId=${offer.id}`)}
             >
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3 sm:gap-4">
                 {offer.logo ? (
                   <Image src={urlFor(offer.logo).width(48).height(48).url()} alt={offer.bookmaker} width={48} height={48} className="rounded-md" />
                 ) : (
                   <div className="w-12 h-12 bg-gray-100 rounded-md" />
                 )}
                 <div>
-                  <div className="font-semibold text-gray-900 text-base hover:underline cursor-pointer">{offer.title}</div>
-                  <div className="text-sm text-gray-500 mt-1">{offer.description}</div>
+                  <div className="font-semibold text-gray-900 text-sm sm:text-base hover:underline cursor-pointer">{offer.title}</div>
+                  <div className="text-xs sm:text-sm text-gray-500 mt-1">{offer.description}</div>
                   <div className="flex items-center gap-2 text-xs text-gray-500 mt-2">
                     <span className="inline-flex items-center gap-1"><svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg> Expires: {offer.expires}</span>
                   </div>
                 </div>
               </div>
-              <div className="flex flex-col items-end mt-4 sm:mt-0">
+              <div className="flex flex-col items-end mt-2 sm:mt-4">
                 <span className="text-xs text-gray-400 mb-2">Published: {offer.published}</span>
               </div>
             </div>

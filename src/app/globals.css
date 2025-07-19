@@ -3,3 +3,27 @@
 body {
   font-family: inherit;
 }
+
+.faq-dropdown-open {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.4,0,0.2,1);
+}
+.faq-dropdown-closed {
+  opacity: 0;
+  transform: translateY(-16px);
+  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.4,0,0.2,1);
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}

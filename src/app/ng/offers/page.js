@@ -14,15 +14,51 @@ function OfferDetailsInner() {
   const offerId = params.get("offerId");
   const [offer, setOffer] = useState(null);
   const [moreOffers, setMoreOffers] = useState([]);
+  const [banners, setBanners] = useState([]);
+  const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Fetch banners from Sanity
+  const fetchBanners = async () => {
+    const query = `*[_type == "banner" && country == "Nigeria" && isActive == true] | order(order asc) {
+      _id,
+      title,
+      image,
+      country,
+      order
+    }`;
+    
+    try {
+      const banners = await client.fetch(query);
+      // If no active banners, get all Nigeria banners
+      if (banners.length === 0) {
+        const allBanners = await client.fetch(`*[_type == "banner" && country == "Nigeria"] | order(order asc) {
+          _id,
+          title,
+          image,
+          country,
+          order
+        }`);
+        return allBanners;
+      }
+      return banners;
+    } catch (error) {
+      console.error('Error fetching Nigeria banners:', error);
+      return [];
+    }
+  };
 
   useEffect(() => {
     if (!offerId) return;
     setLoading(true);
-    // Fetch the main offer and more offers from Sanity
+    // Fetch the main offer, more offers, and banners from Sanity
     const fetchData = async () => {
       try {
+        // Fetch banners
+        const bannerData = await fetchBanners();
+        setBanners(bannerData);
+        
         // Fetch the main offer by id
         const mainOfferQuery = `*[_type == "offer" && country == "Nigeria" && id == $id][0]{
           _id,
@@ -86,13 +122,62 @@ function OfferDetailsInner() {
           <span className="mx-1">/</span>
           <span className="text-gray-700 font-medium">{offer?.bonusType || "Bonus"}</span>
         </div>
-        {/* Banner */}
+        {/* Banner Carousel */}
         {loading && <div className="text-center text-gray-400">Loading offer...</div>}
         {error && <div className="text-center text-red-500">{error}</div>}
-        {!loading && !error && offer && (
+        {!loading && !error && offer && banners.length > 0 && (
           <>
-        <div className="w-full rounded-xl overflow-hidden shadow-sm mb-6">
-              <Image src="/assets/ng-nigeria.png" alt="Nigeria Banner" width={1200} height={200} className="w-full h-40 object-cover" priority />
+            <div className="relative w-full rounded-xl overflow-hidden shadow-sm mb-6">
+              <div className="relative h-32 sm:h-56 md:h-64">
+                <Image
+                  src={urlFor(banners[currentBannerIndex].image).width(1200).height(400).url()}
+                  alt={banners[currentBannerIndex].title}
+                  width={1200}
+                  height={400}
+                  className="w-full h-full object-contain sm:object-cover"
+                  priority
+                />
+              </div>
+              
+              {/* Navigation Arrows */}
+              {banners.length > 1 && (
+                <>
+                  <button
+                    onClick={() => setCurrentBannerIndex((prev) => (prev === 0 ? banners.length - 1 : prev - 1))}
+                    className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-all"
+                    aria-label="Previous banner"
+                  >
+                    <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => setCurrentBannerIndex((prev) => (prev === banners.length - 1 ? 0 : prev + 1))}
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-all"
+                    aria-label="Next banner"
+                  >
+                    <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </>
+              )}
+              
+              {/* Dots */}
+              {banners.length > 1 && (
+                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+                  {banners.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentBannerIndex(index)}
+                      className={`w-2 h-2 rounded-full transition-all ${
+                        index === currentBannerIndex ? 'bg-white' : 'bg-white bg-opacity-50'
+                      }`}
+                      aria-label={`Go to banner ${index + 1}`}
+                    />
+                  ))}
+                </div>
+              )}
         </div>
         {/* Offer Card */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-6">

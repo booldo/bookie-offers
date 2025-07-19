@@ -33,6 +33,8 @@ export default function Navbar() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState(null);
   const searchDebounceRef = useRef();
+  const [recentSearches, setRecentSearches] = useState([]);
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
 
   // Update selected flag based on current path
   useEffect(() => {
@@ -81,6 +83,13 @@ export default function Navbar() {
       }`;
       const results = await client.fetch(query, { country, term: `*${term}*` });
       setSearchResults(results);
+      // Add to recent searches
+      let recents = JSON.parse(localStorage.getItem('recentSearches') || '[]');
+      recents = recents.filter(t => t !== term);
+      recents.unshift(term);
+      if (recents.length > 5) recents = recents.slice(0, 5);
+      localStorage.setItem('recentSearches', JSON.stringify(recents));
+      setRecentSearches(recents);
     } catch (err) {
       setSearchError("Failed to search offers");
     } finally {
@@ -102,6 +111,14 @@ export default function Navbar() {
     }, 300);
     return () => clearTimeout(searchDebounceRef.current);
   }, [searchValue, country, searchOpen]);
+
+  // Load recent searches on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const recents = JSON.parse(localStorage.getItem('recentSearches') || '[]');
+      setRecentSearches(recents);
+    }
+  }, [searchOpen]);
 
   const handleFlagSelect = (flag) => {
     setSelectedFlag(flag);
@@ -134,22 +151,34 @@ export default function Navbar() {
       </div>
       {/* Search & Flag */}
       <div className="flex items-center gap-4">
-        {/* Search input */}
-          <div className="flex items-center bg-[#f6f7f9] border border-gray-200 rounded-lg px-3 py-1 w-48 cursor-pointer" onClick={() => setSearchOpen(true)}>
-          <svg className="text-gray-400 mr-2" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        {/* Search input for desktop */}
+        <div className="hidden sm:flex items-center bg-white border border-gray-300 rounded-lg px-3 py-1 w-32 sm:w-48 cursor-pointer shadow-sm focus-within:ring-2 focus-within:ring-black transition-all duration-150">
+          <svg className="text-gray-700 mr-2" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <circle cx="11" cy="11" r="8" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
           <input
             type="text"
             placeholder="Search..."
-            className="bg-transparent outline-none text-gray-700 w-full placeholder-gray-400"
-              value={searchValue}
-              onChange={e => { setSearchValue(e.target.value); setSearchOpen(true); }}
-              onFocus={() => setSearchOpen(true)}
-              readOnly={!searchOpen}
+            className="bg-white outline-none text-gray-900 w-full placeholder-gray-400 text-sm sm:text-base antialiased py-1 font-medium"
+            value={searchValue}
+            onChange={e => { setSearchValue(e.target.value); setSearchOpen(true); }}
+            onFocus={() => setSearchOpen(true)}
+            readOnly={!searchOpen}
+            style={{ letterSpacing: 0.1 }}
           />
         </div>
+        {/* Search icon for mobile */}
+        <button
+          className="flex sm:hidden items-center justify-center p-2 rounded hover:bg-gray-100 focus:ring-2 focus:ring-black"
+          onClick={() => { setShowMobileSearch(true); setSearchOpen(true); }}
+          aria-label="Open search"
+        >
+          <svg className="text-gray-700" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+        </button>
         {/* Flag dropdown */}
         <div className="relative">
           <button
@@ -163,7 +192,7 @@ export default function Navbar() {
           </button>
           {dropdownOpen && (
             <div className="absolute right-0 mt-2 w-40 bg-white border rounded shadow-lg z-20">
-              {flags.filter(f => f.name !== selectedFlag.name).map(flag => (
+              {flags.map(flag => (
                 <button
                   key={flag.name}
                   className="flex items-center gap-2 w-full px-4 py-2 hover:bg-gray-100"
@@ -171,6 +200,9 @@ export default function Navbar() {
                 >
                   <Image src={flag.src} alt={flag.name} width={20} height={20} className="rounded-full" />
                   <span>{flag.name}</span>
+                  {selectedFlag.name === flag.name && (
+                    <svg className="ml-1 text-green-600" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" /></svg>
+                  )}
                 </button>
               ))}
             </div>
@@ -182,10 +214,10 @@ export default function Navbar() {
       {menuOpen && (
         <div className="fixed left-0 right-0 top-[64px] w-full bg-white shadow-2xl z-50 rounded-b-xl animate-slide-down">
           <div className="flex flex-col gap-6 px-10 py-10 text-gray-800 text-base font-medium">
-            <Link href="/briefly" className="hover:underline">Briefly</Link>
             <Link href="/calculator" className="hover:underline">Calculator</Link>
             <Link href="/about" className="hover:underline">About Us</Link>
             <Link href="/contact" className="hover:underline">Contact Us</Link>
+            <Link href="/faq" className="hover:underline">FAQ</Link>
           </div>
         </div>
       )}
@@ -209,7 +241,9 @@ export default function Navbar() {
                   autoFocus
                 />
               </div>
-              <button className="ml-4 text-gray-500 text-base font-medium hover:underline" onClick={() => setSearchOpen(false)}>Cancel</button>
+              <button className="ml-4 text-gray-500 text-base font-medium hover:underline" onClick={() => { setSearchOpen(false); setSearchValue(""); }}>
+                Cancel
+              </button>
             </div>
             {/* Search Results */}
             <div>
@@ -261,6 +295,29 @@ export default function Navbar() {
                         className="bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full px-4 py-2 text-sm font-medium transition"
                         onClick={() => {
                           setSearchValue(term);
+                          setSearchOpen(true);
+                          handleSearch(term);
+                        }}
+                      >
+                        {term}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {/* Recent Searches */}
+              {!searchLoading && !searchError && !searchValue && recentSearches.length > 0 && (
+                <div className="mb-6">
+                  <div className="text-gray-500 text-sm mb-2 font-medium">Recent Searches</div>
+                  <div className="flex flex-wrap gap-2">
+                    {recentSearches.map((term, idx) => (
+                      <button
+                        key={term + idx}
+                        className="bg-gray-50 hover:bg-gray-200 text-gray-700 rounded-full px-4 py-2 text-sm font-medium transition"
+                        onClick={() => {
+                          setSearchValue(term);
+                          setSearchOpen(true);
+                          handleSearch(term);
                         }}
                       >
                         {term}
@@ -271,6 +328,114 @@ export default function Navbar() {
               )}
             </div>
           </div>
+        </div>
+      )}
+      {/* Mobile search input overlay */}
+      {showMobileSearch && (
+        <div className="fixed inset-0 z-50 bg-white flex flex-col px-4 py-4 sm:hidden overflow-y-auto">
+          <div className="flex items-center gap-2 mb-4 bg-white border border-gray-300 rounded-lg px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-black transition-all duration-150">
+            <svg className="text-gray-700" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Search..."
+              className="bg-white outline-none text-gray-900 w-full placeholder-gray-400 text-base antialiased py-1 font-medium"
+              value={searchValue}
+              onChange={e => { setSearchValue(e.target.value); setSearchOpen(true); }}
+              autoFocus
+              style={{ letterSpacing: 0.1 }}
+            />
+            <button
+              className="ml-2 text-gray-500 text-base font-medium hover:underline"
+              onClick={() => { setShowMobileSearch(false); setSearchOpen(false); setSearchValue(""); }}
+            >
+              Cancel
+            </button>
+          </div>
+          {/* Search Results (Mobile) */}
+          {searchLoading && <div className="text-center text-gray-400">Searching...</div>}
+          {searchError && <div className="text-center text-red-500">{searchError}</div>}
+          {!searchLoading && !searchError && searchResults.length === 0 && searchValue && (
+            <div className="text-center text-gray-400">No results found.</div>
+          )}
+          {!searchLoading && !searchError && searchResults.length > 0 && (
+            <div className="flex flex-col gap-4 mb-6">
+              {searchResults.map((offer) => (
+                <div
+                  key={offer._id || offer.id}
+                  className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex flex-col sm:flex-row sm:items-center justify-between transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:border-gray-200 cursor-pointer"
+                  onClick={() => {
+                    setShowMobileSearch(false);
+                    setSearchOpen(false);
+                    setSearchValue("");
+                    router.push(`/${country === "Nigeria" ? "ng" : "gh"}/offers?offerId=${offer.id}`);
+                  }}
+                >
+                  <div className="flex items-center gap-4">
+                    {offer.logo ? (
+                      <Image src={urlFor(offer.logo).width(48).height(48).url()} alt={offer.bookmaker} width={48} height={48} className="rounded-md" />
+                    ) : (
+                      <div className="w-12 h-12 bg-gray-100 rounded-md" />
+                    )}
+                    <div>
+                      <div className="font-semibold text-gray-900 text-base hover:underline cursor-pointer">{offer.title}</div>
+                      <div className="text-sm text-gray-500 mt-1">{offer.description}</div>
+                      <div className="flex items-center gap-2 text-xs text-gray-500 mt-2">
+                        <span className="inline-flex items-center gap-1"><svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg> Expires: {offer.expires}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end mt-4 sm:mt-0">
+                    <span className="text-xs text-gray-400 mb-2">Published: {offer.published}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {/* Popular Searches (Mobile) */}
+          {!searchLoading && !searchError && !searchValue && (
+            <div className="mb-6">
+              <div className="text-gray-500 text-sm mb-2 font-medium">Popular Searches</div>
+              <div className="flex flex-wrap gap-2">
+                {popularSearches.map((term, idx) => (
+                  <button
+                    key={term + idx}
+                    className="bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full px-4 py-2 text-sm font-medium transition"
+                    onClick={() => {
+                      setSearchValue(term);
+                      setSearchOpen(true);
+                      handleSearch(term);
+                    }}
+                  >
+                    {term}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {/* Recent Searches (Mobile) */}
+          {!searchLoading && !searchError && !searchValue && recentSearches.length > 0 && (
+            <div className="mb-6">
+              <div className="text-gray-500 text-sm mb-2 font-medium">Recent Searches</div>
+              <div className="flex flex-wrap gap-2">
+                {recentSearches.map((term, idx) => (
+                  <button
+                    key={term + idx}
+                    className="bg-gray-50 hover:bg-gray-200 text-gray-700 rounded-full px-4 py-2 text-sm font-medium transition"
+                    onClick={() => {
+                      setSearchValue(term);
+                      setSearchOpen(true);
+                      handleSearch(term);
+                    }}
+                  >
+                    {term}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </>
