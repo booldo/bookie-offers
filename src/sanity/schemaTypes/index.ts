@@ -1,12 +1,10 @@
 import { type SchemaTypeDefinition } from 'sanity'
 import offer from './offer'
-import faq from './faq'
-import banner from './banner'
+import article from "./article";
 
 export const schemaTypes = [
   offer,
-  faq,
-  banner,
+  article,
 ];
 
 export const schema: { types: SchemaTypeDefinition[] } = {

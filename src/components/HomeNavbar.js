@@ -74,7 +74,7 @@ export default function HomeNavbar() {
           </button>
           {dropdownOpen && (
             <div className="absolute right-0 mt-2 w-40 bg-white border rounded shadow-lg z-20">
-              {flags.map(flag => (
+              {flags.filter(f => f.name !== selectedFlag.name).map(flag => (
                 <button
                   key={flag.name}
                   className="flex items-center gap-2 w-full px-4 py-2 hover:bg-gray-100"
@@ -82,9 +82,6 @@ export default function HomeNavbar() {
                 >
                   <Image src={flag.src} alt={flag.name} width={20} height={20} className="rounded-full" />
                   <span>{flag.name}</span>
-                  {selectedFlag.name === flag.name && (
-                    <svg className="ml-1 text-green-600" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" /></svg>
-                  )}
                 </button>
               ))}
             </div>
@@ -96,10 +93,11 @@ export default function HomeNavbar() {
       {menuOpen && (
         <div className="fixed left-0 right-0 top-[64px] w-full bg-white shadow-2xl z-50 rounded-b-xl animate-slide-down">
           <div className="flex flex-col gap-6 px-10 py-10 text-gray-800 text-base font-medium">
-            <Link href="#" className="hover:underline">Calculator</Link>
-            <Link href="/about" className="hover:underline">About Us</Link>
-            <Link href="/contact" className="hover:underline">Contact Us</Link>
-            <Link href="/faq" className="hover:underline">FAQ</Link>
+            <a href="/briefly" className="hover:underline">Blog</a>
+            <a href="/faq" className="hover:underline">FAQ</a>
+            <a href="#" className="hover:underline">Calculator</a>
+            <a href="/about" className="hover:underline">About Us</a>
+            <a href="/contact" className="hover:underline">Contact Us</a>
           </div>
         </div>
       )}

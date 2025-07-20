@@ -5,6 +5,22 @@ export default {
   fields: [
     { name: "id", title: "ID", type: "string" },
     { name: "title", title: "Title", type: "string" },
+    {
+      name: "slug",
+      title: "Slug",
+      type: "slug",
+      options: {
+        source: doc => `${doc.country}-${doc.bookmaker}-${doc.title}`,
+        maxLength: 96,
+        slugify: input =>
+          input
+            .toLowerCase()
+            .replace(/\s+/g, '-')
+            .replace(/[^ 0-\u007F\w\-]+/g, '')
+            .slice(0, 96)
+      }
+    },
+    { name: "url", title: "URL", type: "url", description: "External link for the offer (Get Bonus)" },
     { name: "bookmaker", title: "Bookmaker", type: "string" },
     { name: "bonusType", title: "Bonus Type", type: "string" },
     { name: "country", title: "Country", type: "string" },

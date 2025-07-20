@@ -11,59 +11,25 @@ import { urlFor } from "../../../sanity/lib/image";
 
 function OfferDetailsInner() {
   const params = useSearchParams();
-  const offerId = params.get("offerId");
+  const slug = params.get("slug");
   const [offer, setOffer] = useState(null);
   const [moreOffers, setMoreOffers] = useState([]);
-  const [banners, setBanners] = useState([]);
-  const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch banners from Sanity
-  const fetchBanners = async () => {
-    const query = `*[_type == "banner" && country == "Nigeria" && isActive == true] | order(order asc) {
-      _id,
-      title,
-      image,
-      country,
-      order
-    }`;
-    
-    try {
-      const banners = await client.fetch(query);
-      // If no active banners, get all Nigeria banners
-      if (banners.length === 0) {
-        const allBanners = await client.fetch(`*[_type == "banner" && country == "Nigeria"] | order(order asc) {
-          _id,
-          title,
-          image,
-          country,
-          order
-        }`);
-        return allBanners;
-      }
-      return banners;
-    } catch (error) {
-      console.error('Error fetching Nigeria banners:', error);
-      return [];
-    }
-  };
-
   useEffect(() => {
-    if (!offerId) return;
+    if (!slug) return;
     setLoading(true);
-    // Fetch the main offer, more offers, and banners from Sanity
+    // Fetch the main offer and more offers from Sanity
     const fetchData = async () => {
       try {
-        // Fetch banners
-        const bannerData = await fetchBanners();
-        setBanners(bannerData);
-        
-        // Fetch the main offer by id
-        const mainOfferQuery = `*[_type == "offer" && country == "Nigeria" && id == $id][0]{
+        // Fetch the main offer by slug
+        const mainOfferQuery = `*[_type == "offer" && country == "Nigeria" && slug.current == $slug][0]{
           _id,
           id,
           title,
+          slug,
+          url,
           bookmaker,
           bonusType,
           country,
@@ -78,12 +44,14 @@ function OfferDetailsInner() {
           howItWorks,
           banner
         }`;
-        const mainOffer = await client.fetch(mainOfferQuery, { id: offerId });
+        const mainOffer = await client.fetch(mainOfferQuery, { slug });
         // Fetch more offers, excluding the current one
-        const moreOffersQuery = `*[_type == "offer" && country == "Nigeria" && id != $id] | order(published desc)[0...4]{
+        const moreOffersQuery = `*[_type == "offer" && country == "Nigeria" && slug.current != $slug] | order(published desc)[0...4]{
           _id,
           id,
           title,
+          slug,
+          url,
           bookmaker,
           bonusType,
           country,
@@ -98,7 +66,7 @@ function OfferDetailsInner() {
           howItWorks,
           banner
         }`;
-        const more = await client.fetch(moreOffersQuery, { id: offerId });
+        const more = await client.fetch(moreOffersQuery, { slug });
         setOffer(mainOffer);
         setMoreOffers(more);
         setLoading(false);
@@ -108,7 +76,7 @@ function OfferDetailsInner() {
       }
     };
     fetchData();
-  }, [offerId]);
+  }, [slug]);
 
   return (
     <div className="min-h-screen bg-[#fafbfc] flex flex-col">
@@ -122,62 +90,13 @@ function OfferDetailsInner() {
           <span className="mx-1">/</span>
           <span className="text-gray-700 font-medium">{offer?.bonusType || "Bonus"}</span>
         </div>
-        {/* Banner Carousel */}
+        {/* Banner */}
         {loading && <div className="text-center text-gray-400">Loading offer...</div>}
         {error && <div className="text-center text-red-500">{error}</div>}
-        {!loading && !error && offer && banners.length > 0 && (
+        {!loading && !error && offer && (
           <>
-            <div className="relative w-full rounded-xl overflow-hidden shadow-sm mb-6">
-              <div className="relative h-32 sm:h-56 md:h-64">
-                <Image
-                  src={urlFor(banners[currentBannerIndex].image).width(1200).height(400).url()}
-                  alt={banners[currentBannerIndex].title}
-                  width={1200}
-                  height={400}
-                  className="w-full h-full object-contain sm:object-cover"
-                  priority
-                />
-              </div>
-              
-              {/* Navigation Arrows */}
-              {banners.length > 1 && (
-                <>
-                  <button
-                    onClick={() => setCurrentBannerIndex((prev) => (prev === 0 ? banners.length - 1 : prev - 1))}
-                    className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-all"
-                    aria-label="Previous banner"
-                  >
-                    <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                      <path d="M15 19l-7-7 7-7" />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => setCurrentBannerIndex((prev) => (prev === banners.length - 1 ? 0 : prev + 1))}
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-all"
-                    aria-label="Next banner"
-                  >
-                    <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                      <path d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
-                </>
-              )}
-              
-              {/* Dots */}
-              {banners.length > 1 && (
-                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-                  {banners.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setCurrentBannerIndex(index)}
-                      className={`w-2 h-2 rounded-full transition-all ${
-                        index === currentBannerIndex ? 'bg-white' : 'bg-white bg-opacity-50'
-                      }`}
-                      aria-label={`Go to banner ${index + 1}`}
-                    />
-                  ))}
-                </div>
-              )}
+        <div className="w-full rounded-xl overflow-hidden shadow-sm mb-6">
+              <Image src="/assets/ng-nigeria.png" alt="Nigeria Banner" width={1200} height={200} className="w-full h-40 object-cover" priority />
         </div>
         {/* Offer Card */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-6">
@@ -198,7 +117,11 @@ function OfferDetailsInner() {
             </span>
           </div>
           <p className="text-gray-700 mb-4">{offer.description}</p>
-          <button className="bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg px-6 py-2 mb-4 transition">Get Bonus!</button>
+          <button
+            className="bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg px-6 py-2 mb-4 transition"
+            onClick={() => offer.url && window.open(offer.url, '_blank', 'noopener,noreferrer')}
+            disabled={!offer.url}
+          >Get Bonus!</button>
           {/* How it works */}
               {offer.howItWorks && offer.howItWorks.length > 0 && (
           <div className="mb-4">
@@ -246,7 +169,7 @@ function OfferDetailsInner() {
             {moreOffers.map((o) => (
               <Link
                 key={o._id || o.id}
-                href={`?offerId=${o.id}`}
+                href={`?slug=${o.slug?.current}`}
                 scroll={false}
                 className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex flex-col justify-between transition cursor-pointer hover:bg-gray-50 hover:shadow-lg hover:scale-[1.03] focus:outline-none focus:ring-2 focus:ring-green-500"
               >

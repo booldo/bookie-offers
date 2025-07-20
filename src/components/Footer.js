@@ -24,8 +24,10 @@ export default function Footer() {
         </div>
         {/* Links */}
         <div className="flex flex-col gap-2">
-          <a href="#" className="hover:underline">About us</a>
-          <a href="#" className="hover:underline">Contact us</a>
+        <a href="/faq" className="hover:underline">FAQ</a>
+        <a href="/briefly" className="hover:underline">Blog</a>
+          <a href="/about" className="hover:underline">About us</a>
+          <a href="/contact" className="hover:underline">Contact us</a>
         </div>
         <hr className="my-2 border-gray-200" />
         {/* Affiliate Disclosure */}
