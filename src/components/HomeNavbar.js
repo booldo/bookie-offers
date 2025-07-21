@@ -6,9 +6,9 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 
 const flags = [
-  { src: "/assets/flags.png", name: "World Wide", path: "/" },
-  { src: "/assets/ghana-circle.png", name: "Ghana", path: "/gh" },
-  { src: "/assets/nigeria-cirle.png", name: "Nigeria", path: "/ng" },
+  { src: "/assets/flags.png", name: "World Wide", path: "/", topIcon: "/assets/dropdown.png" },
+  { src: "/assets/ghana-square.png", name: "Ghana", path: "/gh", topIcon: "/assets/ghana.png" },
+  { src: "/assets/nigeria-square.png", name: "Nigeria", path: "/ng", topIcon: "/assets/nigeria.png" },
 ];
 
 export default function HomeNavbar() {
@@ -67,21 +67,28 @@ export default function HomeNavbar() {
             className="flex items-center gap-1 p-2 rounded hover:bg-gray-100"
             onClick={() => setDropdownOpen((v) => !v)}
           >
-            <Image src={selectedFlag.src} alt={selectedFlag.name} width={24} height={24} className="rounded-full" />
+            <Image src={selectedFlag.topIcon} alt={selectedFlag.name} width={24} height={24} />
             <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path d="M6 9l6 6 6-6" />
             </svg>
           </button>
           {dropdownOpen && (
-            <div className="absolute right-0 mt-2 w-40 bg-white border rounded shadow-lg z-20">
-              {flags.filter(f => f.name !== selectedFlag.name).map(flag => (
+            <div className="absolute right-0 mt-2 w-56 bg-white border rounded shadow-lg z-20">
+              {flags.map(flag => (
                 <button
                   key={flag.name}
-                  className="flex items-center gap-2 w-full px-4 py-2 hover:bg-gray-100"
+                  className="flex items-center justify-between w-full px-4 py-2 hover:bg-gray-100"
                   onClick={() => handleFlagSelect(flag)}
                 >
-                  <Image src={flag.src} alt={flag.name} width={20} height={20} className="rounded-full" />
-                  <span>{flag.name}</span>
+                  <div className="flex items-center gap-2">
+                    <Image src={flag.src} alt={flag.name} width={20} height={20} />
+                    <span>{flag.name}</span>
+                  </div>
+                  {selectedFlag.name === flag.name && (
+                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="green" strokeWidth="3">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
                 </button>
               ))}
             </div>

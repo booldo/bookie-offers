@@ -40,20 +40,8 @@ export default function MultiSelectDropdown({ label, options, selected, setSelec
     }));
   }
 
-  return (
-    <div className="relative w-56" ref={ref}>
-      <button
-        type="button"
-        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-left text-sm flex items-center justify-between shadow-sm hover:border-gray-300 focus:outline-none"
-        onClick={() => setOpen((v) => !v)}
-      >
-        <span className="truncate text-gray-700">
-          {selected.length === 0 ? label : selected.join(", ")}
-        </span>
-        <svg className={`ml-2 w-4 h-4 transition-transform ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" /></svg>
-      </button>
-      {open && (
-        <div className="absolute z-20 mt-2 w-full bg-white rounded-xl shadow-xl border border-gray-100 py-2 max-h-72 overflow-y-auto animate-fade-in">
+  const dropdownContent = (
+    <div className="overflow-y-auto max-h-[calc(80vh-6rem)] sm:max-h-full">
           {!nested && (
             <div className="px-3 pb-2 pt-1 sticky top-0 bg-white z-10">
               <input
@@ -128,6 +116,44 @@ export default function MultiSelectDropdown({ label, options, selected, setSelec
               ))
             )}
           </div>
+    </div>
+  );
+
+  return (
+    <div className="relative w-full" ref={ref}>
+      <button
+        type="button"
+        className="w-full bg-white border border-gray-200 rounded-lg px-2 sm:px-3 py-2 text-left text-xs sm:text-sm flex items-center justify-between shadow-sm hover:border-gray-300 focus:outline-none"
+        onClick={() => setOpen((v) => !v)}
+      >
+        <span className="truncate text-gray-700">
+          {selected.length === 0 ? label : selected.join(", ")}
+        </span>
+        <svg className={`ml-1 sm:ml-2 w-4 h-4 transition-transform ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" /></svg>
+      </button>
+
+      {/* Mobile slide-up panel */}
+      <div
+        className={`
+          sm:hidden fixed bottom-0 left-0 right-0 rounded-t-2xl p-4
+          bg-white shadow-2xl border-t border-black z-20
+          transform transition-transform duration-300 ease-in-out
+          ${open ? 'translate-y-0' : 'translate-y-full'}
+        `}
+      >
+        <div className="sm:hidden flex justify-between items-center pb-2 mb-3">
+          <h3 className="font-semibold text-lg">{label}</h3>
+          <button onClick={() => setOpen(false)} className="p-1">
+            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" /></svg>
+          </button>
+        </div>
+        {dropdownContent}
+      </div>
+
+      {/* Desktop dropdown panel */}
+      {open && (
+        <div className="hidden sm:block absolute z-20 mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-100 py-2 animate-fade-in">
+          {dropdownContent}
         </div>
       )}
     </div>

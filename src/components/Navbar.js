@@ -8,9 +8,9 @@ import { urlFor } from "../sanity/lib/image";
 import Link from "next/link";
 
 const flags = [
-  { src: "/assets/flags.png", name: "World Wide", path: "/" },
-  { src: "/assets/ghana-circle.png", name: "Ghana", path: "/gh" },
-  { src: "/assets/nigeria-cirle.png", name: "Nigeria", path: "/ng" },
+  { src: "/assets/flags.png", name: "World Wide", path: "/", topIcon: "/assets/dropdown.png" },
+  { src: "/assets/ghana-square.png", name: "Ghana", path: "/gh", topIcon: "/assets/ghana.png" },
+  { src: "/assets/nigeria-square.png", name: "Nigeria", path: "/ng", topIcon: "/assets/nigeria.png" },
 ];
 
 const popularSearches = [
@@ -113,29 +113,29 @@ export default function Navbar() {
     <>
     <nav className="w-full flex items-center justify-between px-4 py-3 border-b bg-white sticky top-0 z-10">
       <div className="flex items-center gap-2">
-          {/* Hamburger/X Toggle */}
-          <button className="p-2 focus:outline-none" onClick={() => setMenuOpen(!menuOpen)}>
-            {menuOpen ? (
-              <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path d="M18 6L6 18M6 6l12 12" />
-              </svg>
-            ) : (
-              <>
-          <span className="block w-6 h-0.5 bg-gray-800 mb-1"></span>
-          <span className="block w-6 h-0.5 bg-gray-800 mb-1"></span>
-          <span className="block w-6 h-0.5 bg-gray-800"></span>
-              </>
-            )}
+        {/* Hamburger/X Toggle */}
+        <button className="p-2 focus:outline-none" onClick={() => setMenuOpen(!menuOpen)}>
+          {menuOpen ? (
+            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          ) : (
+            <>
+        <span className="block w-6 h-0.5 bg-gray-800 mb-1"></span>
+        <span className="block w-6 h-0.5 bg-gray-800 mb-1"></span>
+        <span className="block w-6 h-0.5 bg-gray-800"></span>
+            </>
+          )}
         </button>
-        {/* Logo */}
-        <Link href="/">
+        {/* Logo - hide on mobile when search is open */}
+        <Link href="/" className={`${searchOpen ? 'hidden sm:block' : ''}`}>
           <Image src="/assets/logo.png" alt="Booldo Logo" width={80} height={80} className="cursor-pointer" />
         </Link>
       </div>
       {/* Search & Flag */}
-      <div className="flex items-center gap-4">
-        {/* Search input */}
-          <div className="flex items-center bg-[#f6f7f9] border border-gray-200 rounded-lg px-3 py-1 w-48 cursor-pointer" onClick={() => setSearchOpen(true)}>
+      <div className="flex items-center gap-0 sm:gap-4 flex-1 justify-end">
+        {/* Search input - desktop only */}
+        <div className="hidden sm:flex items-center bg-[#f6f7f9] border border-gray-200 rounded-lg px-3 py-1 w-48 cursor-pointer" onClick={() => setSearchOpen(true)}>
           <svg className="text-gray-400 mr-2" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <circle cx="11" cy="11" r="8" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -144,33 +144,71 @@ export default function Navbar() {
             type="text"
             placeholder="Search..."
             className="bg-transparent outline-none text-gray-700 w-full placeholder-gray-400"
-              value={searchValue}
-              onChange={e => { setSearchValue(e.target.value); setSearchOpen(true); }}
-              onFocus={() => setSearchOpen(true)}
-              readOnly={!searchOpen}
+            value={searchValue}
+            onChange={e => { setSearchValue(e.target.value); setSearchOpen(true); }}
+            onFocus={() => setSearchOpen(true)}
+            readOnly={!searchOpen}
           />
         </div>
+        {/* Search icon - mobile only */}
+        {!searchOpen && (
+          <button className="flex sm:hidden p-2" onClick={() => setSearchOpen(true)}>
+            <svg className="text-gray-400" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </button>
+        )}
+        {/* Mobile search input - only when searchOpen */}
+        {searchOpen && (
+          <div className="flex sm:hidden items-center bg-[#f6f7f9] border border-gray-200 rounded-lg px-3 py-1 w-full ml-2 relative">
+            <input
+              type="text"
+              placeholder="Search..."
+              className="bg-transparent outline-none text-gray-700 w-full placeholder-gray-400 pr-8"
+              value={searchValue}
+              onChange={e => setSearchValue(e.target.value)}
+              autoFocus
+            />
+            {searchValue && (
+              <button
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1"
+                onClick={() => setSearchValue("")}
+                tabIndex={-1}
+              >
+                <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" /></svg>
+              </button>
+            )}
+          </div>
+        )}
         {/* Flag dropdown */}
         <div className="relative">
           <button
             className="flex items-center gap-1 p-2 rounded hover:bg-gray-100"
             onClick={() => setDropdownOpen((v) => !v)}
           >
-            <Image src={selectedFlag.src} alt={selectedFlag.name} width={24} height={24} className="rounded-full" />
+            <Image src={selectedFlag.topIcon} alt={selectedFlag.name} width={24} height={24} />
             <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path d="M6 9l6 6 6-6" />
             </svg>
           </button>
           {dropdownOpen && (
-            <div className="absolute right-0 mt-2 w-40 bg-white border rounded shadow-lg z-20">
-              {flags.filter(f => f.name !== selectedFlag.name).map(flag => (
+            <div className="absolute right-0 mt-2 w-56 bg-white border rounded shadow-lg z-20">
+              {flags.map(flag => (
                 <button
                   key={flag.name}
-                  className="flex items-center gap-2 w-full px-4 py-2 hover:bg-gray-100"
+                  className="flex items-center justify-between w-full px-4 py-2 hover:bg-gray-100"
                   onClick={() => handleFlagSelect(flag)}
                 >
-                  <Image src={flag.src} alt={flag.name} width={20} height={20} className="rounded-full" />
-                  <span>{flag.name}</span>
+                  <div className="flex items-center gap-2">
+                    <Image src={flag.src} alt={flag.name} width={20} height={20} />
+                    <span>{flag.name}</span>
+                  </div>
+                  {selectedFlag.name === flag.name && (
+                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="green" strokeWidth="3">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
                 </button>
               ))}
             </div>

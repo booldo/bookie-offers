@@ -26,7 +26,7 @@ export default function AboutPage() {
     <div className="min-h-screen flex flex-col bg-[#fafbfc]">
       <HomeNavbar />
       <main className="flex-1 max-w-6xl mx-auto py-10 px-4 w-full">
-        <h1 className="text-4xl font-bold text-center mb-4">About us</h1>
+        <h1 className="text-4xl font-bold mb-4">About us</h1>
         
         <div className="flex flex-col md:flex-row gap-8">
           {/* Main About Content */}
