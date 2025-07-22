@@ -5,6 +5,8 @@ import Link from "next/link";
 import { client } from "../../sanity/lib/client";
 import imageUrlBuilder from '@sanity/image-url';
 import { useEffect, useState } from "react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 const builder = imageUrlBuilder(client);
 function urlFor(source) {
@@ -14,6 +16,7 @@ function urlFor(source) {
 export default function BrieflyPage() {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     async function fetchArticles() {
@@ -34,6 +37,13 @@ export default function BrieflyPage() {
       <HomeNavbar />
       <main className="flex-1 max-w-6xl mx-auto py-10 px-4 w-full">
         <div className="flex items-center gap-2 mb-6">
+          <button
+            onClick={() => router.back()}
+            className="focus:outline-none"
+            aria-label="Go back"
+          >
+            <Image src="/assets/back-arrow.png" alt="Back" width={28} height={28} />
+          </button>
           <span className="text-green-700 text-2xl">●</span>
           <h2 className="text-2xl font-bold">Latest</h2>
         </div>

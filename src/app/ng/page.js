@@ -8,6 +8,7 @@ import MultiSelectDropdown from "../../components/BonusTypeDropdown";
 import { useRouter } from "next/navigation";
 import { client } from "../../sanity/lib/client";
 import { urlFor } from "../../sanity/lib/image";
+import BannerCarousel from "../../components/BannerCarousel";
 
 // Fetch offers from Sanity
 const fetchOffers = async () => {
@@ -28,6 +29,19 @@ const fetchOffers = async () => {
     logo,
     terms,
     howItWorks
+  }`;
+  return await client.fetch(query);
+};
+
+// Fetch banners from Sanity
+const fetchBanners = async () => {
+  const query = `*[_type == "banner" && country == "Nigeria" && isActive == true] | order(order asc) {
+    _id,
+    title,
+    image,
+    country,
+    order,
+    isActive
   }`;
   return await client.fetch(query);
 };
@@ -89,6 +103,7 @@ export default function NigeriaHome() {
   const [bookmakerOptions, setBookmakerOptions] = useState([]);
   const [advancedOptions, setAdvancedOptions] = useState([]);
   const sortByRef = useRef();
+  const [banners, setBanners] = useState([]);
 
   useEffect(() => {
     function handleClick(e) {
@@ -162,6 +177,13 @@ export default function NigeriaHome() {
       });
   }, []);
 
+  useEffect(() => {
+    fetchBanners().then((data) => {
+      // Attach imageUrl using urlFor
+      setBanners(data.map(b => ({ ...b, imageUrl: b.image ? urlFor(b.image).width(1200).height(200).url() : undefined })));
+      });
+  }, []);
+
   // Filter logic (case-insensitive, robust)
   const filteredOffers = offers.filter((offer) => {
     // Normalize for case-insensitive comparison
@@ -211,26 +233,10 @@ export default function NigeriaHome() {
     <div className="min-h-screen bg-[#fafbfc] flex flex-col">
       <Navbar />
       <main className="max-w-7xl mx-auto w-full px-2 sm:px-4 flex-1">
-        {/* Banner */}
-        <div className="w-full mt-4 sm:mt-8 flex flex-col items-center">
-          <div className="w-full rounded-xl overflow-hidden shadow-sm">
-            <Image
-              src="/assets/ng-nigeria.png"
-              alt="Nigeria Banner"
-              width={1200}
-              height={200}
-              className="w-full h-32 sm:h-48 object-cover"
-              priority
-            />
-          </div>
-          {/* Carousel dots */}
-          <div className="flex justify-center mt-2 gap-2">
-            <span className="w-2 h-2 bg-gray-300 rounded-full inline-block" />
-            <span className="w-2 h-2 bg-gray-300 rounded-full inline-block" />
-            <span className="w-2 h-2 bg-gray-400 rounded-full inline-block" />
-          </div>
+        {/* Banner Carousel - remove mt-4 and sm:mt-8 from BannerCarousel if present */}
+        <div className="flex flex-col items-center">
+          <BannerCarousel banners={banners} />
         </div>
-
         {/* Best Offers Header */}
         <div className="flex items-center justify-between my-4">
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900 whitespace-nowrap">Best Offers <span className="text-gray-400 font-normal text-base sm:text-xl">{offers.length}</span></h1>

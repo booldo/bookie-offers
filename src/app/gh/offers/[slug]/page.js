@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { client } from "../../../../sanity/lib/client";
 import { urlFor } from "../../../../sanity/lib/image";
+import BannerCarousel from "../../../../components/BannerCarousel";
 
 function OfferDetailsInner({ slug }) {
   const [offer, setOffer] = useState(null);
@@ -17,6 +18,7 @@ function OfferDetailsInner({ slug }) {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [shouldRestoreScroll, setShouldRestoreScroll] = useState(false);
   const [totalOffers, setTotalOffers] = useState(0);
+  const [banners, setBanners] = useState([]);
   const scrollPositionRef = useRef(0);
 
   useEffect(() => {
@@ -86,6 +88,24 @@ function OfferDetailsInner({ slug }) {
     fetchData();
   }, [slug, loadMoreCount]);
 
+  useEffect(() => {
+    // Fetch banners from Sanity
+    const fetchBanners = async () => {
+      const query = `*[_type == "banner" && country == "Ghana" && isActive == true] | order(order asc) {
+        _id,
+        title,
+        image,
+        country,
+        order,
+        isActive
+      }`;
+      return await client.fetch(query);
+    };
+    fetchBanners().then((data) => {
+      setBanners(data.map(b => ({ ...b, imageUrl: b.image ? urlFor(b.image).width(1200).height(200).url() : undefined })));
+    });
+  }, []);
+
   useLayoutEffect(() => {
     if (shouldRestoreScroll) {
       window.scrollTo(0, scrollPositionRef.current);
@@ -135,6 +155,8 @@ function OfferDetailsInner({ slug }) {
     <div className="min-h-screen bg-[#fafbfc] flex flex-col">
       <Navbar />
       <main className="max-w-6xl mx-auto w-full px-2 sm:px-4 flex-1">
+        {/* Banner Carousel */}
+        <BannerCarousel banners={banners} />
         <div className="mt-6 mb-4 flex items-center gap-2 text-sm text-gray-500">
           <Link href="/gh" className="hover:underline flex items-center gap-1">
             <Image src="/assets/back-arrow.png" alt="Back" width={24} height={24} />
@@ -143,14 +165,11 @@ function OfferDetailsInner({ slug }) {
           <span className="mx-1">/</span>
           <span className="text-gray-700 font-medium">{offer?.bonusType || "Bonus"}</span>
         </div>
-        {/* Banner */}
+        {/* Offer Card */}
         {loading && <div className="text-center text-gray-400">Loading offer...</div>}
         {error && <div className="text-center text-red-500">{error}</div>}
         {!loading && !error && offer && (
           <>
-            <div className="w-full rounded-xl overflow-hidden shadow-sm mb-6">
-              <Image src="/assets/gh-ghana.png" alt="Ghana Banner" width={1200} height={200} className="w-full h-40 object-cover" priority />
-            </div>
             {/* Offer Card */}
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6 flex flex-col">
               {/* Top row */}

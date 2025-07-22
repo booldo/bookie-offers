@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 
@@ -17,6 +17,7 @@ export default function HomeNavbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+  const menuRef = useRef();
 
   // Update selected flag based on current path
   useEffect(() => {
@@ -36,6 +37,18 @@ export default function HomeNavbar() {
     setDropdownOpen(false);
     router.push(flag.path);
   };
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    if (!menuOpen) return;
+    function handleClick(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [menuOpen]);
 
   return (
     <>
@@ -98,10 +111,9 @@ export default function HomeNavbar() {
     </nav>
       {/* Hamburger Menu Overlay */}
       {menuOpen && (
-        <div className="fixed left-0 right-0 top-[64px] w-full bg-white shadow-2xl z-50 rounded-b-xl animate-slide-down">
-          <div className="flex flex-col gap-6 px-10 py-10 text-gray-800 text-base font-medium">
+        <div ref={menuRef} className="fixed left-0 right-0 top-[64px] w-full bg-white shadow-2xl z-50 rounded-b-xl animate-slide-down">
+          <div className="flex flex-col gap-6 px-10 py-4 text-gray-800 text-base font-medium">
             <a href="/briefly" className="hover:underline">Blog</a>
-            <a href="/faq" className="hover:underline">FAQ</a>
             <a href="#" className="hover:underline">Calculator</a>
             <a href="/about" className="hover:underline">About Us</a>
             <a href="/contact" className="hover:underline">Contact Us</a>

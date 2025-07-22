@@ -27,12 +27,38 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
+  const [recentSearches, setRecentSearches] = useState([]);
   const router = useRouter();
   const pathname = usePathname();
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState(null);
   const searchDebounceRef = useRef();
+  const menuRef = useRef();
+
+  // Load recent searches from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('recentSearches');
+      if (stored) setRecentSearches(JSON.parse(stored));
+    }
+  }, []);
+
+  // Save recent searches to localStorage when they change
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('recentSearches', JSON.stringify(recentSearches));
+    }
+  }, [recentSearches]);
+
+  // Add to recent searches when a search is performed
+  const addRecentSearch = (term) => {
+    if (!term) return;
+    setRecentSearches(prev => {
+      const filtered = prev.filter(t => t.toLowerCase() !== term.toLowerCase());
+      return [term, ...filtered].slice(0, 5); // Keep max 5
+    });
+  };
 
   // Update selected flag based on current path
   useEffect(() => {
@@ -59,6 +85,7 @@ export default function Navbar() {
     }
     setSearchLoading(true);
     setSearchError(null);
+    addRecentSearch(term);
     try {
       const query = `*[_type == "offer" && country == $country && (
         title match $term ||
@@ -103,6 +130,18 @@ export default function Navbar() {
     return () => clearTimeout(searchDebounceRef.current);
   }, [searchValue, country, searchOpen]);
 
+  // Close menu when clicking outside
+  useEffect(() => {
+    if (!menuOpen) return;
+    function handleClick(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [menuOpen]);
+
   const handleFlagSelect = (flag) => {
     setSelectedFlag(flag);
     setDropdownOpen(false);
@@ -121,9 +160,9 @@ export default function Navbar() {
             </svg>
           ) : (
             <>
-        <span className="block w-6 h-0.5 bg-gray-800 mb-1"></span>
-        <span className="block w-6 h-0.5 bg-gray-800 mb-1"></span>
-        <span className="block w-6 h-0.5 bg-gray-800"></span>
+              <span className="block w-6 h-0.5 bg-gray-800 mb-1"></span>
+              <span className="block w-6 h-0.5 bg-gray-800 mb-1"></span>
+              <span className="block w-6 h-0.5 bg-gray-800"></span>
             </>
           )}
         </button>
@@ -159,26 +198,22 @@ export default function Navbar() {
             </svg>
           </button>
         )}
-        {/* Mobile search input - only when searchOpen */}
+        {/* Search input - mobile only, expanded when open */}
         {searchOpen && (
-          <div className="flex sm:hidden items-center bg-[#f6f7f9] border border-gray-200 rounded-lg px-3 py-1 w-full ml-2 relative">
+          <div className="flex sm:hidden items-center bg-[#f6f7f9] border border-gray-200 rounded-lg px-3 py-1 w-full max-w-xs flex-1">
+            <svg className="text-gray-400 mr-2" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
             <input
               type="text"
               placeholder="Search..."
-              className="bg-transparent outline-none text-gray-700 w-full placeholder-gray-400 pr-8"
+              className="bg-transparent outline-none text-gray-700 w-full placeholder-gray-400"
               value={searchValue}
               onChange={e => setSearchValue(e.target.value)}
               autoFocus
             />
-            {searchValue && (
-              <button
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1"
-                onClick={() => setSearchValue("")}
-                tabIndex={-1}
-              >
-                <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" /></svg>
-              </button>
-            )}
+            <button className="ml-2 text-gray-500 text-base font-medium hover:underline" onClick={() => setSearchOpen(false)}>Cancel</button>
           </div>
         )}
         {/* Flag dropdown */}
@@ -218,10 +253,9 @@ export default function Navbar() {
     </nav>
       {/* Hamburger Menu Overlay */}
       {menuOpen && (
-        <div className="fixed left-0 right-0 top-[64px] w-full bg-white shadow-2xl z-50 rounded-b-xl animate-slide-down">
-          <div className="flex flex-col gap-6 px-10 py-10 text-gray-800 text-base font-medium">
+        <div ref={menuRef} className="fixed left-0 right-0 top-[64px] w-full bg-white shadow-2xl z-50 rounded-b-xl animate-slide-down">
+          <div className="flex flex-col gap-6 px-10 py-4 text-gray-800 text-base font-medium">
             <Link href="/briefly" className="hover:underline">Blog</Link>
-            <Link href="/faq" className="hover:underline">FAQ</Link>
             <Link href="/calculator" className="hover:underline">Calculator</Link>
             <Link href="/about" className="hover:underline">About Us</Link>
             <Link href="/contact" className="hover:underline">Contact Us</Link>
@@ -233,7 +267,7 @@ export default function Navbar() {
         <div className="fixed top-0 left-0 w-full bg-white z-50 px-0 sm:px-0 pt-8 pb-12 animate-slide-down min-h-screen">
           <div className="max-w-5xl mx-auto px-4">
             <div className="flex items-center gap-4 mb-6">
-              <Image src="/assets/logo.png" alt="Booldo Logo" width={100} height={40} />
+              <Image src="/assets/logo.png" alt="Booldo Logo" width={100} height={40} className="hidden sm:block" />
               <div className="flex-1 flex items-center bg-[#f6f7f9] border border-gray-200 rounded-lg px-3 py-2">
                 <svg className="text-gray-400 mr-2" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <circle cx="11" cy="11" r="8" />
@@ -241,7 +275,7 @@ export default function Navbar() {
                 </svg>
                 <input
                   type="text"
-                  placeholder="Bonus"
+                  placeholder="search"
                   className="bg-transparent outline-none text-gray-700 w-full placeholder-gray-400"
                   value={searchValue}
                   onChange={e => setSearchValue(e.target.value)}
@@ -306,6 +340,23 @@ export default function Navbar() {
                       </button>
                     ))}
                   </div>
+                  {/* Recent Searches */}
+                  {recentSearches.length > 0 && (
+                    <div className="mt-6">
+                      <div className="text-gray-500 text-sm mb-2 font-medium">Recent Searches</div>
+                      <div className="flex flex-wrap gap-2">
+                        {recentSearches.map((term, idx) => (
+                          <button
+                            key={term + idx}
+                            className="bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full px-4 py-2 text-sm font-medium transition"
+                            onClick={() => setSearchValue(term)}
+                          >
+                            {term}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -8,6 +8,7 @@ import imageUrlBuilder from '@sanity/image-url';
 import { useEffect, useState } from "react";
 import { PortableText } from '@portabletext/react';
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 const builder = imageUrlBuilder(client);
 function urlFor(source) {
@@ -67,23 +68,19 @@ export default function ArticlePage() {
     <div className="min-h-screen flex flex-col bg-[#fafbfc]">
       <HomeNavbar />
       <main className="flex-1 max-w-6xl mx-auto py-10 px-4 w-full">
-        <button
-          onClick={() => {
-            if (window.history.length > 2) {
-              router.back();
-            } else {
-              router.push("/briefly");
-            }
-          }}
-          className="mb-4 flex items-center gap-2 text-gray-600 hover:text-green-700 font-medium text-base focus:outline-none"
-        >
-          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" /></svg>
-          Back
-        </button>
+        <div className="flex items-center gap-2 mb-4">
+          <button
+            onClick={() => router.back()}
+            className="focus:outline-none"
+            aria-label="Go back"
+          >
+            <Image src="/assets/back-arrow.png" alt="Back" width={28} height={28} />
+          </button>
+          <h1 className="text-3xl font-bold">{article.title}</h1>
+        </div>
         <div className="flex flex-col md:flex-row gap-8">
           {/* Main Article Content */}
           <div className="flex-1">
-            <h1 className="text-3xl font-bold mb-4">{article.title}</h1>
             <div className="text-gray-700 text-base space-y-6 mb-8">
               <PortableText value={article.content} />
             </div>
