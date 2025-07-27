@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAllSitemapEntries, getSeoSettings } from "../../../sanity/lib/seo";
+import { getAllSitemapEntries, getSeoSettings } from "../../sanity/lib/seo";
 
 export async function GET() {
   const baseUrl = "https://yourdomain.com"; // TODO: Replace with your real domain

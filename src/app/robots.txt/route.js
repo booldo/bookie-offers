@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSeoSettings } from "../../../sanity/lib/seo";
+import { getSeoSettings } from "../../sanity/lib/seo";
 
 export async function GET() {
   const seo = await getSeoSettings();
