@@ -3,7 +3,7 @@
 import Navbar from "../../../components/Navbar";
 import Footer from "../../../components/Footer";
 import Image from "next/image";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import MultiSelectDropdown from "../../../components/BonusTypeDropdown";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import { client } from "../../../sanity/lib/client";
@@ -48,7 +48,7 @@ const fetchBanners = async () => {
   return await client.fetch(query);
 };
 
-export default function GhanaHomeFilters() {
+function GhanaHomeFiltersContent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -493,5 +493,13 @@ export default function GhanaHomeFilters() {
       </main>
       <Footer />
     </div>
+  );
+}
+
+export default function GhanaHomeFilters() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <GhanaHomeFiltersContent />
+    </Suspense>
   );
 } 

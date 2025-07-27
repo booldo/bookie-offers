@@ -3,7 +3,7 @@
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import Image from "next/image";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import MultiSelectDropdown from "../../components/BonusTypeDropdown";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import { client } from "../../sanity/lib/client";
@@ -48,7 +48,7 @@ const fetchBanners = async () => {
 
 const sortOptions = ["Latest", "A-Z"];
 
-export default function NigeriaHome() {
+function NigeriaHomeContent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -476,5 +476,13 @@ export default function NigeriaHome() {
       </main>
       <Footer />
     </div>
+  );
+}
+
+export default function NigeriaHome() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <NigeriaHomeContent />
+    </Suspense>
   );
 } 
