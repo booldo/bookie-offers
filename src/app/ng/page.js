@@ -5,7 +5,7 @@ import Footer from "../../components/Footer";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 import MultiSelectDropdown from "../../components/BonusTypeDropdown";
-import { useRouter } from "next/navigation";
+import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import { client } from "../../sanity/lib/client";
 import { urlFor } from "../../sanity/lib/image";
 import BannerCarousel from "../../components/BannerCarousel";
@@ -46,51 +46,12 @@ const fetchBanners = async () => {
   return await client.fetch(query);
 };
 
-const bonusTypeOptions = [
-  { name: "Discount Bonus", count: 110 },
-  { name: "Sign up Bonus", count: 125 },
-  { name: "Free Bet", count: 24 },
-  { name: "No Deposit Bonus", count: 24 },
-  { name: "ACCA Boost", count: 12 },
-  { name: "Cashback Offer", count: 24 },
-  { name: "Refer-a-Friend", count: 32 },
-  { name: "Odds Boost", count: 2 },
-];
-const bookmakerOptions = [
-  { name: "Bet9ja" },
-  { name: "BangBet" },
-  { name: "Betika" },
-  { name: "BetKing" },
-  { name: "Betpawa" },
-  { name: "Betway" },
-  { name: "1xBet" },
-  { name: "NairaBet" },
-];
-const advancedOptions = [
-  {
-    name: "Payment Method",
-    subcategories: [
-      { name: "Bank Transfer" },
-      { name: "Credit Card" },
-      { name: "Debit Card" },
-      { name: "E-Wallet" },
-      { name: "Mobile Money" },
-      { name: "Cryptocurrency" }
-    ]
-  },
-  {
-    name: "License",
-    subcategories: [
-      { name: "Licensed" },
-      { name: "Unlicensed" },
-      { name: "Pending License" }
-    ]
-  }
-];
 const sortOptions = ["Latest", "A-Z"];
 
 export default function NigeriaHome() {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -229,6 +190,105 @@ export default function NigeriaHome() {
     });
   }
 
+  // --- URL/Filter Sync Logic ---
+  // Helper: slugify for pretty URLs
+  function slugify(str) {
+    return str
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)+/g, "")
+      .replace(/-+/g, "-");
+  }
+  function unslugify(slug, options) {
+    if (!options) return slug;
+    const found = options.find(opt => slugify(opt.name) === slug);
+    return found ? found.name : slug;
+  }
+  function getFiltersFromUrl() {
+    let bonusTypes = [], bookmakers = [], advanced = [];
+    const prettyMatch = pathname.match(/^\/ng\/(.+)$/);
+    if (prettyMatch && !pathname.includes("/offers")) {
+      const slug = prettyMatch[1];
+      if (bonusTypeOptions.length) {
+        const bt = unslugify(slug, bonusTypeOptions);
+        if (bonusTypeOptions.some(opt => opt.name === bt)) bonusTypes = [bt];
+      }
+      if (bookmakerOptions.length && bonusTypes.length === 0) {
+        const bm = unslugify(slug, bookmakerOptions);
+        if (bookmakerOptions.some(opt => opt.name === bm)) bookmakers = [bm];
+      }
+      if (advancedOptions.length && bonusTypes.length === 0 && bookmakers.length === 0) {
+        const advFlat = advancedOptions.flatMap(cat => cat.subcategories || []);
+        const adv = unslugify(slug, advFlat);
+        if (advFlat.some(opt => opt.name === adv)) advanced = [adv];
+      }
+    }
+    if (pathname.includes("/offers")) {
+      const getArr = (key) => {
+        const val = searchParams.get(key);
+        return val ? val.split(",").map(v => v.replace(/-/g, " ").replace(/\b\w/g, l => l.toUpperCase()).replace(/\s+/g, " ").trim()) : [];
+      };
+      bonusTypes = getArr("bonustypes");
+      bookmakers = getArr("bookmakers");
+      advanced = getArr("advanced");
+      if (bonusTypeOptions.length) bonusTypes = bonusTypes.map(slug => unslugify(slugify(slug), bonusTypeOptions));
+      if (bookmakerOptions.length) bookmakers = bookmakers.map(slug => unslugify(slugify(slug), bookmakerOptions));
+      if (advancedOptions.length) {
+        const advFlat = advancedOptions.flatMap(cat => cat.subcategories || []);
+        advanced = advanced.map(slug => unslugify(slugify(slug), advFlat));
+      }
+    }
+    return { bonusTypes, bookmakers, advanced };
+  }
+  function buildUrl({ bonusTypes, bookmakers, advanced }) {
+    if (bonusTypes.length === 1 && bookmakers.length === 0 && advanced.length === 0) {
+      return `/ng/${slugify(bonusTypes[0])}`;
+    }
+    if (bookmakers.length === 1 && bonusTypes.length === 0 && advanced.length === 0) {
+      return `/ng/${slugify(bookmakers[0])}`;
+    }
+    if (advanced.length === 1 && bonusTypes.length === 0 && bookmakers.length === 0) {
+      return `/ng/${slugify(advanced[0])}`;
+    }
+    let url = "/ng/offers/?";
+    const params = [];
+    if (bonusTypes.length) params.push(`bonustypes=${bonusTypes.map(slugify).join(",")}`);
+    if (bookmakers.length) params.push(`bookmakers=${bookmakers.map(slugify).join(",")}`);
+    if (advanced.length) params.push(`advanced=${advanced.map(slugify).join(",")}`);
+    url += params.join("&");
+    return url;
+  }
+  useEffect(() => {
+    if (!bonusTypeOptions.length && !bookmakerOptions.length && !advancedOptions.length) return;
+    const { bonusTypes, bookmakers, advanced } = getFiltersFromUrl();
+    setSelectedBonusTypes(bonusTypes);
+    setSelectedBookmakers(bookmakers);
+    setSelectedAdvanced(advanced);
+    // eslint-disable-next-line
+  }, [pathname, searchParams, bonusTypeOptions, bookmakerOptions, advancedOptions]);
+  function handleFilterChange({ bonusTypes, bookmakers, advanced }) {
+    const url = buildUrl({ bonusTypes, bookmakers, advanced });
+    router.push(url);
+  }
+  const setSelectedBonusTypesWrapped = (arr) => {
+    setSelectedBonusTypes(arr);
+    handleFilterChange({ bonusTypes: arr, bookmakers: selectedBookmakers, advanced: selectedAdvanced });
+  };
+  const setSelectedBookmakersWrapped = (arr) => {
+    setSelectedBookmakers(arr);
+    handleFilterChange({ bonusTypes: selectedBonusTypes, bookmakers: arr, advanced: selectedAdvanced });
+  };
+  const setSelectedAdvancedWrapped = (arr) => {
+    setSelectedAdvanced(arr);
+    handleFilterChange({ bonusTypes: selectedBonusTypes, bookmakers: selectedBookmakers, advanced: arr });
+  };
+  const clearAllFilters = () => {
+    setSelectedBonusTypes([]);
+    setSelectedBookmakers([]);
+    setSelectedAdvanced([]);
+    router.push("/ng/offers");
+  };
+
   return (
     <div className="min-h-screen bg-[#fafbfc] flex flex-col">
       <Navbar />
@@ -303,9 +363,9 @@ export default function NigeriaHome() {
         {/* Filters */}
         <div className="sm:max-w-md">
           <div className="grid grid-cols-3 gap-2 mb-6">
-          <MultiSelectDropdown label="Bonus Type" options={bonusTypeOptions} selected={selectedBonusTypes} setSelected={setSelectedBonusTypes} showCount={true} />
-          <MultiSelectDropdown label="Bookmaker" options={bookmakerOptions} selected={selectedBookmakers} setSelected={setSelectedBookmakers} showCount={true} />
-          <MultiSelectDropdown label="Advanced" options={advancedOptions} selected={selectedAdvanced} setSelected={setSelectedAdvanced} showCount={true} nested={true} />
+          <MultiSelectDropdown label="Bonus Type" options={bonusTypeOptions} selected={selectedBonusTypes} setSelected={setSelectedBonusTypesWrapped} showCount={true} />
+          <MultiSelectDropdown label="Bookmaker" options={bookmakerOptions} selected={selectedBookmakers} setSelected={setSelectedBookmakersWrapped} showCount={true} />
+          <MultiSelectDropdown label="Advanced" options={advancedOptions} selected={selectedAdvanced} setSelected={setSelectedAdvancedWrapped} showCount={true} nested={true} />
         </div>
         </div>
 
@@ -318,7 +378,7 @@ export default function NigeriaHome() {
                   {type}
                   <button
                     className="ml-1 text-gray-400 hover:text-gray-700 focus:outline-none"
-                    onClick={() => setSelectedBonusTypes(selectedBonusTypes.filter(t => t !== type))}
+                    onClick={() => setSelectedBonusTypesWrapped(selectedBonusTypes.filter(t => t !== type))}
                     aria-label={`Remove ${type}`}
                   >
                     <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" /></svg>
@@ -330,7 +390,7 @@ export default function NigeriaHome() {
                   {bm}
                   <button
                     className="ml-1 text-gray-400 hover:text-gray-700 focus:outline-none"
-                    onClick={() => setSelectedBookmakers(selectedBookmakers.filter(b => b !== bm))}
+                    onClick={() => setSelectedBookmakersWrapped(selectedBookmakers.filter(b => b !== bm))}
                     aria-label={`Remove ${bm}`}
                   >
                     <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" /></svg>
@@ -342,7 +402,7 @@ export default function NigeriaHome() {
                   {adv}
                   <button
                     className="ml-1 text-gray-400 hover:text-gray-700 focus:outline-none"
-                    onClick={() => setSelectedAdvanced(selectedAdvanced.filter(a => a !== adv))}
+                    onClick={() => setSelectedAdvancedWrapped(selectedAdvanced.filter(a => a !== adv))}
                     aria-label={`Remove ${adv}`}
                   >
                     <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" /></svg>
@@ -352,11 +412,7 @@ export default function NigeriaHome() {
             </div>
             <button
               className="ml-auto text-sm text-gray-500 underline hover:text-gray-700 font-medium"
-              onClick={() => {
-                setSelectedBonusTypes([]);
-                setSelectedBookmakers([]);
-                setSelectedAdvanced([]);
-              }}
+              onClick={clearAllFilters}
             >
               clear filter
             </button>

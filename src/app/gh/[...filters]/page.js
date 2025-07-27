@@ -1,14 +1,14 @@
 "use client";
 
-import Navbar from "../../components/Navbar";
-import Footer from "../../components/Footer";
+import Navbar from "../../../components/Navbar";
+import Footer from "../../../components/Footer";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
-import MultiSelectDropdown from "../../components/BonusTypeDropdown";
+import MultiSelectDropdown from "../../../components/BonusTypeDropdown";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
-import { client } from "../../sanity/lib/client";
-import { urlFor } from "../../sanity/lib/image";
-import BannerCarousel from "../../components/BannerCarousel";
+import { client } from "../../../sanity/lib/client";
+import { urlFor } from "../../../sanity/lib/image";
+import BannerCarousel from "../../../components/BannerCarousel";
 
 // Fetch offers from Sanity
 const fetchOffers = async () => {
@@ -48,7 +48,7 @@ const fetchBanners = async () => {
   return await client.fetch(query);
 };
 
-export default function GhanaHome() {
+export default function GhanaHomeFilters() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -145,105 +145,6 @@ export default function GhanaHome() {
       });
   }, []);
 
-  // --- URL/Filter Sync Logic ---
-  // Helper: slugify for pretty URLs
-  function slugify(str) {
-    return str
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)+/g, "")
-      .replace(/-+/g, "-");
-  }
-  function unslugify(slug, options) {
-    if (!options) return slug;
-    const found = options.find(opt => slugify(opt.name) === slug);
-    return found ? found.name : slug;
-  }
-  function getFiltersFromUrl() {
-    let bonusTypes = [], bookmakers = [], advanced = [];
-    const prettyMatch = pathname.match(/^\/gh\/(.+)$/);
-    if (prettyMatch && !pathname.includes("/offers")) {
-      const slug = prettyMatch[1];
-      if (bonusTypeOptions.length) {
-        const bt = unslugify(slug, bonusTypeOptions);
-        if (bonusTypeOptions.some(opt => opt.name === bt)) bonusTypes = [bt];
-      }
-      if (bookmakerOptions.length && bonusTypes.length === 0) {
-        const bm = unslugify(slug, bookmakerOptions);
-        if (bookmakerOptions.some(opt => opt.name === bm)) bookmakers = [bm];
-      }
-      if (advancedOptions.length && bonusTypes.length === 0 && bookmakers.length === 0) {
-        const advFlat = advancedOptions.flatMap(cat => cat.subcategories || []);
-        const adv = unslugify(slug, advFlat);
-        if (advFlat.some(opt => opt.name === adv)) advanced = [adv];
-      }
-    }
-    if (pathname.includes("/offers")) {
-      const getArr = (key) => {
-        const val = searchParams.get(key);
-        return val ? val.split(",").map(v => v.replace(/-/g, " ").replace(/\b\w/g, l => l.toUpperCase()).replace(/\s+/g, " ").trim()) : [];
-      };
-      bonusTypes = getArr("bonustypes");
-      bookmakers = getArr("bookmakers");
-      advanced = getArr("advanced");
-      if (bonusTypeOptions.length) bonusTypes = bonusTypes.map(slug => unslugify(slugify(slug), bonusTypeOptions));
-      if (bookmakerOptions.length) bookmakers = bookmakers.map(slug => unslugify(slugify(slug), bookmakerOptions));
-      if (advancedOptions.length) {
-        const advFlat = advancedOptions.flatMap(cat => cat.subcategories || []);
-        advanced = advanced.map(slug => unslugify(slugify(slug), advFlat));
-      }
-    }
-    return { bonusTypes, bookmakers, advanced };
-  }
-  function buildUrl({ bonusTypes, bookmakers, advanced }) {
-    if (bonusTypes.length === 1 && bookmakers.length === 0 && advanced.length === 0) {
-      return `/gh/${slugify(bonusTypes[0])}`;
-    }
-    if (bookmakers.length === 1 && bonusTypes.length === 0 && advanced.length === 0) {
-      return `/gh/${slugify(bookmakers[0])}`;
-    }
-    if (advanced.length === 1 && bonusTypes.length === 0 && bookmakers.length === 0) {
-      return `/gh/${slugify(advanced[0])}`;
-    }
-    let url = "/gh/offers/?";
-    const params = [];
-    if (bonusTypes.length) params.push(`bonustypes=${bonusTypes.map(slugify).join(",")}`);
-    if (bookmakers.length) params.push(`bookmakers=${bookmakers.map(slugify).join(",")}`);
-    if (advanced.length) params.push(`advanced=${advanced.map(slugify).join(",")}`);
-    url += params.join("&");
-    return url;
-  }
-  useEffect(() => {
-    if (!bonusTypeOptions.length && !bookmakerOptions.length && !advancedOptions.length) return;
-    const { bonusTypes, bookmakers, advanced } = getFiltersFromUrl();
-    setSelectedBonusTypes(bonusTypes);
-    setSelectedBookmakers(bookmakers);
-    setSelectedAdvanced(advanced);
-    // eslint-disable-next-line
-  }, [pathname, searchParams, bonusTypeOptions, bookmakerOptions, advancedOptions]);
-  function handleFilterChange({ bonusTypes, bookmakers, advanced }) {
-    const url = buildUrl({ bonusTypes, bookmakers, advanced });
-    router.push(url);
-  }
-  const setSelectedBonusTypesWrapped = (arr) => {
-    setSelectedBonusTypes(arr);
-    handleFilterChange({ bonusTypes: arr, bookmakers: selectedBookmakers, advanced: selectedAdvanced });
-  };
-  const setSelectedBookmakersWrapped = (arr) => {
-    setSelectedBookmakers(arr);
-    handleFilterChange({ bonusTypes: selectedBonusTypes, bookmakers: arr, advanced: selectedAdvanced });
-  };
-  const setSelectedAdvancedWrapped = (arr) => {
-    setSelectedAdvanced(arr);
-    handleFilterChange({ bonusTypes: selectedBonusTypes, bookmakers: selectedBookmakers, advanced: arr });
-  };
-  const clearAllFilters = () => {
-    setSelectedBonusTypes([]);
-    setSelectedBookmakers([]);
-    setSelectedAdvanced([]);
-    router.push("/gh/offers");
-  };
-
   // Filter logic (case-insensitive, robust)
   const filteredOffers = offers.filter((offer) => {
     // Normalize for case-insensitive comparison
@@ -288,6 +189,122 @@ export default function GhanaHome() {
       return new Date(b.published) - new Date(a.published);
     });
   }
+
+  // --- URL/Filter Sync Logic ---
+  // Helper: slugify for pretty URLs
+  function slugify(str) {
+    return str
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)+/g, "")
+      .replace(/-+/g, "-");
+  }
+  function unslugify(slug, options) {
+    // Try to match slug to option name (case-insensitive, slugified)
+    if (!options) return slug;
+    const found = options.find(opt => slugify(opt.name) === slug);
+    return found ? found.name : slug;
+  }
+  // Parse filters from URL
+  function getFiltersFromUrl() {
+    // Pretty URL: /gh/odds-boost
+    // Query URL: /gh/offers/?bonustypes=free-bets,cashback-bonuses&bookmakers=betway,1xbet&advanced=mobile-money,licensed
+    let bonusTypes = [], bookmakers = [], advanced = [];
+    // 1. Pretty URL
+    const prettyMatch = pathname.match(/^\/gh\/(.+)$/);
+    if (prettyMatch && !pathname.includes("/offers")) {
+      const slug = prettyMatch[1];
+      // Try to match to bonus type, bookmaker, or advanced
+      if (bonusTypeOptions.length) {
+        const bt = unslugify(slug, bonusTypeOptions);
+        if (bonusTypeOptions.some(opt => opt.name === bt)) bonusTypes = [bt];
+      }
+      if (bookmakerOptions.length && bonusTypes.length === 0) {
+        const bm = unslugify(slug, bookmakerOptions);
+        if (bookmakerOptions.some(opt => opt.name === bm)) bookmakers = [bm];
+      }
+      if (advancedOptions.length && bonusTypes.length === 0 && bookmakers.length === 0) {
+        // Flatten advanced subcategories
+        const advFlat = advancedOptions.flatMap(cat => cat.subcategories || []);
+        const adv = unslugify(slug, advFlat);
+        if (advFlat.some(opt => opt.name === adv)) advanced = [adv];
+      }
+    }
+    // 2. Query URL
+    if (pathname.includes("/offers")) {
+      const getArr = (key) => {
+        const val = searchParams.get(key);
+        return val ? val.split(",").map(v => v.replace(/-/g, " ").replace(/\b\w/g, l => l.toUpperCase()).replace(/\s+/g, " ").trim()) : [];
+      };
+      bonusTypes = getArr("bonustypes");
+      bookmakers = getArr("bookmakers");
+      advanced = getArr("advanced");
+      // Try to match to real option names
+      if (bonusTypeOptions.length) bonusTypes = bonusTypes.map(slug => unslugify(slugify(slug), bonusTypeOptions));
+      if (bookmakerOptions.length) bookmakers = bookmakers.map(slug => unslugify(slugify(slug), bookmakerOptions));
+      if (advancedOptions.length) {
+        const advFlat = advancedOptions.flatMap(cat => cat.subcategories || []);
+        advanced = advanced.map(slug => unslugify(slugify(slug), advFlat));
+      }
+    }
+    return { bonusTypes, bookmakers, advanced };
+  }
+  // Build URL from filters
+  function buildUrl({ bonusTypes, bookmakers, advanced }) {
+    // If only one filter, use pretty URL
+    if (bonusTypes.length === 1 && bookmakers.length === 0 && advanced.length === 0) {
+      return `/gh/${slugify(bonusTypes[0])}`;
+    }
+    if (bookmakers.length === 1 && bonusTypes.length === 0 && advanced.length === 0) {
+      return `/gh/${slugify(bookmakers[0])}`;
+    }
+    if (advanced.length === 1 && bonusTypes.length === 0 && bookmakers.length === 0) {
+      return `/gh/${slugify(advanced[0])}`;
+    }
+    // Otherwise, use query params
+    let url = "/gh/offers/?";
+    const params = [];
+    if (bonusTypes.length) params.push(`bonustypes=${bonusTypes.map(slugify).join(",")}`);
+    if (bookmakers.length) params.push(`bookmakers=${bookmakers.map(slugify).join(",")}`);
+    if (advanced.length) params.push(`advanced=${advanced.map(slugify).join(",")}`);
+    url += params.join("&");
+    return url;
+  }
+  // --- Sync state with URL ---
+  // 1. On mount and when URL changes, update state
+  useEffect(() => {
+    if (!bonusTypeOptions.length && !bookmakerOptions.length && !advancedOptions.length) return;
+    const { bonusTypes, bookmakers, advanced } = getFiltersFromUrl();
+    setSelectedBonusTypes(bonusTypes);
+    setSelectedBookmakers(bookmakers);
+    setSelectedAdvanced(advanced);
+    // eslint-disable-next-line
+  }, [pathname, searchParams, bonusTypeOptions, bookmakerOptions, advancedOptions]);
+  // 2. When filters change, update URL
+  function handleFilterChange({ bonusTypes, bookmakers, advanced }) {
+    const url = buildUrl({ bonusTypes, bookmakers, advanced });
+    router.push(url);
+  }
+  // Wrap setSelected* to update URL
+  const setSelectedBonusTypesWrapped = (arr) => {
+    setSelectedBonusTypes(arr);
+    handleFilterChange({ bonusTypes: arr, bookmakers: selectedBookmakers, advanced: selectedAdvanced });
+  };
+  const setSelectedBookmakersWrapped = (arr) => {
+    setSelectedBookmakers(arr);
+    handleFilterChange({ bonusTypes: selectedBonusTypes, bookmakers: arr, advanced: selectedAdvanced });
+  };
+  const setSelectedAdvancedWrapped = (arr) => {
+    setSelectedAdvanced(arr);
+    handleFilterChange({ bonusTypes: selectedBonusTypes, bookmakers: selectedBookmakers, advanced: arr });
+  };
+  // Clear filter
+  const clearAllFilters = () => {
+    setSelectedBonusTypes([]);
+    setSelectedBookmakers([]);
+    setSelectedAdvanced([]);
+    router.push("/gh/offers");
+  };
 
   return (
     <div className="min-h-screen bg-[#fafbfc] flex flex-col">

@@ -50,9 +50,9 @@ export default function Footer() {
         <div className="md:text-center">
           <div className="mb-1">Need help? Visit these responsible gambling resources</div>
           <ul className="flex flex-col gap-1 md:items-center">
-            <li><a href="#" className="text-gray-900 underline">GambleAlert</a></li>
-            <li><a href="#" className="text-gray-900 underline">BeGambleAware</a></li>
-            <li><a href="#" className="text-gray-900 underline">Gambling Therapy</a></li>
+            <li><a href="https://gamblealert.org.ng/home/" className="text-gray-900 underline">GambleAlert</a></li>
+            <li><a href="https://www.begambleaware.org/" className="text-gray-900 underline">BeGambleAware</a></li>
+            <li><a href="https://www.gamblingtherapy.org/" className="text-gray-900 underline">Gambling Therapy</a></li>
           </ul>
         </div>
         {/* Bottom row */}
