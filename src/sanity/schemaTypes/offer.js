@@ -23,10 +23,25 @@ export default {
     { name: "url", title: "URL", type: "url", description: "External link for the offer (Get Bonus)" },
     { name: "bookmaker", title: "Bookmaker", type: "string" },
     { name: "bonusType", title: "Bonus Type", type: "string" },
-    { name: "country", title: "Country", type: "string" },
+    {
+      name: "country",
+      title: "Country",
+      type: "string",
+      options: {
+        list: [
+          { title: "Nigeria", value: "Nigeria" },
+          { title: "Ghana", value: "Ghana" }
+        ]
+      }
+    },
     { name: "maxBonus", title: "Max Bonus", type: "number" },
     { name: "minDeposit", title: "Min Deposit", type: "number" },
-    { name: "description", title: "Description", type: "text" },
+    {
+      name: "description",
+      title: "Description",
+      type: "array",
+      of: [{ type: "block" }]
+    },
     { name: "expires", title: "Expires", type: "date" },
     { name: "published", title: "Published", type: "date" },
     {
@@ -36,17 +51,61 @@ export default {
       of: [{ type: "string" }]
     },
     { name: "logo", title: "Logo", type: "image" },
+    { name: "banner", title: "Banner", type: "image", description: "Banner image for this specific offer" },
     {
       name: "terms",
       title: "Terms",
       type: "array",
-      of: [{ type: "string" }]
+      of: [{ type: "block" }]
     },
     {
       name: "howItWorks",
       title: "How It Works",
       type: "array",
-      of: [{ type: "string" }]
+      of: [{ type: "block" }]
+    },
+    {
+      name: "license",
+      title: "License",
+      type: "string",
+      options: {
+        list: [
+          { title: "Lagos State Lotteries and Gaming Authority (LSLGA) - State level", value: "Lagos State Lotteries and Gaming Authority (LSLGA) - State level" },
+          { title: "National Lottery Regulatory Commission (NLRC) - Federal", value: "National Lottery Regulatory Commission (NLRC) - Federal" },
+          { title: "Ghana Gaming Commission (GCG) Licenses", value: "Ghana Gaming Commission (GCG) Licenses" }
+        ]
+      }
+    },
+    {
+      name: "faq",
+      title: "FAQ",
+      type: "array",
+      of: [
+        {
+          type: "object",
+          fields: [
+            {
+              name: "question",
+              title: "Question",
+              type: "array",
+              of: [{ type: "block" }],
+              validation: Rule => Rule.required()
+            },
+            {
+              name: "answer",
+              title: "Answer",
+              type: "array",
+              of: [{ type: "block" }],
+              validation: Rule => Rule.required()
+            }
+          ],
+          preview: {
+            select: {
+              title: "question"
+            }
+          }
+        }
+      ]
     },
     {
       name: "metaTitle",

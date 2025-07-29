@@ -6,7 +6,42 @@ import Image from "next/image";
 import Link from "next/link";
 import { client } from "../../../../sanity/lib/client";
 import { urlFor } from "../../../../sanity/lib/image";
-import BannerCarousel from "../../../../components/BannerCarousel";
+import { PortableText } from '@portabletext/react';
+
+// FAQ Item Component
+const FAQItem = ({ question, answer, isOpen, onToggle }) => {
+  return (
+    <div className="border border-gray-200 rounded-lg overflow-hidden">
+      <button
+        className="w-full px-4 py-3 text-left flex justify-between items-center hover:bg-gray-50 transition-colors"
+        onClick={onToggle}
+      >
+        <div className="font-medium text-gray-900 flex-1 text-left">
+          <PortableText value={question} />
+        </div>
+        <svg
+          className={`w-5 h-5 text-gray-500 transition-transform duration-300 ease-in-out ${isOpen ? 'rotate-180' : ''} flex-shrink-0 ml-2`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      <div 
+        className={`transition-all duration-300 ease-in-out overflow-hidden ${
+          isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+        }`}
+      >
+        <div className="px-4 pb-3 border-t border-gray-200">
+          <div className="pt-3 text-gray-700 text-sm prose prose-sm max-w-none">
+            <PortableText value={answer} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 function OfferDetailsInner({ slug }) {
   const [offer, setOffer] = useState(null);
@@ -17,7 +52,7 @@ function OfferDetailsInner({ slug }) {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [shouldRestoreScroll, setShouldRestoreScroll] = useState(false);
   const [totalOffers, setTotalOffers] = useState(0);
-  const [banners, setBanners] = useState([]);
+  const [openFAQIndex, setOpenFAQIndex] = useState(null);
   const scrollPositionRef = useRef(0);
 
   useEffect(() => {
@@ -45,6 +80,8 @@ function OfferDetailsInner({ slug }) {
           logo,
           terms,
           howItWorks,
+          license,
+          faq,
           banner,
           metaTitle,
           metaDescription,
@@ -93,40 +130,12 @@ function OfferDetailsInner({ slug }) {
     fetchData();
   }, [slug, loadMoreCount]);
 
-  useEffect(() => {
-    // Fetch banners from Sanity
-    const fetchBanners = async () => {
-      const query = `*[_type == "banner" && country == "Nigeria" && isActive == true] | order(order asc) {
-        _id,
-        title,
-        image,
-        country,
-        order,
-        isActive
-      }`;
-      return await client.fetch(query);
-    };
-    fetchBanners().then((data) => {
-      setBanners(data.map(b => ({ ...b, imageUrl: b.image ? urlFor(b.image).width(1200).height(200).url() : undefined })));
-    });
-  }, []);
-
-  useLayoutEffect(() => {
-    if (shouldRestoreScroll) {
-      window.scrollTo(0, scrollPositionRef.current);
-      setShouldRestoreScroll(false);
-    }
-  }, [moreOffers, shouldRestoreScroll]);
-
   const handleLoadMore = async () => {
-    // Store current scroll position
-    scrollPositionRef.current = window.scrollY;
-    setShouldRestoreScroll(true);
-    
+    if (isLoadingMore) return;
     setIsLoadingMore(true);
     try {
-      const newCount = loadMoreCount + 2;
-      const moreOffersQuery = `*[_type == "offer" && country == "Nigeria" && slug.current != $slug] | order(published desc)[0...$count]{
+      const newCount = loadMoreCount + 4;
+      const moreOffersQuery = `*[_type == "offer" && country == "Nigeria" && slug.current != $slug] | order(published desc)[$count...$newCount]{
         _id,
         id,
         title,
@@ -146,7 +155,7 @@ function OfferDetailsInner({ slug }) {
         howItWorks,
         banner
       }`;
-      const more = await client.fetch(moreOffersQuery, { slug, count: newCount });
+      const more = await client.fetch(moreOffersQuery, { slug, count: loadMoreCount, newCount });
       setMoreOffers(more);
       setLoadMoreCount(newCount);
     } catch (err) {
@@ -156,12 +165,27 @@ function OfferDetailsInner({ slug }) {
     }
   };
 
+  const handleFAQToggle = (index) => {
+    setOpenFAQIndex(openFAQIndex === index ? null : index);
+  };
+
   return (
     <div className="min-h-screen bg-[#fafbfc] flex flex-col">
       <Navbar />
-      <main className="max-w-6xl mx-auto w-full px-2 sm:px-4 flex-1">
-        {/* Banner Carousel */}
-        <BannerCarousel banners={banners} />
+      <main className="max-w-7xl mx-auto w-full px-2 sm:px-4 flex-1">
+        {/* Individual Offer Banner */}
+        {!loading && !error && offer && offer.banner && (
+          <div className="mt-6 mb-6">
+            <Image 
+              src={urlFor(offer.banner).width(1200).height(200).url()} 
+              alt={offer.title}
+              width={1200}
+              height={200}
+              className="w-full h-auto rounded-xl"
+            />
+          </div>
+        )}
+        
         <div className="mt-6 mb-4 flex items-center gap-2 text-sm text-gray-500 ml-2">
           <Link href="/ng" className="hover:underline flex items-center gap-1">
             <Image src="/assets/back-arrow.png" alt="Back" width={24} height={24} />
@@ -198,7 +222,9 @@ function OfferDetailsInner({ slug }) {
               </div>
 
               <h1 className="text-2xl font-bold text-gray-900 mb-2 sm:order-2">{offer.title}</h1>
-              <p className="text-gray-700 mb-4 sm:order-3">{offer.description}</p>
+              <div className="text-gray-700 mb-4 sm:order-3 prose prose-sm max-w-none">
+                {offer.description && <PortableText value={offer.description} />}
+              </div>
               
               <div className="flex items-center gap-2 mb-6 sm:order-4">
                 <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
@@ -206,20 +232,15 @@ function OfferDetailsInner({ slug }) {
               </div>
 
               {/* How it works */}
-              {offer.howItWorks && offer.howItWorks.length > 0 && (
+              {offer.howItWorks && (
                 <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6 sm:order-6">
                   <div className="flex items-center gap-2 mb-3">
                     <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 8v4l3 3" /></svg>
                     <h2 className="font-semibold text-gray-900">How it works</h2>
                   </div>
-                  <ul className="space-y-3">
-                    {offer.howItWorks.map((step, i) => (
-                      <li key={i} className="flex items-start gap-3">
-                        <span className="flex-shrink-0 mt-1 w-4 h-4 bg-gray-200 rounded-full" />
-                        <span className="text-gray-700 text-sm">{step}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="text-gray-700 text-sm prose prose-sm max-w-none">
+                    {offer.howItWorks && <PortableText value={offer.howItWorks} />}
+                  </div>
                 </div>
               )}
               {/* Payment Method */}
@@ -234,14 +255,39 @@ function OfferDetailsInner({ slug }) {
                 </div>
               )}
               {/* Terms & Condition */}
-              {offer.terms && offer.terms.length > 0 && (
+              {offer.terms && (
                 <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6 sm:order-8">
                   <div className="font-semibold text-gray-900 mb-1">Terms & Condition</div>
+                  <div className="text-gray-700 text-sm prose prose-sm max-w-none">
+                    {offer.terms && <PortableText value={offer.terms} />}
+                  </div>
+                </div>
+              )}
+              {/* License */}
+              {offer.license && (
+                <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6 sm:order-9">
+                  <div className="font-semibold text-gray-900 mb-1">License</div>
                   <ul className="list-disc list-inside text-gray-700 text-sm space-y-1 pl-4">
-                    {offer.terms.map((term, i) => (
-                      <li key={i}>{term}</li>
-                    ))}
+                    <li>{offer.license}</li>
                   </ul>
+                </div>
+              )}
+
+              {/* FAQ */}
+              {offer.faq && offer.faq.length > 0 && (
+                <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6 order-10">
+                  <div className="font-semibold text-gray-900 mb-4">Frequently Asked Questions</div>
+                  <div className="space-y-3">
+                    {offer.faq.map((item, index) => (
+                      <FAQItem 
+                        key={index} 
+                        question={item.question} 
+                        answer={item.answer}
+                        isOpen={openFAQIndex === index}
+                        onToggle={() => handleFAQToggle(index)}
+                      />
+                    ))}
+                  </div>
                 </div>
               )}
 
@@ -269,16 +315,18 @@ function OfferDetailsInner({ slug }) {
                   className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex flex-col justify-between transition cursor-pointer hover:bg-gray-50 hover:shadow-lg hover:scale-[1.03] focus:outline-none focus:ring-2 focus:ring-green-500"
                 >
                   <div className="flex items-center gap-2 mb-1">
-                      {o.logo ? (
-                        <Image src={urlFor(o.logo).width(28).height(28).url()} alt={o.bookmaker} width={28} height={28} className="rounded-md" />
-                      ) : (
-                        <div className="w-7 h-7 bg-gray-100 rounded-md" />
-                      )}
+                    {o.logo ? (
+                      <Image src={urlFor(o.logo).width(28).height(28).url()} alt={o.bookmaker} width={28} height={28} className="rounded-md" />
+                    ) : (
+                      <div className="w-7 h-7 bg-gray-100 rounded-md" />
+                    )}
                     <span className="font-semibold text-gray-900 text-base">{o.bookmaker}</span>
                     <span className="ml-auto text-xs text-gray-500">Published: {o.published}</span>
                   </div>
                   <div className="font-semibold text-gray-900 text-sm mb-1">{o.title}</div>
-                  <div className="text-xs text-gray-500 mb-2">{o.description}</div>
+                  <div className="text-xs text-gray-500 mb-2">
+                    {o.description && <PortableText value={o.description} />}
+                  </div>
                   <span className="flex items-center gap-1 text-green-700 text-xs font-medium">
                     <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
                     Expires: {o.expires}

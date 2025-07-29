@@ -315,74 +315,76 @@ function GhanaHomeFiltersContent() {
           <BannerCarousel banners={banners} />
         </div>
         {/* Best Offers Header */}
-        <div className="flex items-center justify-between my-4">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 whitespace-nowrap">Best Offers <span className="text-gray-400 font-normal text-base sm:text-xl">{offers.length}</span></h1>
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-500 mr-1">Sort By:</label>
-            <div className="relative" ref={sortByRef}>
-              <button
-                className="flex items-center gap-2 border border-gray-200 rounded-md px-3 py-1 text-sm focus:outline-none"
-                onClick={() => setSortByOpen(p => !p)}
-              >
-                {sortBy}
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-              </button>
+        <div className="sticky top-16 z-10 bg-white sm:static sm:bg-transparent">
+          <div className="flex items-center justify-between my-4">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 whitespace-nowrap">Best Offers <span className="text-gray-400 font-normal text-base sm:text-xl">{offers.length}</span></h1>
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-500 mr-1">Sort By:</label>
+              <div className="relative" ref={sortByRef}>
+                <button
+                  className="flex items-center gap-2 border border-gray-200 rounded-md px-3 py-1 text-sm focus:outline-none"
+                  onClick={() => setSortByOpen(p => !p)}
+                >
+                  {sortBy}
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
 
-              {/* Mobile slide-up panel */}
-              <div className={`sm:hidden fixed bottom-0 left-0 right-0 rounded-t-2xl p-4 bg-white shadow-2xl border-t z-20 transform transition-transform duration-300 ${sortByOpen ? 'translate-y-0' : 'translate-y-full'}`}>
-                <div className="flex justify-between items-center pb-2 mb-3">
-                  <h3 className="font-semibold text-lg">Sort By</h3>
-                  <button onClick={() => setSortByOpen(false)} className="p-1">
-                    <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" /></svg>
-                  </button>
-                </div>
-                <div className="flex flex-col gap-1">
-                  {sortOptions.map(option => (
-                    <button
-                      key={option}
-                      className="flex items-center justify-between w-full px-4 py-2 hover:bg-gray-100 rounded-lg"
-                      onClick={() => { setSortBy(option); setSortByOpen(false); }}
-                    >
-                      <span>{option}</span>
-                      {sortBy === option && (
-                        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="green" strokeWidth="3">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
+                {/* Mobile slide-up panel */}
+                <div className={`sm:hidden fixed bottom-0 left-0 right-0 rounded-t-2xl p-4 bg-white shadow-2xl border-t z-20 transform transition-transform duration-300 ${sortByOpen ? 'translate-y-0' : 'translate-y-full'}`}>
+                  <div className="flex justify-between items-center pb-2 mb-3">
+                    <h3 className="font-semibold text-lg">Sort By</h3>
+                    <button onClick={() => setSortByOpen(false)} className="p-1">
+                      <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" /></svg>
                     </button>
-                  ))}
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    {sortOptions.map(option => (
+                      <button
+                        key={option}
+                        className="flex items-center justify-between w-full px-4 py-2 hover:bg-gray-100 rounded-lg"
+                        onClick={() => { setSortBy(option); setSortByOpen(false); }}
+                      >
+                        <span>{option}</span>
+                        {sortBy === option && (
+                          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="green" strokeWidth="3">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </button>
+                    ))}
+                  </div>
                 </div>
+
+                {/* Desktop dropdown */}
+                {sortByOpen && (
+                  <div className="hidden sm:block absolute right-0 mt-2 w-48 bg-white border rounded shadow-lg z-20">
+                {sortOptions.map(option => (
+                      <button
+                        key={option}
+                        className="flex items-center justify-between w-full px-4 py-2 hover:bg-gray-100"
+                        onClick={() => { setSortBy(option); setSortByOpen(false); }}
+                      >
+                        <span>{option}</span>
+                        {sortBy === option && (
+                          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="green" strokeWidth="3">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </button>
+                ))}
+                  </div>
+                )}
               </div>
-
-              {/* Desktop dropdown */}
-              {sortByOpen && (
-                <div className="hidden sm:block absolute right-0 mt-2 w-48 bg-white border rounded shadow-lg z-20">
-              {sortOptions.map(option => (
-                    <button
-                      key={option}
-                      className="flex items-center justify-between w-full px-4 py-2 hover:bg-gray-100"
-                      onClick={() => { setSortBy(option); setSortByOpen(false); }}
-                    >
-                      <span>{option}</span>
-                      {sortBy === option && (
-                        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="green" strokeWidth="3">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                    </button>
-              ))}
-                </div>
-              )}
             </div>
           </div>
-        </div>
 
-        {/* Filters */}
-        <div className="sm:max-w-md">
-          <div className="grid grid-cols-3 gap-2 mb-6">
-          <MultiSelectDropdown label="Bonus Type" options={bonusTypeOptions} selected={selectedBonusTypes} setSelected={setSelectedBonusTypesWrapped} showCount={true} />
-          <MultiSelectDropdown label="Bookmaker" options={bookmakerOptions} selected={selectedBookmakers} setSelected={setSelectedBookmakersWrapped} showCount={true} />
-          <MultiSelectDropdown label="Advanced" options={advancedOptions} selected={selectedAdvanced} setSelected={setSelectedAdvancedWrapped} showCount={true} nested={true} />
+          {/* Filters */}
+          <div className="sm:max-w-md">
+            <div className="grid grid-cols-3 gap-2 mb-6">
+            <MultiSelectDropdown label="Bonus Type" options={bonusTypeOptions} selected={selectedBonusTypes} setSelected={setSelectedBonusTypesWrapped} showCount={true} />
+            <MultiSelectDropdown label="Bookmaker" options={bookmakerOptions} selected={selectedBookmakers} setSelected={setSelectedBookmakersWrapped} showCount={true} />
+            <MultiSelectDropdown label="Advanced" options={advancedOptions} selected={selectedAdvanced} setSelected={setSelectedAdvancedWrapped} showCount={true} nested={true} />
+            </div>
           </div>
         </div>
 
