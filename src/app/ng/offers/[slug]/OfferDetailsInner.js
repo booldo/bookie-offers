@@ -200,15 +200,8 @@ function OfferDetailsInner({ slug }) {
             <Image src="/assets/back-arrow.png" alt="Back" width={24} height={24} />
             Home
           </button>
-          <span className="mx-1">/</span>
-          <Link 
-            href={`/ng/${offer?.title?.toLowerCase().replace(/\s+/g, '-') || 'offers'}`} 
-            className="text-gray-700 font-medium hover:underline"
-          >
-            {offer?.title || "Bonus"}
-          </Link>
-          <span className="mx-1">/</span>
-          <span className="text-gray-700 font-medium">{offer?.title || "Offer"}</span>
+          <span className="mx-1">|</span>
+          <span className="text-gray-700 font-medium">{offer?.title || "Bonus"}</span>
         </div>
         {/* Offer Card */}
         {loading && <div className="text-center text-gray-400">Loading offer...</div>}
