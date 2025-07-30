@@ -167,7 +167,7 @@ export default function Navbar() {
           )}
         </button>
         {/* Logo - hide on mobile when search is open */}
-        <Link href="/" className={`${searchOpen ? 'hidden sm:block' : ''}`}>
+        <Link href={pathname.startsWith("/ng") ? "/ng" : pathname.startsWith("/gh") ? "/gh" : "/"} className={`${searchOpen ? 'hidden sm:block' : ''}`}>
           <Image src="/assets/logo.png" alt="Booldo Logo" width={80} height={80} className="cursor-pointer" />
         </Link>
       </div>

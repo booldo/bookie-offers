@@ -9,7 +9,7 @@ function ExpiredOfferPage({ offer }) {
   return (
     <div className="min-h-screen bg-[#fafbfc] flex flex-col">
       <Navbar />
-      <main className="max-w-4xl mx-auto w-full px-4 flex-1">
+      <main className="max-w-7xl mx-auto w-full px-4 flex-1">
         {/* Back Button - positioned like breadcrumb */}
         <div className="mt-6 mb-4 flex items-center gap-2 text-sm text-gray-500">
           <Link href="/ng" className="hover:underline flex items-center gap-1">

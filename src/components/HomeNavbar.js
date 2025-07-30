@@ -69,7 +69,7 @@ export default function HomeNavbar() {
             )}
         </button>
         {/* Logo */}
-        <Link href="/">
+        <Link href={pathname.startsWith("/ng") ? "/ng" : pathname.startsWith("/gh") ? "/gh" : "/"}>
           <Image src="/assets/logo.png" alt="Booldo Logo" width={80} height={80} className="cursor-pointer" />
         </Link>
       </div>

@@ -9,31 +9,39 @@ import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import { client } from "../../../sanity/lib/client";
 import { urlFor } from "../../../sanity/lib/image";
 import BannerCarousel from "../../../components/BannerCarousel";
+import { PortableText } from '@portabletext/react';
 
-// Fetch offers from Sanity
-const fetchOffers = async () => {
-  const query = `*[_type == "offer" && country == "Ghana"] | order(published desc) {
+// Fetch bonus types from Sanity
+const fetchBonusTypes = async () => {
+  const query = `*[_type == "bonusType" && bookmaker->country == "Ghana"] | order(published desc) {
     _id,
-    id,
     title,
     slug,
-    bookmaker,
-    bonusType,
-    country,
+    bookmaker->{
+      _id,
+      name,
+      logo,
+      logoAlt,
+      paymentMethods,
+      license,
+      country
+    },
     maxBonus,
     minDeposit,
     description,
     expires,
     published,
-    paymentMethods,
-    logo,
+    affiliateLink,
+    banner,
+    bannerAlt,
     terms,
-    howItWorks
+    howItWorks,
+    faq
   }`;
   return await client.fetch(query);
 };
 
-const sortOptions = ["Latest", "A-Z"];
+const sortOptions = ["Latest", "By Name (A-Z)"];
 
 // Fetch banners from Sanity
 const fetchBanners = async () => {
@@ -41,12 +49,21 @@ const fetchBanners = async () => {
     _id,
     title,
     image,
+    imageAlt,
     country,
     order,
     isActive
   }`;
   return await client.fetch(query);
 };
+
+// Utility to get string from possible block array or string
+function getString(val) {
+  if (Array.isArray(val) && val[0] && val[0].children) {
+    return val.map(block => block.children.map(child => child.text).join("")).join(" ");
+  }
+  return typeof val === "string" ? val : "";
+}
 
 function GhanaHomeFiltersContent() {
   const router = useRouter();
@@ -78,43 +95,37 @@ function GhanaHomeFiltersContent() {
 
   useEffect(() => {
     setLoading(true);
-    fetchOffers()
+    fetchBonusTypes()
       .then((data) => {
         setOffers(data);
         // Compute bonus type counts and unique bonus types
         const bonusTypeCount = {};
-        data.forEach(offer => {
-          const bt = offer.bonusType || "Other";
+        data.forEach(bonusType => {
+          const bt = bonusType.title || "Other";
           bonusTypeCount[bt] = (bonusTypeCount[bt] || 0) + 1;
         });
         const bonusOptions = Object.entries(bonusTypeCount).map(([name, count]) => ({ name, count }));
         setBonusTypeOptions(bonusOptions);
         // Compute bookmaker counts and unique bookmakers
         const bookmakerCount = {};
-        data.forEach(offer => {
-          const bm = offer.bookmaker || "Other";
+        data.forEach(bonusType => {
+          const bm = bonusType.bookmaker?.name || "Other";
           bookmakerCount[bm] = (bookmakerCount[bm] || 0) + 1;
         });
         const bmOptions = Object.entries(bookmakerCount).map(([name, count]) => ({ name, count }));
         setBookmakerOptions(bmOptions);
-        // Compute payment method counts
+        // Compute payment method counts from actual data
         const paymentMethodCount = {};
-        data.forEach(offer => {
-          if (Array.isArray(offer.paymentMethods)) {
-            offer.paymentMethods.forEach(pm => {
+        data.forEach(bonusType => {
+          if (Array.isArray(bonusType.bookmaker?.paymentMethods)) {
+            bonusType.bookmaker.paymentMethods.forEach(pm => {
               paymentMethodCount[pm] = (paymentMethodCount[pm] || 0) + 1;
             });
           }
         });
-        const paymentMethods = [
-          "Mobile Money",
-          "Bank Transfer",
-          "Credit Card",
-          "Debit Card",
-          "E-Wallet",
-          "Cryptocurrency"
-        ];
-        const paymentSubcategories = paymentMethods.map(name => ({ name, count: paymentMethodCount[name] || 0 }));
+        // Create payment method subcategories from actual data
+        const paymentSubcategories = Object.entries(paymentMethodCount).map(([name, count]) => ({ name, count }));
+        
         // Advanced options with counts for payment methods
         setAdvancedOptions([
           {
@@ -124,16 +135,14 @@ function GhanaHomeFiltersContent() {
           {
             name: "License",
             subcategories: [
-              { name: "Licensed" },
-              { name: "Unlicensed" },
-              { name: "Pending License" }
+              { name: "Ghana Gaming Commission (GCG) Licenses" }
             ]
           }
         ]);
         setLoading(false);
       })
       .catch((err) => {
-        setError("Failed to load offers");
+        setError("Failed to load bonus types");
         setLoading(false);
       });
   }, []);
@@ -141,23 +150,27 @@ function GhanaHomeFiltersContent() {
   useEffect(() => {
     fetchBanners().then((data) => {
       // Attach imageUrl using urlFor
-      setBanners(data.map(b => ({ ...b, imageUrl: b.image ? urlFor(b.image).width(1200).height(200).url() : undefined })));
+      setBanners(data.map(b => ({ 
+        ...b, 
+        imageUrl: b.image ? urlFor(b.image).width(1200).height(200).url() : undefined,
+        imageAlt: b.imageAlt || b.title
+      })));
       });
   }, []);
 
   // Filter logic (case-insensitive, robust)
-  const filteredOffers = offers.filter((offer) => {
+  const filteredOffers = offers.filter((bonusType) => {
     // Normalize for case-insensitive comparison
-    const offerBookmaker = offer.bookmaker ? offer.bookmaker.toLowerCase() : "";
-    const offerBonusType = offer.bonusType ? offer.bonusType.toLowerCase() : "";
-    const offerPaymentMethods = Array.isArray(offer.paymentMethods) ? offer.paymentMethods.map(pm => pm.toLowerCase()) : [];
+    const bonusTypeBookmaker = bonusType.bookmaker?.name ? bonusType.bookmaker.name.toLowerCase() : "";
+    const bonusTypeTitle = bonusType.title ? bonusType.title.toLowerCase() : "";
+    const bonusTypePaymentMethods = Array.isArray(bonusType.bookmaker?.paymentMethods) ? bonusType.bookmaker.paymentMethods.map(pm => pm.toLowerCase()) : [];
 
-    if (selectedBookmakers.length > 0 && !selectedBookmakers.some(bm => bm.toLowerCase() === offerBookmaker)) return false;
-    if (selectedBonusTypes.length > 0 && !selectedBonusTypes.some(bt => bt.toLowerCase() === offerBonusType)) return false;
+    if (selectedBookmakers.length > 0 && !selectedBookmakers.some(bm => bm.toLowerCase() === bonusTypeBookmaker)) return false;
+    if (selectedBonusTypes.length > 0 && !selectedBonusTypes.some(bt => bt.toLowerCase() === bonusTypeTitle)) return false;
     if (selectedAdvanced.length > 0) {
-      // Advanced filter: match if any selectedAdvanced is in offer.paymentMethods
+      // Advanced filter: match if any selectedAdvanced is in bonusType.bookmaker.paymentMethods
       const selectedAdvancedLower = selectedAdvanced.map(a => a.toLowerCase());
-      const paymentMatch = offerPaymentMethods.some(pm => selectedAdvancedLower.includes(pm));
+      const paymentMatch = bonusTypePaymentMethods.some(pm => selectedAdvancedLower.includes(pm));
       if (!paymentMatch) return false;
     }
     return true;
@@ -166,27 +179,14 @@ function GhanaHomeFiltersContent() {
   // Sorting logic
   let sortedOffers = [...filteredOffers];
   if (sortBy === "Latest") {
-    sortedOffers.sort((a, b) => new Date(a.expires) - new Date(b.expires));
-  } else if (sortBy === "A-Z") {
-    sortedOffers.sort((a, b) => a.title.localeCompare(b.title));
-  } else if (sortBy === "Lowest Minimum Deposit") {
+    // Sort by published date, oldest first (ascending)
+    sortedOffers.sort((a, b) => new Date(a.published) - new Date(b.published));
+  } else if (sortBy === "By Name (A-Z)") {
+    // Sort by bookmaker name alphabetically
     sortedOffers.sort((a, b) => {
-      const aMin = a.minDeposit !== undefined && a.minDeposit !== null ? Number(a.minDeposit) : Infinity;
-      const bMin = b.minDeposit !== undefined && b.minDeposit !== null ? Number(b.minDeposit) : Infinity;
-      return aMin - bMin;
-    });
-  } else if (sortBy === "Most Popular") {
-    // Count frequency of each bookmaker in filteredOffers
-    const freq = {};
-    filteredOffers.forEach(offer => {
-      const bm = offer.bookmaker || "Unknown";
-      freq[bm] = (freq[bm] || 0) + 1;
-    });
-    // Sort offers by bookmaker frequency (descending), then by published date (desc)
-    sortedOffers.sort((a, b) => {
-      const freqDiff = (freq[b.bookmaker || "Unknown"] || 0) - (freq[a.bookmaker || "Unknown"] || 0);
-      if (freqDiff !== 0) return freqDiff;
-      return new Date(b.published) - new Date(a.published);
+      const aName = a.bookmaker?.name || "";
+      const bName = b.bookmaker?.name || "";
+      return aName.localeCompare(bName);
     });
   }
 
@@ -438,42 +438,44 @@ function GhanaHomeFiltersContent() {
           </div>
         )}
 
-        {/* Offer Cards */}
+        {/* Bonus Type Cards */}
         <div className="flex flex-col gap-4 mb-6">
-          {loading && <div className="text-center text-gray-400">Loading offers...</div>}
+          {loading && <div className="text-center text-gray-400">Loading bonus types...</div>}
           {error && <div className="text-center text-red-500">{error}</div>}
           {!loading && !error && sortedOffers.length === 0 && (
-            <div className="text-center text-gray-400">No offers found.</div>
+            <div className="text-center text-gray-400">No bonus types found.</div>
           )}
-          {!loading && !error && sortedOffers.map((offer, idx) => (
+          {!loading && !error && sortedOffers.map((bonusType, idx) => (
             <div
-              key={offer._id || offer.id}
+              key={bonusType._id}
               className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex flex-col transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:border-gray-200 cursor-pointer"
-              onClick={() => router.push(`/gh/offers/${offer.slug?.current}`)}
+              onClick={() => router.push(`/gh/offers/${bonusType.slug?.current}`)}
             >
               {/* Top row */}
               <div className="flex justify-between items-center mb-2">
                 <div className="flex items-center gap-2">
-                {offer.logo ? (
-                    <Image src={urlFor(offer.logo).width(32).height(32).url()} alt={offer.bookmaker} width={32} height={32} className="rounded-md" />
+                {bonusType.bookmaker?.logo ? (
+                    <Image src={urlFor(bonusType.bookmaker.logo).width(32).height(32).url()} alt={bonusType.bookmaker.name} width={32} height={32} className="rounded-md" />
                 ) : (
                     <div className="w-8 h-8 bg-gray-100 rounded-md" />
                 )}
-                  <span className="font-semibold text-gray-900">{offer.bookmaker}</span>
+                  <span className="font-semibold text-gray-900">{bonusType.bookmaker?.name}</span>
                 </div>
-                <span className="text-xs text-gray-900">Published: {offer.published}</span>
+                <span className="text-xs text-gray-900">Published: {bonusType.published}</span>
               </div>
 
               {/* Title */}
-              <h3 className="font-semibold text-green-700 text-lg hover:underline cursor-pointer mb-1">{offer.title}</h3>
+              <h3 className="font-semibold text-green-700 text-lg hover:underline cursor-pointer mb-1">{bonusType.title}</h3>
 
               {/* Description */}
-              <p className="text-sm text-gray-500 mb-2">{offer.description}</p>
+              <div className="text-sm text-gray-500 mb-2">
+                {bonusType.description && <PortableText value={bonusType.description} />}
+              </div>
 
               {/* Expires */}
               <div className="flex items-center gap-1 text-sm text-gray-500 mt-auto font-bold">
                 <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" className="flex-shrink-0"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
-                <span className="text-xs">Expires: {offer.expires}</span>
+                <span className="text-xs">Expires: {bonusType.expires}</span>
               </div>
             </div>
           ))}

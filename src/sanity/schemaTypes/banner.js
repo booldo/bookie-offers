@@ -19,6 +19,12 @@ export default {
       },
     },
     {
+      name: "imageAlt",
+      title: "Banner Image Alt Text",
+      type: "string",
+      description: "Alternative text for accessibility and SEO",
+    },
+    {
       name: "country",
       title: "Country",
       type: "string",

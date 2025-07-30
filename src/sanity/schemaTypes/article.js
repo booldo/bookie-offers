@@ -28,6 +28,12 @@ export default {
       },
     },
     {
+      name: 'mainImageAlt',
+      title: 'Main Image Alt Text',
+      type: 'string',
+      description: 'Alternative text for accessibility and SEO',
+    },
+    {
       name: 'content',
       title: 'Content',
       type: 'array',

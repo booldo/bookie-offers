@@ -7,6 +7,8 @@ import Link from "next/link";
 import { client } from "../../../../sanity/lib/client";
 import { urlFor } from "../../../../sanity/lib/image";
 import { PortableText } from '@portabletext/react';
+import { useRouter } from "next/navigation";
+import TrackedLink from "../../../../components/TrackedLink";
 
 // FAQ Item Component
 const FAQItem = ({ question, answer, isOpen, onToggle }) => {
@@ -44,6 +46,7 @@ const FAQItem = ({ question, answer, isOpen, onToggle }) => {
 };
 
 function OfferDetailsInner({ slug }) {
+  const router = useRouter();
   const [offer, setOffer] = useState(null);
   const [moreOffers, setMoreOffers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -61,69 +64,71 @@ function OfferDetailsInner({ slug }) {
     // Fetch the main offer and more offers from Sanity
     const fetchData = async () => {
       try {
-        // Fetch the main offer by slug
-        const mainOfferQuery = `*[_type == "offer" && country == "Nigeria" && slug.current == $slug][0]{
+        // Fetch the main bonus type by slug
+        const mainBonusTypeQuery = `*[_type == "bonusType" && bookmaker->country == "Nigeria" && slug.current == $slug][0]{
           _id,
-          id,
           title,
           slug,
-          url,
-          bookmaker,
-          bonusType,
+          bookmaker->{
+            _id,
+            name,
+            logo,
+            logoAlt,
+            paymentMethods,
+            license,
+            country
+          },
           country,
           maxBonus,
           minDeposit,
           description,
           expires,
           published,
-          paymentMethods,
-          logo,
           terms,
           howItWorks,
-          license,
           faq,
           banner,
-          metaTitle,
-          metaDescription,
-          noindex,
-          nofollow,
-          canonicalUrl,
-          sitemapInclude
+          bannerAlt,
+          affiliateLink
         }`;
-        const mainOffer = await client.fetch(mainOfferQuery, { slug });
+        const mainBonusType = await client.fetch(mainBonusTypeQuery, { slug });
         
-        // Get total count of offers (excluding current one)
-        const totalCountQuery = `count(*[_type == "offer" && country == "Nigeria" && slug.current != $slug])`;
+        // Get total count of bonus types (excluding current one)
+        const totalCountQuery = `count(*[_type == "bonusType" && bookmaker->country == "Nigeria" && slug.current != $slug])`;
         const total = await client.fetch(totalCountQuery, { slug });
         setTotalOffers(total);
         
-        // Fetch more offers, excluding the current one
-        const moreOffersQuery = `*[_type == "offer" && country == "Nigeria" && slug.current != $slug] | order(published desc)[0...$count]{
+        // Fetch more bonus types, excluding the current one
+        const moreBonusTypesQuery = `*[_type == "bonusType" && bookmaker->country == "Nigeria" && slug.current != $slug] | order(published desc)[0...$count]{
           _id,
-          id,
           title,
           slug,
-          url,
-          bookmaker,
-          bonusType,
+          bookmaker->{
+            _id,
+            name,
+            logo,
+            logoAlt,
+            paymentMethods,
+            license,
+            country
+          },
           country,
           maxBonus,
           minDeposit,
           description,
           expires,
           published,
-          paymentMethods,
-          logo,
           terms,
           howItWorks,
-          banner
+          banner,
+          bannerAlt
         }`;
-        const more = await client.fetch(moreOffersQuery, { slug, count: loadMoreCount });
-        setOffer(mainOffer);
+        const more = await client.fetch(moreBonusTypesQuery, { slug, count: loadMoreCount });
+        setOffer(mainBonusType);
         setMoreOffers(more);
         setLoading(false);
       } catch (err) {
-        setError("Failed to load offer details");
+        setError("Failed to load bonus type details");
         setLoading(false);
       }
     };
@@ -135,31 +140,35 @@ function OfferDetailsInner({ slug }) {
     setIsLoadingMore(true);
     try {
       const newCount = loadMoreCount + 4;
-      const moreOffersQuery = `*[_type == "offer" && country == "Nigeria" && slug.current != $slug] | order(published desc)[$count...$newCount]{
+      const moreBonusTypesQuery = `*[_type == "bonusType" && bookmaker->country == "Nigeria" && slug.current != $slug] | order(published desc)[$count...$newCount]{
         _id,
-        id,
         title,
         slug,
-        url,
-        bookmaker,
-        bonusType,
+        bookmaker->{
+          _id,
+          name,
+          logo,
+          logoAlt,
+          paymentMethods,
+          license,
+          country
+        },
         country,
         maxBonus,
         minDeposit,
         description,
         expires,
         published,
-        paymentMethods,
-        logo,
         terms,
         howItWorks,
-        banner
+        banner,
+        bannerAlt
       }`;
-      const more = await client.fetch(moreOffersQuery, { slug, count: loadMoreCount, newCount });
+      const more = await client.fetch(moreBonusTypesQuery, { slug, count: loadMoreCount, newCount });
       setMoreOffers(more);
       setLoadMoreCount(newCount);
     } catch (err) {
-      console.error("Failed to load more offers:", err);
+      console.error("Failed to load more bonus types:", err);
     } finally {
       setIsLoadingMore(false);
     }
@@ -178,7 +187,7 @@ function OfferDetailsInner({ slug }) {
           <div className="mt-6 mb-6">
             <Image 
               src={urlFor(offer.banner).width(1200).height(200).url()} 
-              alt={offer.title}
+              alt={offer.bannerAlt || offer.title}
               width={1200}
               height={200}
               className="w-full h-auto rounded-xl"
@@ -187,16 +196,16 @@ function OfferDetailsInner({ slug }) {
         )}
         
         <div className="mt-6 mb-4 flex items-center gap-2 text-sm text-gray-500 ml-2">
-          <Link href="/ng" className="hover:underline flex items-center gap-1">
+          <button type="button" onClick={() => router.back()} className="hover:underline flex items-center gap-1">
             <Image src="/assets/back-arrow.png" alt="Back" width={24} height={24} />
             Home
-          </Link>
+          </button>
           <span className="mx-1">/</span>
           <Link 
-            href={`/ng/${offer?.bonusType?.toLowerCase().replace(/\s+/g, '-') || 'offers'}`} 
+            href={`/ng/${offer?.title?.toLowerCase().replace(/\s+/g, '-') || 'offers'}`} 
             className="text-gray-700 font-medium hover:underline"
           >
-            {offer?.bonusType || "Bonus"}
+            {offer?.title || "Bonus"}
           </Link>
           <span className="mx-1">/</span>
           <span className="text-gray-700 font-medium">{offer?.title || "Offer"}</span>
@@ -211,12 +220,12 @@ function OfferDetailsInner({ slug }) {
               {/* Top row */}
               <div className="flex justify-between items-center mb-4 sm:order-1">
                 <div className="flex items-center gap-3">
-                  {offer.logo ? (
-                    <Image src={urlFor(offer.logo).width(40).height(40).url()} alt={offer.bookmaker} width={40} height={40} className="rounded-md" />
+                  {offer.bookmaker?.logo ? (
+                    <Image src={urlFor(offer.bookmaker.logo).width(40).height(40).url()} alt={offer.bookmaker.logoAlt || offer.bookmaker.name} width={40} height={40} className="rounded-md" />
                   ) : (
                     <div className="w-10 h-10 bg-gray-100 rounded-md" />
                   )}
-                  <span className="font-semibold text-gray-900 text-lg">{offer.bookmaker}</span>
+                  <span className="font-semibold text-gray-900 text-lg">{offer.bookmaker?.name}</span>
                 </div>
                 <span className="text-gray-500 text-sm">Published: {offer.published}</span>
               </div>
@@ -231,6 +240,23 @@ function OfferDetailsInner({ slug }) {
                 <span className="text-green-700 text-sm font-medium">Expires: {offer.expires}</span>
               </div>
 
+              {offer.affiliateLink && (
+                <TrackedLink
+                  href={offer.affiliateLink}
+                  linkId={offer._id}
+                  linkType="offer"
+                  linkTitle={offer.title}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full sm:w-fit sm:px-6 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 mb-6 sm:order-5"
+                >
+                  Get Bonus
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </TrackedLink>
+              )}
+
               {/* How it works */}
               {offer.howItWorks && (
                 <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6 sm:order-6">
@@ -244,11 +270,11 @@ function OfferDetailsInner({ slug }) {
                 </div>
               )}
               {/* Payment Method */}
-              {offer.paymentMethods && offer.paymentMethods.length > 0 && (
+              {offer.bookmaker?.paymentMethods && offer.bookmaker.paymentMethods.length > 0 && (
                 <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6 sm:order-7">
                   <div className="font-semibold text-gray-900 mb-1">Payment Method</div>
                   <div className="flex flex-wrap gap-2 text-gray-700 text-sm">
-                    {offer.paymentMethods.map((pm, i) => (
+                    {offer.bookmaker.paymentMethods.map((pm, i) => (
                       <span key={i} className="border border-gray-200 rounded px-2 py-1 bg-gray-50">{pm}</span>
                     ))}
                   </div>
@@ -264,18 +290,20 @@ function OfferDetailsInner({ slug }) {
                 </div>
               )}
               {/* License */}
-              {offer.license && (
+              {offer.bookmaker?.license && offer.bookmaker.license.length > 0 && (
                 <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6 sm:order-9">
                   <div className="font-semibold text-gray-900 mb-1">License</div>
                   <ul className="list-disc list-inside text-gray-700 text-sm space-y-1 pl-4">
-                    <li>{offer.license}</li>
+                    {offer.bookmaker.license.map((license, i) => (
+                      <li key={i}>{license}</li>
+                    ))}
                   </ul>
                 </div>
               )}
 
               {/* FAQ */}
               {offer.faq && offer.faq.length > 0 && (
-                <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6 order-10">
+                <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6 mt-6 order-10">
                   <div className="font-semibold text-gray-900 mb-4">Frequently Asked Questions</div>
                   <div className="space-y-3">
                     {offer.faq.map((item, index) => (
@@ -290,15 +318,6 @@ function OfferDetailsInner({ slug }) {
                   </div>
                 </div>
               )}
-
-              <button
-                className="w-full sm:w-48 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg px-6 py-3 flex items-center justify-center gap-2 transition sm:order-5 sm:mb-6"
-                onClick={() => offer.url && window.open(offer.url, '_blank', 'noopener,noreferrer')}
-                disabled={!offer.url}
-              >
-                Get Bonus!
-                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-              </button>
             </div>
           </>
         )}
@@ -315,12 +334,12 @@ function OfferDetailsInner({ slug }) {
                   className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex flex-col justify-between transition cursor-pointer hover:bg-gray-50 hover:shadow-lg hover:scale-[1.03] focus:outline-none focus:ring-2 focus:ring-green-500"
                 >
                   <div className="flex items-center gap-2 mb-1">
-                    {o.logo ? (
-                      <Image src={urlFor(o.logo).width(28).height(28).url()} alt={o.bookmaker} width={28} height={28} className="rounded-md" />
+                    {o.bookmaker?.logo ? (
+                      <Image src={urlFor(o.bookmaker.logo).width(28).height(28).url()} alt={o.bookmaker.logoAlt || o.bookmaker.name} width={28} height={28} className="rounded-md" />
                     ) : (
                       <div className="w-7 h-7 bg-gray-100 rounded-md" />
                     )}
-                    <span className="font-semibold text-gray-900 text-base">{o.bookmaker}</span>
+                    <span className="font-semibold text-gray-900 text-base">{o.bookmaker?.name}</span>
                     <span className="ml-auto text-xs text-gray-500">Published: {o.published}</span>
                   </div>
                   <div className="font-semibold text-gray-900 text-sm mb-1">{o.title}</div>

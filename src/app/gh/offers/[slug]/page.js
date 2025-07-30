@@ -14,19 +14,22 @@ function isOfferExpired(expiresDate) {
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   
-  // Fetch the offer to check if it's expired
-  const offerQuery = `*[_type == "offer" && country == "Ghana" && slug.current == $slug][0]{
-          expires,
+  // Fetch the bonus type to check if it's expired and get SEO data
+  const bonusTypeQuery = `*[_type == "bonusType" && bookmaker->country == "Ghana" && slug.current == $slug][0]{
+    _id,
+    title,
+    expires,
     metaTitle,
     metaDescription,
     noindex,
     nofollow,
-    canonicalUrl
+    canonicalUrl,
+    sitemapInclude
   }`;
-  const offer = await client.fetch(offerQuery, { slug });
+  const bonusType = await client.fetch(bonusTypeQuery, { slug });
   
-  // If offer is expired, return 410 metadata
-  if (offer && isOfferExpired(offer.expires)) {
+  // If bonus type is expired, return 410 metadata
+  if (bonusType && isOfferExpired(bonusType.expires)) {
     return {
       title: "Offer Expired | Booldo",
       description: "This offer has expired and is no longer available.",
@@ -34,18 +37,25 @@ export async function generateMetadata({ params }) {
     };
   }
   
-  // Get SEO data for non-expired offers
-  const seo = await getPageSeo("offer", slug);
+  // If no bonus type found, return default metadata
+  if (!bonusType) {
+    return {
+      title: "Offer Not Found | Booldo",
+      description: "The requested offer could not be found.",
+      robots: "noindex, nofollow",
+    };
+  }
 
+  // Return SEO metadata from the bonus type
   return {
-    title: seo?.metaTitle || "Offer Details | Booldo",
-    description: seo?.metaDescription || "View offer details and claim your bonus.",
+    title: bonusType.metaTitle || `${bonusType.title} | Booldo`,
+    description: bonusType.metaDescription || `View ${bonusType.title} details and claim your bonus.`,
     robots: [
-      seo?.noindex ? "noindex" : "index",
-      seo?.nofollow ? "nofollow" : "follow"
+      bonusType.noindex ? "noindex" : "index",
+      bonusType.nofollow ? "nofollow" : "follow"
     ].join(", "),
     alternates: {
-      canonical: seo?.canonicalUrl || undefined,
+      canonical: bonusType.canonicalUrl || undefined,
     },
   };
 }
@@ -53,18 +63,18 @@ export async function generateMetadata({ params }) {
 export default async function OfferDetails({ params }) {
   const { slug } = await params;
   
-  // Fetch the offer to check if it's expired
-  const offerQuery = `*[_type == "offer" && country == "Ghana" && slug.current == $slug][0]{
+  // Fetch the bonus type to check if it's expired
+  const bonusTypeQuery = `*[_type == "bonusType" && bookmaker->country == "Ghana" && slug.current == $slug][0]{
     _id,
     title,
     bookmaker,
     expires
   }`;
-  const offer = await client.fetch(offerQuery, { slug });
+  const bonusType = await client.fetch(bonusTypeQuery, { slug });
   
-  // If offer is expired, return 410 error page
-  if (offer && isOfferExpired(offer.expires)) {
-    return <ExpiredOfferPage offer={offer} />;
+  // If bonus type is expired, return 410 error page
+  if (bonusType && isOfferExpired(bonusType.expires)) {
+    return <ExpiredOfferPage offer={bonusType} />;
   }
   
   return <OfferDetailsInner slug={slug} />;
