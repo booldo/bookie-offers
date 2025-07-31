@@ -10,6 +10,30 @@ import { PortableText } from '@portabletext/react';
 import { useRouter } from "next/navigation";
 import TrackedLink from "../../../../components/TrackedLink";
 
+// Custom components for PortableText
+const portableTextComponents = {
+  block: {
+    h1: ({children}) => <h1 className="text-2xl font-bold text-gray-900 mb-4">{children}</h1>,
+    h2: ({children}) => <h2 className="text-xl font-semibold text-gray-900 mb-3">{children}</h2>,
+    h3: ({children}) => <h3 className="text-lg font-semibold text-gray-900 mb-2">{children}</h3>,
+    h4: ({children}) => <h4 className="text-base font-semibold text-gray-900 mb-2">{children}</h4>,
+    normal: ({children}) => <p className="text-gray-700 mb-3 leading-relaxed">{children}</p>,
+  },
+  list: {
+    bullet: ({children}) => <ul className="list-disc list-inside text-gray-700 mb-3 space-y-1">{children}</ul>,
+    number: ({children}) => <ol className="list-decimal list-inside text-gray-700 mb-3 space-y-1">{children}</ol>,
+  },
+  listItem: {
+    bullet: ({children}) => <li className="text-gray-700">{children}</li>,
+    number: ({children}) => <li className="text-gray-700">{children}</li>,
+  },
+  marks: {
+    strong: ({children}) => <strong className="font-semibold text-gray-900">{children}</strong>,
+    em: ({children}) => <em className="italic text-gray-700">{children}</em>,
+    code: ({children}) => <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono">{children}</code>,
+  },
+};
+
 // FAQ Item Component
 const FAQItem = ({ question, answer, isOpen, onToggle }) => {
   return (
@@ -19,7 +43,7 @@ const FAQItem = ({ question, answer, isOpen, onToggle }) => {
         onClick={onToggle}
       >
         <div className="font-medium text-gray-900 flex-1 text-left">
-          <PortableText value={question} />
+          <PortableText value={question} components={portableTextComponents} />
         </div>
         <svg
           className={`w-5 h-5 text-gray-500 transition-transform duration-300 ease-in-out ${isOpen ? 'rotate-180' : ''} flex-shrink-0 ml-2`}
@@ -36,8 +60,8 @@ const FAQItem = ({ question, answer, isOpen, onToggle }) => {
         }`}
       >
         <div className="px-4 pb-3 border-t border-gray-200">
-          <div className="pt-3 text-gray-700 text-sm prose prose-sm max-w-none">
-            <PortableText value={answer} />
+          <div className="pt-3 text-gray-700 text-sm">
+            <PortableText value={answer} components={portableTextComponents} />
           </div>
         </div>
       </div>
@@ -223,8 +247,8 @@ function OfferDetailsInner({ slug }) {
               </div>
 
               <h1 className="text-2xl font-bold text-gray-900 mb-2 sm:order-2">{offer.title}</h1>
-              <div className="text-gray-700 mb-4 sm:order-3 prose prose-sm max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-strong:text-gray-900 prose-strong:font-semibold prose-ul:text-gray-700 prose-ol:text-gray-700 prose-li:text-gray-700">
-                {offer.description && <PortableText value={offer.description} />}
+              <div className="text-gray-700 mb-4 sm:order-3">
+                {offer.description && <PortableText value={offer.description} components={portableTextComponents} />}
               </div>
               
               <div className="flex items-center gap-2 mb-6 sm:order-4">
@@ -234,7 +258,7 @@ function OfferDetailsInner({ slug }) {
 
               {offer.affiliateLink && (
                 <TrackedLink
-                  href={offer.affiliateLink}
+                  href={`/go/${offer.slug?.current}`}
                   linkId={offer._id}
                   linkType="offer"
                   linkTitle={offer.title}
@@ -252,8 +276,8 @@ function OfferDetailsInner({ slug }) {
               {/* How it works */}
               {offer.howItWorks && (
                 <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6 sm:order-6">
-                  <div className="text-gray-700 text-sm prose prose-sm max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-strong:text-gray-900 prose-strong:font-semibold prose-ul:text-gray-700 prose-ol:text-gray-700 prose-li:text-gray-700">
-                    {offer.howItWorks && <PortableText value={offer.howItWorks} />}
+                  <div className="text-gray-700 text-sm">
+                    {offer.howItWorks && <PortableText value={offer.howItWorks} components={portableTextComponents} />}
                   </div>
                 </div>
               )}
@@ -271,8 +295,8 @@ function OfferDetailsInner({ slug }) {
               {/* Terms & Condition */}
               {offer.terms && (
                 <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6 sm:order-8">
-                  <div className="text-gray-700 text-sm prose prose-sm max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-strong:text-gray-900 prose-strong:font-semibold prose-ul:text-gray-700 prose-ol:text-gray-700 prose-li:text-gray-700">
-                    {offer.terms && <PortableText value={offer.terms} />}
+                  <div className="text-gray-700 text-sm">
+                    {offer.terms && <PortableText value={offer.terms} components={portableTextComponents} />}
                   </div>
                 </div>
               )}
