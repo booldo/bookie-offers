@@ -14,10 +14,11 @@ function isOfferExpired(expiresDate) {
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   
-  // Fetch the bonus type to check if it's expired and get SEO data
-  const bonusTypeQuery = `*[_type == "bonusType" && bookmaker->country == "Nigeria" && slug.current == $slug][0]{
+  // Fetch the offer to check if it's expired and get SEO data
+  const offerQuery = `*[_type == "offers" && country == "Nigeria" && slug.current == $slug][0]{
     _id,
-    title,
+    bonusType->{name},
+    bookmaker->{name},
     expires,
     metaTitle,
     metaDescription,
@@ -26,10 +27,10 @@ export async function generateMetadata({ params }) {
     canonicalUrl,
     sitemapInclude
   }`;
-  const bonusType = await client.fetch(bonusTypeQuery, { slug });
+  const offer = await client.fetch(offerQuery, { slug });
   
-  // If bonus type is expired, return 410 metadata
-  if (bonusType && isOfferExpired(bonusType.expires)) {
+  // If offer is expired, return 410 metadata
+  if (offer && isOfferExpired(offer.expires)) {
     return {
       title: "Offer Expired | Booldo",
       description: "This offer has expired and is no longer available.",
@@ -37,8 +38,8 @@ export async function generateMetadata({ params }) {
     };
   }
   
-  // If no bonus type found, return default metadata
-  if (!bonusType) {
+  // If no offer found, return default metadata
+  if (!offer) {
     return {
       title: "Offer Not Found | Booldo",
       description: "The requested offer could not be found.",
@@ -46,16 +47,17 @@ export async function generateMetadata({ params }) {
     };
   }
 
-  // Return SEO metadata from the bonus type
+  // Return SEO metadata from the offer
+  const offerTitle = offer.bonusType?.name ? `${offer.bonusType.name} - ${offer.bookmaker?.name}` : "Offer";
   return {
-    title: bonusType.metaTitle || `${bonusType.title} | Booldo`,
-    description: bonusType.metaDescription || `View ${bonusType.title} details and claim your bonus.`,
+    title: offer.metaTitle || `${offerTitle} | Booldo`,
+    description: offer.metaDescription || `View ${offerTitle} details and claim your bonus.`,
     robots: [
-      bonusType.noindex ? "noindex" : "index",
-      bonusType.nofollow ? "nofollow" : "follow"
+      offer.noindex ? "noindex" : "index",
+      offer.nofollow ? "nofollow" : "follow"
     ].join(", "),
     alternates: {
-      canonical: bonusType.canonicalUrl || undefined,
+      canonical: offer.canonicalUrl || undefined,
     },
   };
 }
@@ -63,18 +65,18 @@ export async function generateMetadata({ params }) {
 export default async function OfferDetails({ params }) {
   const { slug } = await params;
   
-  // Fetch the bonus type to check if it's expired
-  const bonusTypeQuery = `*[_type == "bonusType" && bookmaker->country == "Nigeria" && slug.current == $slug][0]{
+  // Fetch the offer to check if it's expired
+  const offerQuery = `*[_type == "offers" && country == "Nigeria" && slug.current == $slug][0]{
     _id,
-    title,
-    bookmaker,
+    bonusType->{name},
+    bookmaker->{name},
     expires
   }`;
-  const bonusType = await client.fetch(bonusTypeQuery, { slug });
+  const offer = await client.fetch(offerQuery, { slug });
   
-  // If bonus type is expired, return 410 error page
-  if (bonusType && isOfferExpired(bonusType.expires)) {
-    return <ExpiredOfferPage offer={bonusType} />;
+  // If offer is expired, return 410 error page
+  if (offer && isOfferExpired(offer.expires)) {
+    return <ExpiredOfferPage offer={offer} />;
   }
   
   return <OfferDetailsInner slug={slug} />;

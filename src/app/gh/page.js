@@ -11,12 +11,15 @@ import { urlFor } from "../../sanity/lib/image";
 import BannerCarousel from "../../components/BannerCarousel";
 import { PortableText } from '@portabletext/react';
 
-// Fetch bonus types from Sanity
-const fetchBonusTypes = async () => {
-  const query = `*[_type == "bonusType" && bookmaker->country == "Ghana"] | order(published desc) {
+// Fetch offers from Sanity
+const fetchOffers = async () => {
+  const query = `*[_type == "offers" && country == "Ghana"] | order(_createdAt desc) {
     _id,
-    title,
     slug,
+    bonusType->{
+      _id,
+      name
+    },
     bookmaker->{
       _id,
       name,
@@ -101,30 +104,30 @@ function GhanaHomeContent() {
 
   useEffect(() => {
     setLoading(true);
-    fetchBonusTypes()
+    fetchOffers()
       .then((data) => {
         setOffers(data);
         // Compute bonus type counts and unique bonus types
         const bonusTypeCount = {};
-        data.forEach(bonusType => {
-          const bt = bonusType.title || "Other";
+        data.forEach(offer => {
+          const bt = offer.bonusType?.name || "Other";
           bonusTypeCount[bt] = (bonusTypeCount[bt] || 0) + 1;
         });
         const bonusOptions = Object.entries(bonusTypeCount).map(([name, count]) => ({ name, count }));
         setBonusTypeOptions(bonusOptions);
         // Compute bookmaker counts and unique bookmakers
         const bookmakerCount = {};
-        data.forEach(bonusType => {
-          const bm = bonusType.bookmaker?.name || "Other";
+        data.forEach(offer => {
+          const bm = offer.bookmaker?.name || "Other";
           bookmakerCount[bm] = (bookmakerCount[bm] || 0) + 1;
         });
         const bmOptions = Object.entries(bookmakerCount).map(([name, count]) => ({ name, count }));
         setBookmakerOptions(bmOptions);
         // Compute payment method counts from actual data
         const paymentMethodCount = {};
-        data.forEach(bonusType => {
-          if (Array.isArray(bonusType.bookmaker?.paymentMethods)) {
-            bonusType.bookmaker.paymentMethods.forEach(pm => {
+        data.forEach(offer => {
+          if (Array.isArray(offer.bookmaker?.paymentMethods)) {
+            offer.bookmaker.paymentMethods.forEach(pm => {
               paymentMethodCount[pm] = (paymentMethodCount[pm] || 0) + 1;
             });
           }
@@ -148,7 +151,7 @@ function GhanaHomeContent() {
         setLoading(false);
       })
       .catch((err) => {
-        setError("Failed to load bonus types");
+        setError("Failed to load offers");
         setLoading(false);
       });
   }, []);
@@ -273,18 +276,18 @@ function GhanaHomeContent() {
   };
 
   // Filter logic (case-insensitive, robust)
-  const filteredOffers = offers.filter((bonusType) => {
+  const filteredOffers = offers.filter((offer) => {
     // Normalize for case-insensitive comparison
-    const bonusTypeBookmaker = bonusType.bookmaker?.name ? bonusType.bookmaker.name.toLowerCase() : "";
-    const bonusTypeTitle = bonusType.title ? bonusType.title.toLowerCase() : "";
-    const bonusTypePaymentMethods = Array.isArray(bonusType.bookmaker?.paymentMethods) ? bonusType.bookmaker.paymentMethods.map(pm => pm.toLowerCase()) : [];
+    const offerBookmaker = offer.bookmaker?.name ? offer.bookmaker.name.toLowerCase() : "";
+    const offerBonusType = offer.bonusType?.name ? offer.bonusType.name.toLowerCase() : "";
+    const offerPaymentMethods = Array.isArray(offer.bookmaker?.paymentMethods) ? offer.bookmaker.paymentMethods.map(pm => pm.toLowerCase()) : [];
 
-    if (selectedBookmakers.length > 0 && !selectedBookmakers.some(bm => bm.toLowerCase() === bonusTypeBookmaker)) return false;
-    if (selectedBonusTypes.length > 0 && !selectedBonusTypes.some(bt => bt.toLowerCase() === bonusTypeTitle)) return false;
+    if (selectedBookmakers.length > 0 && !selectedBookmakers.some(bm => bm.toLowerCase() === offerBookmaker)) return false;
+    if (selectedBonusTypes.length > 0 && !selectedBonusTypes.some(bt => bt.toLowerCase() === offerBonusType)) return false;
     if (selectedAdvanced.length > 0) {
-      // Advanced filter: match if any selectedAdvanced is in bonusType.bookmaker.paymentMethods
+      // Advanced filter: match if any selectedAdvanced is in offer.bookmaker.paymentMethods
       const selectedAdvancedLower = selectedAdvanced.map(a => a.toLowerCase());
-      const paymentMatch = bonusTypePaymentMethods.some(pm => selectedAdvancedLower.includes(pm));
+      const paymentMatch = offerPaymentMethods.some(pm => selectedAdvancedLower.includes(pm));
       if (!paymentMatch) return false;
     }
     return true;
@@ -443,37 +446,37 @@ function GhanaHomeContent() {
           {!loading && !error && sortedOffers.length === 0 && (
             <div className="text-center text-gray-400">No bonus types found.</div>
           )}
-          {!loading && !error && sortedOffers.map((bonusType, idx) => (
+          {!loading && !error && sortedOffers.map((offer, idx) => (
             <div
-              key={bonusType._id}
+              key={offer._id}
               className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex flex-col transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:border-gray-200 cursor-pointer"
-              onClick={() => router.push(`/gh/offers/${bonusType.slug?.current}`)}
+              onClick={() => router.push(`/gh/offers/${offer.slug?.current}`)}
             >
               {/* Top row */}
               <div className="flex justify-between items-center mb-2">
                 <div className="flex items-center gap-2">
-                {bonusType.bookmaker?.logo ? (
-                    <Image src={urlFor(bonusType.bookmaker.logo).width(32).height(32).url()} alt={bonusType.bookmaker.name} width={32} height={32} className="rounded-md" />
+                {offer.bookmaker?.logo ? (
+                    <Image src={urlFor(offer.bookmaker.logo).width(32).height(32).url()} alt={offer.bookmaker.name} width={32} height={32} className="rounded-md" />
                 ) : (
                     <div className="w-8 h-8 bg-gray-100 rounded-md" />
                 )}
-                  <span className="font-semibold text-gray-900">{bonusType.bookmaker?.name}</span>
+                  <span className="font-semibold text-gray-900">{offer.bookmaker?.name}</span>
                 </div>
-                <span className="text-xs text-gray-900">Published: {bonusType.published}</span>
+                <span className="text-xs text-gray-900">Published: {offer.published}</span>
               </div>
 
               {/* Title */}
-              <h3 className="font-semibold text-green-700 text-lg hover:underline cursor-pointer mb-1">{bonusType.title}</h3>
+              <h3 className="font-semibold text-green-700 text-lg hover:underline cursor-pointer mb-1">{offer.bonusType?.name}</h3>
 
               {/* Description */}
               <div className="text-sm text-gray-500 mb-2">
-                {bonusType.description && <PortableText value={bonusType.description} />}
+                {offer.description && <PortableText value={offer.description} />}
               </div>
 
               {/* Expires */}
               <div className="flex items-center gap-1 text-sm text-gray-500 mt-auto font-bold">
                 <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" className="flex-shrink-0"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
-                <span className="text-xs">Expires: {bonusType.expires}</span>
+                <span className="text-xs">Expires: {offer.expires}</span>
               </div>
             </div>
           ))}

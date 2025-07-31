@@ -88,10 +88,10 @@ function OfferDetailsInner({ slug }) {
     // Fetch the main offer and more offers from Sanity
     const fetchData = async () => {
       try {
-        // Fetch the main bonus type by slug
-        const mainBonusTypeQuery = `*[_type == "bonusType" && bookmaker->country == "Nigeria" && slug.current == $slug][0]{
+        // Fetch the main offer by slug
+        const mainOfferQuery = `*[_type == "offers" && country == "Nigeria" && slug.current == $slug][0]{
           _id,
-          title,
+          bonusType->{name},
           slug,
           bookmaker->{
             _id,
@@ -115,17 +115,17 @@ function OfferDetailsInner({ slug }) {
           bannerAlt,
           affiliateLink
         }`;
-        const mainBonusType = await client.fetch(mainBonusTypeQuery, { slug });
+        const mainOffer = await client.fetch(mainOfferQuery, { slug });
         
-        // Get total count of bonus types (excluding current one)
-        const totalCountQuery = `count(*[_type == "bonusType" && bookmaker->country == "Nigeria" && slug.current != $slug])`;
+        // Get total count of offers (excluding current one)
+        const totalCountQuery = `count(*[_type == "offers" && country == "Nigeria" && slug.current != $slug])`;
         const total = await client.fetch(totalCountQuery, { slug });
         setTotalOffers(total);
         
-        // Fetch more bonus types, excluding the current one
-        const moreBonusTypesQuery = `*[_type == "bonusType" && bookmaker->country == "Nigeria" && slug.current != $slug] | order(published desc)[0...$count]{
+        // Fetch more offers, excluding the current one
+        const moreOffersQuery = `*[_type == "offers" && country == "Nigeria" && slug.current != $slug] | order(_createdAt desc)[0...$count]{
           _id,
-          title,
+          bonusType->{name},
           slug,
           bookmaker->{
             _id,
@@ -147,12 +147,12 @@ function OfferDetailsInner({ slug }) {
           banner,
           bannerAlt
         }`;
-        const more = await client.fetch(moreBonusTypesQuery, { slug, count: loadMoreCount });
-        setOffer(mainBonusType);
+        const more = await client.fetch(moreOffersQuery, { slug, count: loadMoreCount });
+        setOffer(mainOffer);
         setMoreOffers(more);
         setLoading(false);
       } catch (err) {
-        setError("Failed to load bonus type details");
+        setError("Failed to load offer details");
         setLoading(false);
       }
     };
@@ -164,9 +164,9 @@ function OfferDetailsInner({ slug }) {
     setIsLoadingMore(true);
     try {
       const newCount = loadMoreCount + 4;
-      const moreBonusTypesQuery = `*[_type == "bonusType" && bookmaker->country == "Nigeria" && slug.current != $slug] | order(published desc)[$count...$newCount]{
+      const moreOffersQuery = `*[_type == "offers" && country == "Nigeria" && slug.current != $slug] | order(_createdAt desc)[$count...$newCount]{
         _id,
-        title,
+        bonusType->{name},
         slug,
         bookmaker->{
           _id,
@@ -188,11 +188,11 @@ function OfferDetailsInner({ slug }) {
         banner,
         bannerAlt
       }`;
-      const more = await client.fetch(moreBonusTypesQuery, { slug, count: loadMoreCount, newCount });
+      const more = await client.fetch(moreOffersQuery, { slug, count: loadMoreCount, newCount });
       setMoreOffers(more);
       setLoadMoreCount(newCount);
     } catch (err) {
-      console.error("Failed to load more bonus types:", err);
+      console.error("Failed to load more offers:", err);
     } finally {
       setIsLoadingMore(false);
     }
@@ -225,7 +225,7 @@ function OfferDetailsInner({ slug }) {
             Home
           </button>
           <span className="mx-1">|</span>
-          <span className="text-gray-700 font-medium">{offer?.title || "Bonus"}</span>
+          <span className="text-gray-700 font-medium">{offer?.bonusType?.name || "Bonus"}</span>
         </div>
         {/* Offer Card */}
         {error && <div className="text-center text-red-500">{error}</div>}
@@ -246,7 +246,7 @@ function OfferDetailsInner({ slug }) {
                 <span className="text-gray-500 text-sm">Published: {offer.published}</span>
               </div>
 
-              <h1 className="text-2xl font-bold text-gray-900 mb-2 sm:order-2">{offer.title}</h1>
+              <h1 className="text-2xl font-bold text-gray-900 mb-2 sm:order-2">{offer.bonusType?.name}</h1>
               <div className="text-gray-700 mb-4 sm:order-3">
                 {offer.description && <PortableText value={offer.description} components={portableTextComponents} />}
               </div>

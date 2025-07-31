@@ -87,24 +87,21 @@ export default function Navbar() {
     setSearchError(null);
     addRecentSearch(term);
     try {
-      const query = `*[_type == "offer" && country == $country && (
-        title match $term ||
-        bookmaker match $term ||
-        bonusType match $term
-      )] | order(published desc) {
+      const query = `*[_type == "offers" && country == $country && (
+        bonusType->name match $term ||
+        bookmaker->name match $term
+      )] | order(_createdAt desc) {
         _id,
-        id,
-        title,
-        bookmaker,
-        bonusType,
+        slug,
+        bonusType->{name},
+        bookmaker->{name},
         country,
         maxBonus,
         minDeposit,
         description,
         expires,
         published,
-        paymentMethods,
-        logo
+        bookmaker->{paymentMethods, logo}
       }`;
       const results = await client.fetch(query, { country, term: `*${term}*` });
       setSearchResults(results);
