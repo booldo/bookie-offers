@@ -204,9 +204,8 @@ function OfferDetailsInner({ slug }) {
           <span className="text-gray-700 font-medium">{offer?.title || "Bonus"}</span>
         </div>
         {/* Offer Card */}
-        {loading && <div className="text-center text-gray-400">Loading offer...</div>}
         {error && <div className="text-center text-red-500">{error}</div>}
-        {!loading && !error && offer && (
+        {!error && offer && (
           <>
             {/* Offer Card */}
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6 flex flex-col">
@@ -224,7 +223,7 @@ function OfferDetailsInner({ slug }) {
               </div>
 
               <h1 className="text-2xl font-bold text-gray-900 mb-2 sm:order-2">{offer.title}</h1>
-              <div className="text-gray-700 mb-4 sm:order-3 prose prose-sm max-w-none">
+              <div className="text-gray-700 mb-4 sm:order-3 prose prose-sm max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-strong:text-gray-900 prose-strong:font-semibold prose-ul:text-gray-700 prose-ol:text-gray-700 prose-li:text-gray-700">
                 {offer.description && <PortableText value={offer.description} />}
               </div>
               
@@ -253,11 +252,7 @@ function OfferDetailsInner({ slug }) {
               {/* How it works */}
               {offer.howItWorks && (
                 <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6 sm:order-6">
-                  <div className="flex items-center gap-2 mb-3">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 8v4l3 3" /></svg>
-                    <h2 className="font-semibold text-gray-900">How it works</h2>
-                  </div>
-                  <div className="text-gray-700 text-sm prose prose-sm max-w-none">
+                  <div className="text-gray-700 text-sm prose prose-sm max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-strong:text-gray-900 prose-strong:font-semibold prose-ul:text-gray-700 prose-ol:text-gray-700 prose-li:text-gray-700">
                     {offer.howItWorks && <PortableText value={offer.howItWorks} />}
                   </div>
                 </div>
@@ -276,8 +271,7 @@ function OfferDetailsInner({ slug }) {
               {/* Terms & Condition */}
               {offer.terms && (
                 <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6 sm:order-8">
-                  <div className="font-semibold text-gray-900 mb-1">Terms & Condition</div>
-                  <div className="text-gray-700 text-sm prose prose-sm max-w-none">
+                  <div className="text-gray-700 text-sm prose prose-sm max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-strong:text-gray-900 prose-strong:font-semibold prose-ul:text-gray-700 prose-ol:text-gray-700 prose-li:text-gray-700">
                     {offer.terms && <PortableText value={offer.terms} />}
                   </div>
                 </div>

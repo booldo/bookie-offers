@@ -93,7 +93,7 @@ export default {
     { name: "minDeposit", title: "Min Deposit", type: "number" },
     {
       name: "description",
-      title: "Description",
+      title: "Text Block 1 (offer description)",
       type: "array",
       of: [{ type: "block" }]
     },
@@ -102,14 +102,14 @@ export default {
     { name: "banner", title: "Banner", type: "image", description: "Banner image for this specific offer" },
     { name: "bannerAlt", title: "Banner Alt Text", type: "string", description: "Alternative text for accessibility and SEO" },
     {
-      name: "terms",
-      title: "Terms",
+      name: "howItWorks",
+      title: "Text Block 2 (how it works)",
       type: "array",
       of: [{ type: "block" }]
     },
     {
-      name: "howItWorks",
-      title: "How It Works",
+      name: "terms",
+      title: "Text Block 3 (terms and conditions)",
       type: "array",
       of: [{ type: "block" }]
     },
