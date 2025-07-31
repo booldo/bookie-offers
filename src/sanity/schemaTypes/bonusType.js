@@ -66,10 +66,32 @@ export default {
       title: "Slug",
       type: "slug",
       options: {
-        source: (doc) => {
-          const title = doc.title || "Untitled";
-          const id = doc._id || "unknown";
-          return `bonus-type-${title}%${id}`;
+        source: async (doc, context) => {
+          const { getClient } = context;
+          const client = getClient({ apiVersion: '2023-05-03' });
+          
+          // Get the bookmaker name
+          let bookmakerName = "unknown";
+          if (doc.bookmaker?._ref) {
+            try {
+              const bookmaker = await client.fetch(`*[_type == "bookmaker" && _id == $id][0]{
+                name
+              }`, { id: doc.bookmaker._ref });
+              bookmakerName = bookmaker?.name || "unknown";
+            } catch (error) {
+              console.error("Error fetching bookmaker:", error);
+            }
+          }
+          
+          // Get current date
+          const today = new Date();
+          const dateString = today.toISOString().split('T')[0]; // YYYY-MM-DD format
+          
+          // Create slug: bonus-type-bookmaker-date
+          const title = doc.title || "bonus";
+          const slug = `${title.toLowerCase().replace(/\s+/g, '-')}-${bookmakerName.toLowerCase().replace(/\s+/g, '-')}-${dateString}`;
+          
+          return slug;
         },
         maxLength: 96,
         slugify: input =>
