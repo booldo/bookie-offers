@@ -1,4 +1,4 @@
-import { client } from "../../../sanity/lib/client";
+import { client } from "../../sanity/lib/client";
 import { redirect } from "next/navigation";
 
 export async function generateMetadata({ params }) {

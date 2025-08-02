@@ -1,6 +1,6 @@
 export default {
   name: "banner",
-  title: "Banner",
+  title: "Homepage Banners",
   type: "document",
   fields: [
     {
@@ -8,6 +8,18 @@ export default {
       title: "Title",
       type: "string",
       validation: Rule => Rule.required(),
+    },
+    {
+      name: "country",
+      title: "Country",
+      type: "string",
+      validation: Rule => Rule.required(),
+      options: {
+        list: [
+          { title: "Ghana", value: "Ghana" },
+          { title: "Nigeria", value: "Nigeria" },
+        ],
+      },
     },
     {
       name: "image",
@@ -23,18 +35,6 @@ export default {
       title: "Banner Image Alt Text",
       type: "string",
       description: "Alternative text for accessibility and SEO",
-    },
-    {
-      name: "country",
-      title: "Country",
-      type: "string",
-      validation: Rule => Rule.required(),
-      options: {
-        list: [
-          { title: "Ghana", value: "Ghana" },
-          { title: "Nigeria", value: "Nigeria" },
-        ],
-      },
     },
     {
       name: "order",

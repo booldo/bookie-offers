@@ -1,39 +1,44 @@
 export default {
   name: "seoSettings",
-  title: "SEO Settings (Global)",
+  title: "HomePages Metadata",
   type: "document",
+  preview: {
+    select: {
+      title: 'defaultMetaTitle',
+      subtitle: 'country'
+    }
+  },
   fields: [
     {
-      name: "robotsTxt",
-      title: "robots.txt Content",
-      type: "text",
-      description: "Content for robots.txt (editable from CMS)"
-    },
-    {
-      name: "sitemapExtraUrls",
-      title: "Extra Sitemap URLs",
-      type: "array",
-      of: [{ type: "url" }],
-      description: "Additional URLs to include in sitemap.xml"
+      name: "country",
+      title: "Country Page",
+      type: "string",
+      validation: Rule => Rule.required(),
+      options: {
+        list: [
+          { title: "Ghana", value: "Ghana" },
+          { title: "Nigeria", value: "Nigeria" },
+        ],
+      },
     },
     {
       name: "defaultMetaTitle",
-      title: "Default Meta Title",
+      title: "Default Page Title",
       type: "string"
     },
     {
       name: "defaultMetaDescription",
-      title: "Default Meta Description",
+      title: "Default Page Description",
       type: "text"
     },
     {
       name: "defaultNoindex",
-      title: "Default Noindex",
+      title: "Default Search Engine Indexing",
       type: "boolean"
     },
     {
       name: "defaultNofollow",
-      title: "Default Nofollow",
+      title: "Default Link Following",
       type: "boolean"
     },
     {
@@ -43,9 +48,22 @@ export default {
     },
     {
       name: "defaultSitemapInclude",
-      title: "Default Include in Sitemap",
+      title: "Default Sitemap Inclusion",
       type: "boolean",
       initialValue: true
+    },
+    {
+      name: "sitemapExtraUrls",
+      title: "Additional Sitemap URLs",
+      type: "array",
+      of: [{ type: "url" }],
+      description: "Additional URLs to include in sitemap.xml"
+    },
+    {
+      name: "robotsTxt",
+      title: "Robots.txt Configuration",
+      type: "text",
+      description: "Content for robots.txt"
     }
   ]
 }; 

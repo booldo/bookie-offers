@@ -33,6 +33,27 @@ export const structure: StructureResolver = (S) =>
                     .title('Nigeria Offers')
                     .filter('_type == "offers" && bookmaker->country == "Nigeria"')
                 ),
+              S.listItem()
+                .title('Homepage Metadata')
+                .child(
+                  S.documentList()
+                    .title('Nigeria Homepage Metadata')
+                    .filter('_type == "seoSettings" && country == "Nigeria"')
+                ),
+              S.listItem()
+                .title('Homepage Banners')
+                .child(
+                  S.documentList()
+                    .title('Nigeria Homepage Banners')
+                    .filter('_type == "banner" && country == "Nigeria"')
+                ),
+              S.listItem()
+                .title('Homepage Content')
+                .child(
+                  S.documentList()
+                    .title('Nigeria Homepage Content')
+                    .filter('_type == "comparison" && country == "Nigeria"')
+                ),
             ])
         ),
 
@@ -64,6 +85,27 @@ export const structure: StructureResolver = (S) =>
                     .title('Ghana Offers')
                     .filter('_type == "offers" && bookmaker->country == "Ghana"')
                 ),
+              S.listItem()
+                .title('Homepage Metadata')
+                .child(
+                  S.documentList()
+                    .title('Ghana Homepage Metadata')
+                    .filter('_type == "seoSettings" && country == "Ghana"')
+                ),
+              S.listItem()
+                .title('Homepage Banners')
+                .child(
+                  S.documentList()
+                    .title('Ghana Homepage Banners')
+                    .filter('_type == "banner" && country == "Ghana"')
+                ),
+              S.listItem()
+                .title('Homepage Content')
+                .child(
+                  S.documentList()
+                    .title('Ghana Homepage Content')
+                    .filter('_type == "comparison" && country == "Ghana"')
+                ),
             ])
         ),
 
@@ -81,13 +123,7 @@ export const structure: StructureResolver = (S) =>
                     .title('Articles')
                     .filter('_type == "article"')
                 ),
-              S.listItem()
-                .title('Banners')
-                .child(
-                  S.documentList()
-                    .title('Banners')
-                    .filter('_type == "banner"')
-                ),
+
               S.listItem()
                 .title('FAQs')
                 .child(
@@ -96,10 +132,10 @@ export const structure: StructureResolver = (S) =>
                     .filter('_type == "faq"')
                 ),
               S.listItem()
-                .title('SEO Settings')
+                .title('Homepage Metadata')
                 .child(
                   S.documentList()
-                    .title('SEO Settings')
+                    .title('Homepage Metadata')
                     .filter('_type == "seoSettings"')
                 ),
               S.listItem()
@@ -109,13 +145,7 @@ export const structure: StructureResolver = (S) =>
                     .title('Click Tracking')
                     .filter('_type == "clickTracking"')
                 ),
-              S.listItem()
-                .title('Comparisons')
-                .child(
-                  S.documentList()
-                    .title('Comparisons')
-                    .filter('_type == "comparison"')
-                ),
+
             ])
         ),
 

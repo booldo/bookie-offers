@@ -258,7 +258,7 @@ function OfferDetailsInner({ slug }) {
 
               {offer.affiliateLink && (
                 <TrackedLink
-                  href={`/go/${offer.slug?.current}`}
+                  href={`/${offer.slug?.current}`}
                   linkId={offer._id}
                   linkType="offer"
                   linkTitle={offer.title}

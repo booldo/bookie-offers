@@ -78,7 +78,7 @@ export default function Navbar() {
 
   // Search handler
   const handleSearch = async (term) => {
-    if (!term || !country) {
+    if (!term) {
       setSearchResults([]);
       setSearchLoading(false);
       return;
@@ -87,26 +87,162 @@ export default function Navbar() {
     setSearchError(null);
     addRecentSearch(term);
     try {
-      const query = `*[_type == "offers" && country == $country && (
+      let results = [];
+      
+      // Search offers (filtered by current country only)
+      if (country) {
+        const offersQuery = `*[_type == "offers" && country == $country && (
         bonusType->name match $term ||
-        bookmaker->name match $term
+          bookmaker->name match $term ||
+          pt::text(description) match $term
       )] | order(_createdAt desc) {
         _id,
         slug,
-        bonusType->{name},
-        bookmaker->{name},
+          bonusType->{
+            _id,
+            name
+          },
+          bookmaker->{
+            _id,
+            name,
+            logo,
+            paymentMethods
+          },
         country,
         maxBonus,
         minDeposit,
         description,
         expires,
         published,
-        bookmaker->{paymentMethods, logo}
+          _type
+        }`;
+        const offersResults = await client.fetch(offersQuery, { country, term: `*${term}*` });
+        console.log('Offers search results:', offersResults); // Debug log
+        results = [...results, ...offersResults];
+      }
+      
+      // Search articles (worldwide)
+      const articlesQuery = `*[_type == "article" && (
+        title match $term ||
+        pt::text(content) match $term ||
+        excerpt match $term
+      )] | order(_createdAt desc) {
+        _id,
+        slug,
+        title,
+        excerpt,
+        publishedAt,
+        _type
       }`;
-      const results = await client.fetch(query, { country, term: `*${term}*` });
-      setSearchResults(results);
+      const articlesResults = await client.fetch(articlesQuery, { term: `*${term}*` });
+      results = [...results, ...articlesResults];
+      
+      // Search bookmakers (worldwide) - only if no offers found for this bookmaker
+      const bookmakersQuery = `*[_type == "bookmaker" && (
+        name match $term ||
+        pt::text(description) match $term
+      )] | order(_createdAt desc) {
+        _id,
+        name,
+        description,
+        logo,
+        country,
+        slug,
+        _type
+      }`;
+      const bookmakersResults = await client.fetch(bookmakersQuery, { term: `*${term}*` });
+      
+      // Only add bookmaker results if we don't already have offers from these bookmakers
+      const existingBookmakerIds = results
+        .filter(item => item._type === 'offers' && item.bookmaker?._id)
+        .map(item => item.bookmaker._id);
+      
+      const uniqueBookmakers = bookmakersResults.filter(
+        bookmaker => !existingBookmakerIds.includes(bookmaker._id)
+      );
+      
+      results = [...results, ...uniqueBookmakers];
+      
+      // Search bonus types (worldwide)
+      const bonusTypesQuery = `*[_type == "bonusType" && (
+        name match $term ||
+        pt::text(description) match $term
+      )] | order(_createdAt desc) {
+        _id,
+        name,
+        description,
+        slug,
+        _type
+      }`;
+      const bonusTypesResults = await client.fetch(bonusTypesQuery, { term: `*${term}*` });
+      results = [...results, ...bonusTypesResults];
+      
+      // Search banners (current country only)
+      if (country) {
+        const bannersQuery = `*[_type == "banner" && country == $country && (
+          title match $term ||
+          pt::text(imageAlt) match $term
+        )] | order(order asc) {
+          _id,
+          title,
+          image,
+          imageAlt,
+          country,
+          order,
+          isActive,
+          _type
+        }`;
+        const bannersResults = await client.fetch(bannersQuery, { country, term: `*${term}*` });
+        results = [...results, ...bannersResults];
+      }
+      
+      // Search comparison content (current country only)
+      if (country) {
+        const comparisonQuery = `*[_type == "comparison" && country == $country && (
+          title match $term ||
+          pt::text(content) match $term
+        )] | order(order asc) {
+          _id,
+          title,
+          content,
+          country,
+          isActive,
+          order,
+          _type
+        }`;
+        const comparisonResults = await client.fetch(comparisonQuery, { country, term: `*${term}*` });
+        results = [...results, ...comparisonResults];
+      }
+      
+      // Search FAQ (worldwide)
+      const faqQuery = `*[_type == "faq" && (
+        question match $term ||
+        pt::text(answer) match $term
+      )] | order(_createdAt desc) {
+        _id,
+        question,
+        answer,
+        _type
+      }`;
+      const faqResults = await client.fetch(faqQuery, { term: `*${term}*` });
+      results = [...results, ...faqResults];
+      
+      // Deduplicate results based on _id and _type
+      const uniqueResults = results.reduce((acc, item) => {
+        const key = `${item._type}-${item._id}`;
+        if (!acc.some(existing => `${existing._type}-${existing._id}` === key)) {
+          acc.push(item);
+        }
+        return acc;
+      }, []);
+      
+      console.log('Search results before deduplication:', results.length);
+      console.log('Search results after deduplication:', uniqueResults.length);
+      console.log('Unique results:', uniqueResults.map(item => `${item._type}: ${item._id}`));
+      
+      setSearchResults(uniqueResults);
     } catch (err) {
-      setSearchError("Failed to search offers");
+      setSearchError("Failed to search content");
     } finally {
       setSearchLoading(false);
     }
@@ -125,7 +261,7 @@ export default function Navbar() {
       handleSearch(searchValue);
     }, 300);
     return () => clearTimeout(searchDebounceRef.current);
-  }, [searchValue, country, searchOpen]);
+  }, [searchValue, searchOpen]);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -261,7 +397,15 @@ export default function Navbar() {
       )}
       {/* Search Suggestion Panel + Results */}
       {searchOpen && (
-        <div className="fixed top-0 left-0 w-full bg-white z-50 px-0 sm:px-0 pt-8 pb-12 animate-slide-down min-h-screen">
+        <div 
+          className="fixed top-0 left-0 w-full bg-white z-50 px-0 sm:px-0 pt-8 pb-12 animate-slide-down overflow-y-auto max-h-screen"
+          onClick={(e) => {
+            // Prevent clicks on the overlay from interfering with card clicks
+            if (e.target === e.currentTarget) {
+              setSearchOpen(false);
+            }
+          }}
+        >
           <div className="max-w-5xl mx-auto px-4">
             <div className="flex items-center gap-4 mb-6">
               <Image src="/assets/logo.png" alt="Booldo Logo" width={100} height={40} className="hidden sm:block" />
@@ -290,34 +434,267 @@ export default function Navbar() {
               )}
               {!searchLoading && !searchError && searchResults.length > 0 && (
                 <div className="flex flex-col gap-4 mb-6">
-                  {searchResults.map((offer) => (
-                    <div
-                      key={offer._id || offer.id}
-                      className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex flex-col sm:flex-row sm:items-center justify-between transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:border-gray-200 cursor-pointer"
-                      onClick={() => {
+                  {searchResults.map((item) => {
+                    // Handle different content types
+                    const getItemTitle = () => {
+                      switch (item._type) {
+                        case 'offers':
+                          const bonusTypeName = item.bonusType?.name || 'Bonus';
+                          const bookmakerName = item.bookmaker?.name || 'Bookmaker';
+                          console.log('Offer item data:', { 
+                            bonusType: item.bonusType, 
+                            bookmaker: item.bookmaker,
+                            bonusTypeName,
+                            bookmakerName 
+                          }); // Debug log
+                          // If we have both names, show them, otherwise show what we have
+                          if (bonusTypeName && bookmakerName && bonusTypeName !== 'Bonus' && bookmakerName !== 'Bookmaker') {
+                            return `${bonusTypeName} - ${bookmakerName}`;
+                          } else if (bonusTypeName && bonusTypeName !== 'Bonus') {
+                            return `${bonusTypeName} Offer`;
+                          } else if (bookmakerName && bookmakerName !== 'Bookmaker') {
+                            return `${bookmakerName} Offer`;
+                          } else {
+                            return 'Offer';
+                          }
+                        case 'article':
+                          return item.title || 'Article';
+                        case 'bookmaker':
+                          return item.name || 'Bookmaker';
+                        case 'bonusType':
+                          return item.name || 'Bonus Type';
+                        case 'banner':
+                          return item.title || 'Banner';
+                        case 'comparison':
+                          return item.title || 'Comparison';
+                        case 'faq':
+                          return item.question || 'FAQ';
+                        default:
+                          return 'Unknown';
+                      }
+                    };
+
+                    const getItemDescription = () => {
+                      switch (item._type) {
+                        case 'offers':
+                          // Handle PortableText or string
+                          if (typeof item.description === 'string') {
+                            return item.description;
+                          } else if (item.description && Array.isArray(item.description)) {
+                            // Extract text from PortableText blocks
+                            return item.description
+                              .map(block => {
+                                if (block.children) {
+                                  return block.children.map(child => child.text).join('');
+                                }
+                                return '';
+                              })
+                              .join(' ')
+                              .substring(0, 150) + (item.description.length > 150 ? '...' : '');
+                          }
+                          return '';
+                        case 'article':
+                          return item.excerpt || '';
+                        case 'bookmaker':
+                          return item.description || '';
+                        case 'bonusType':
+                          return item.description || '';
+                        case 'banner':
+                          return item.imageAlt || '';
+                        case 'comparison':
+                          // Handle PortableText or string
+                          if (typeof item.content === 'string') {
+                            return item.content.substring(0, 150) + (item.content.length > 150 ? '...' : '');
+                          } else if (item.content && Array.isArray(item.content)) {
+                            return item.content
+                              .map(block => {
+                                if (block.children) {
+                                  return block.children.map(child => child.text).join('');
+                                }
+                                return '';
+                              })
+                              .join(' ')
+                              .substring(0, 150) + (item.content.length > 150 ? '...' : '');
+                          }
+                          return '';
+                        case 'faq':
+                          return item.answer || '';
+                        default:
+                          return '';
+                      }
+                    };
+
+                    const getItemImage = () => {
+                      switch (item._type) {
+                        case 'offers':
+                          return item.bookmaker?.logo;
+                        case 'bookmaker':
+                          return item.logo;
+                        case 'banner':
+                          return item.image;
+                        default:
+                          return null;
+                      }
+                    };
+
+                    const getItemDate = () => {
+                      switch (item._type) {
+                        case 'offers':
+                          return item.published;
+                        case 'article':
+                          return item.publishedAt;
+                        default:
+                          return '';
+                      }
+                    };
+
+                    const getItemUrl = () => {
+                      switch (item._type) {
+                        case 'offers':
+                          if (item.slug?.current) {
+                            return `/${country === "Nigeria" ? "ng" : "gh"}/offers/${item.slug.current}`;
+                          }
+                          return `/${country === "Nigeria" ? "ng" : "gh"}/offers`;
+                        case 'article':
+                          if (item.slug?.current) {
+                            return `/briefly/${item.slug.current}`;
+                          }
+                          return '/briefly';
+                        case 'bookmaker':
+                          // Use the bookmaker name to create a filter URL like the filter system
+                          if (item.name) {
+                            const bookmakerSlug = item.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+                            return `/${country === "Nigeria" ? "ng" : "gh"}/${bookmakerSlug}`;
+                          }
+                          return `/${country === "Nigeria" ? "ng" : "gh"}/offers`;
+                        case 'bonusType':
+                          if (item.slug?.current) {
+                            return `/${item.slug.current}`;
+                          }
+                          return '/';
+                        case 'banner':
+                          return `/${country === "Nigeria" ? "ng" : "gh"}`;
+                        case 'comparison':
+                          return `/${country === "Nigeria" ? "ng" : "gh"}`;
+                        case 'faq':
+                          return '/faq';
+                        default:
+                          return '/';
+                      }
+                    };
+
+                    const getItemIcon = () => {
+                      switch (item._type) {
+                        case 'offers':
+                          return (
+                            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                            </svg>
+                          );
+                        case 'article':
+                          return (
+                            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                              <polyline points="14,2 14,8 20,8"/>
+                              <line x1="16" y1="13" x2="8" y2="13"/>
+                              <line x1="16" y1="17" x2="8" y2="17"/>
+                              <polyline points="10,9 9,9 8,9"/>
+                            </svg>
+                          );
+                        case 'bookmaker':
+                          return (
+                            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                            </svg>
+                          );
+                        case 'bonusType':
+                          return (
+                            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                            </svg>
+                          );
+                        case 'banner':
+                          return (
+                            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                              <circle cx="8.5" cy="8.5" r="1.5"/>
+                              <polyline points="21,15 16,10 5,21"/>
+                            </svg>
+                          );
+                        case 'comparison':
+                          return (
+                            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                              <path d="M9 11H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2z"/>
+                              <path d="M21 11h-4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2z"/>
+                              <path d="M15 3h-4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z"/>
+                            </svg>
+                          );
+                        case 'faq':
+                          return (
+                            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                              <circle cx="12" cy="12" r="10"/>
+                              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                              <line x1="12" y1="17" x2="12.01" y2="17"/>
+                            </svg>
+                          );
+                        default:
+                          return null;
+                      }
+                    };
+
+                    return (
+                      <div
+                        key={item._id}
+                                              className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex flex-col sm:flex-row sm:items-center justify-between transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:border-gray-200 cursor-pointer group"
+                                              onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const url = getItemUrl();
+                          if (url && url !== '#') {
+                            // Close search first, then navigate
                         setSearchOpen(false);
-                        router.push(`/${country === "Nigeria" ? "ng" : "gh"}/offers?offerId=${offer.id}`);
+                            // Small delay to ensure search closes before navigation
+                            setTimeout(() => {
+                              router.replace(url);
+                            }, 100);
+                          }
                       }}
                     >
                       <div className="flex items-center gap-4">
-                        {offer.logo ? (
-                          <Image src={urlFor(offer.logo).width(48).height(48).url()} alt={offer.bookmaker} width={48} height={48} className="rounded-md" />
+                          {getItemImage() ? (
+                            <Image src={urlFor(getItemImage()).width(48).height(48).url()} alt={getItemTitle()} width={48} height={48} className="rounded-md" />
                         ) : (
-                          <div className="w-12 h-12 bg-gray-100 rounded-md" />
+                            <div className="w-12 h-12 bg-gray-100 rounded-md flex items-center justify-center">
+                              {getItemIcon()}
+                            </div>
                         )}
                         <div>
-                          <div className="font-semibold text-gray-900 text-base hover:underline cursor-pointer">{offer.title}</div>
-                          <div className="text-sm text-gray-500 mt-1">{offer.description}</div>
+                            <div className="font-semibold text-gray-900 text-base group-hover:text-green-600 transition-colors">{getItemTitle()}</div>
+                            <div className="text-sm text-gray-500 mt-1">{getItemDescription()}</div>
+                            {item._type === 'offers' && item.expires && (
                           <div className="flex items-center gap-2 text-xs text-gray-500 mt-2">
-                            <span className="inline-flex items-center gap-1"><svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg> Expires: {offer.expires}</span>
+                                <span className="inline-flex items-center gap-1">
+                                  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                                    <line x1="16" y1="2" x2="16" y2="6" />
+                                    <line x1="8" y1="2" x2="8" y2="6" />
+                                    <line x1="3" y1="10" x2="21" y2="10" />
+                                  </svg>
+                                  Expires: {item.expires}
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
+                        <div className="flex flex-col items-end mt-4 sm:mt-0">
+                          <span className="text-xs text-gray-400 mb-2">
+                            {getItemDate() && `Published: ${getItemDate()}`}
+                          </span>
+                          <span className="text-xs text-gray-400 capitalize">{item._type}</span>
                       </div>
-                      <div className="flex flex-col items-end mt-4 sm:mt-0">
-                        <span className="text-xs text-gray-400 mb-2">Published: {offer.published}</span>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
               {/* Popular Searches */}

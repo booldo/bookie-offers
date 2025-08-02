@@ -60,6 +60,19 @@ const fetchBanners = async () => {
   return await client.fetch(query);
 };
 
+// Fetch comparison content from Sanity
+const fetchComparison = async () => {
+  const query = `*[_type == "comparison" && country == "Ghana" && isActive == true] | order(order asc) {
+    _id,
+    title,
+    content,
+    country,
+    isActive,
+    order
+  }`;
+  return await client.fetch(query);
+};
+
 // Utility to get string from possible block array or string
 function getString(val) {
   if (Array.isArray(val) && val[0] && val[0].children) {
@@ -85,6 +98,7 @@ function GhanaHomeFiltersContent() {
   const [advancedOptions, setAdvancedOptions] = useState([]);
   const sortByRef = useRef();
   const [banners, setBanners] = useState([]);
+  const [comparisonContent, setComparisonContent] = useState(null);
 
   useEffect(() => {
     function handleClick(e) {
@@ -151,13 +165,20 @@ function GhanaHomeFiltersContent() {
   }, []);
 
   useEffect(() => {
-    fetchBanners().then((data) => {
+    Promise.all([fetchBanners(), fetchComparison()])
+      .then(([bannersData, comparisonData]) => {
       // Attach imageUrl using urlFor
-      setBanners(data.map(b => ({ 
+        setBanners(bannersData.map(b => ({ 
         ...b, 
         imageUrl: b.image ? urlFor(b.image).width(1200).height(200).url() : undefined,
         imageAlt: b.imageAlt || b.title
       })));
+        
+        // Get the first active comparison content
+        setComparisonContent(comparisonData.length > 0 ? comparisonData[0] : null);
+      })
+      .catch((err) => {
+        console.error("Failed to load banners or comparison content:", err);
       });
   }, []);
 
@@ -443,7 +464,7 @@ function GhanaHomeFiltersContent() {
 
         {/* Bonus Type Cards */}
         <div className="flex flex-col gap-4 mb-6">
-          {loading && <div className="text-center text-gray-400">Loading bonus types...</div>}
+          
           {error && <div className="text-center text-red-500">{error}</div>}
           {!loading && !error && sortedOffers.length === 0 && (
             <div className="text-center text-gray-400">No bonus types found.</div>
@@ -492,11 +513,14 @@ function GhanaHomeFiltersContent() {
         */}
 
         {/* Comparison Section */}
+        {comparisonContent && (
         <section className="bg-white rounded-xl p-4 sm:p-6 mb-10 shadow-sm border border-gray-100">
-          <h2 className="text-xl sm:text-2xl font-semibold mb-3">Compare the Best Betting Bonuses in Ghana</h2>
-          <p className="text-gray-600 text-sm mb-2">Looking to get the most out of your first deposit? At Booldo, we compare bonuses from Ghana's top betting sites like <span className="font-semibold">Betway Ghana</span>, <span className="font-semibold">1xBet Ghana</span>, and <span className="font-semibold">Merrybet</span>. Popular offers include Free Bets, which let you place a risk-free wager, and Deposit Bonuses, where your first deposit is matched up to a certain amount—sometimes as much as ₵500.</p>
-          <p className="text-gray-600 text-sm">Whether you're new to sports betting or just looking for the best deals, Booldo keeps you informed with up-to-date, verified offers in one place.</p>
+            <h2 className="text-xl sm:text-2xl font-semibold mb-3">{comparisonContent.title}</h2>
+            <div className="text-gray-600 text-sm">
+              <PortableText value={comparisonContent.content} />
+            </div>
         </section>
+        )}
       </main>
       <Footer />
     </div>

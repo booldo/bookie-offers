@@ -44,6 +44,19 @@ const fetchOffers = async () => {
   return await client.fetch(query);
 };
 
+// Fetch metadata from Sanity
+const fetchMetadata = async () => {
+  const query = `*[_type == "seoSettings" && country == "Ghana"][0]{
+    defaultMetaTitle,
+    defaultMetaDescription,
+    defaultNoindex,
+    defaultNofollow,
+    defaultCanonicalUrl,
+    defaultSitemapInclude
+  }`;
+  return await client.fetch(query);
+};
+
 const sortOptions = ["Latest", "A-Z"];
 
 // Fetch banners from Sanity
@@ -91,6 +104,7 @@ function GhanaHomeContent() {
   const sortByRef = useRef();
   const [banners, setBanners] = useState([]);
   const [comparisonContent, setComparisonContent] = useState(null);
+  const [metadata, setMetadata] = useState(null);
 
   useEffect(() => {
     function handleClick(e) {
@@ -104,12 +118,14 @@ function GhanaHomeContent() {
 
   useEffect(() => {
     setLoading(true);
-    fetchOffers()
-      .then((data) => {
-        setOffers(data);
+    Promise.all([fetchOffers(), fetchMetadata()])
+      .then(([offersData, metadataData]) => {
+        setOffers(offersData);
+        setMetadata(metadataData);
+        
         // Compute bonus type counts and unique bonus types
         const bonusTypeCount = {};
-        data.forEach(offer => {
+        offersData.forEach(offer => {
           const bt = offer.bonusType?.name || "Other";
           bonusTypeCount[bt] = (bonusTypeCount[bt] || 0) + 1;
         });
@@ -117,7 +133,7 @@ function GhanaHomeContent() {
         setBonusTypeOptions(bonusOptions);
         // Compute bookmaker counts and unique bookmakers
         const bookmakerCount = {};
-        data.forEach(offer => {
+        offersData.forEach(offer => {
           const bm = offer.bookmaker?.name || "Other";
           bookmakerCount[bm] = (bookmakerCount[bm] || 0) + 1;
         });
@@ -125,7 +141,7 @@ function GhanaHomeContent() {
         setBookmakerOptions(bmOptions);
         // Compute payment method counts from actual data
         const paymentMethodCount = {};
-        data.forEach(offer => {
+        offersData.forEach(offer => {
           if (Array.isArray(offer.bookmaker?.paymentMethods)) {
             offer.bookmaker.paymentMethods.forEach(pm => {
               paymentMethodCount[pm] = (paymentMethodCount[pm] || 0) + 1;
@@ -157,22 +173,20 @@ function GhanaHomeContent() {
   }, []);
 
   useEffect(() => {
-    fetchBanners().then((data) => {
+    Promise.all([fetchBanners(), fetchComparison()])
+      .then(([bannersData, comparisonData]) => {
       // Attach imageUrl using urlFor
-      setBanners(data.map(b => ({ 
+        setBanners(bannersData.map(b => ({ 
         ...b, 
         imageUrl: b.image ? urlFor(b.image).width(1200).height(200).url() : undefined,
         imageAlt: b.imageAlt || b.title
       })));
-      });
-  }, []);
-
-  useEffect(() => {
-    fetchComparison().then((data) => {
-      // Get the first active comparison content
-      setComparisonContent(data.length > 0 ? data[0] : null);
-    }).catch((err) => {
-      console.error("Failed to load comparison content:", err);
+        
+        // Get the first active comparison content
+        setComparisonContent(comparisonData.length > 0 ? comparisonData[0] : null);
+      })
+      .catch((err) => {
+        console.error("Failed to load banners or comparison content:", err);
     });
   }, []);
 
@@ -311,6 +325,15 @@ function GhanaHomeContent() {
     <div className="min-h-screen bg-[#fafbfc] flex flex-col">
       <Navbar />
       <main className="max-w-7xl mx-auto w-full px-2 sm:px-4 flex-1">
+        {/* SEO Metadata */}
+        {metadata && (
+          <>
+            <title>{metadata.defaultMetaTitle || "Best Betting Sites Ghana | Booldo"}</title>
+            <meta name="description" content={metadata.defaultMetaDescription || "Discover the best betting sites in Ghana with exclusive bonuses and offers. Compare bookmakers and find the perfect betting experience."} />
+            {metadata.defaultNoindex && <meta name="robots" content="noindex, nofollow" />}
+            {metadata.defaultCanonicalUrl && <link rel="canonical" href={metadata.defaultCanonicalUrl} />}
+          </>
+        )}
         {/* Banner Carousel - remove mt-4 and sm:mt-8 from BannerCarousel if present */}
         <div className="flex flex-col items-center">
           <BannerCarousel banners={banners} />
@@ -441,7 +464,7 @@ function GhanaHomeContent() {
 
         {/* Bonus Type Cards */}
         <div className="flex flex-col gap-4 mb-6">
-          {loading && <div className="text-center text-gray-400">Loading bonus types...</div>}
+          
           {error && <div className="text-center text-red-500">{error}</div>}
           {!loading && !error && sortedOffers.length === 0 && (
             <div className="text-center text-gray-400">No bonus types found.</div>
