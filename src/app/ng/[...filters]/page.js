@@ -10,6 +10,7 @@ import { client } from "../../../sanity/lib/client";
 import { urlFor } from "../../../sanity/lib/image";
 import BannerCarousel from "../../../components/BannerCarousel";
 import { PortableText } from '@portabletext/react';
+import OfferDetailsInner from "./OfferDetailsInner";
 
 // Fetch offers from Sanity
 const fetchOffers = async () => {
@@ -92,13 +93,16 @@ function NigeriaHomeFiltersContent() {
   const [banners, setBanners] = useState([]);
   const [comparisonContent, setComparisonContent] = useState(null);
 
+  // Check if this is an individual offer page
+  const isIndividualOffer = pathname.match(/\/ng\/[^\/]+\/[^\/]+$/);
+
   useEffect(() => {
     function handleClick(e) {
       if (sortByRef.current && !sortByRef.current.contains(e.target)) {
         setSortByOpen(false);
       }
     }
-    if (sortByOpen) document.addEventListener("mousedown", handleClick);
+    document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [sortByOpen]);
 
@@ -123,7 +127,7 @@ function NigeriaHomeFiltersContent() {
         });
         const bmOptions = Object.entries(bookmakerCount).map(([name, count]) => ({ name, count }));
         setBookmakerOptions(bmOptions);
-        // Compute payment method counts 
+        // Compute payment method counts from actual data
         const paymentMethodCount = {};
         data.forEach(offer => {
           if (Array.isArray(offer.bookmaker?.paymentMethods)) {
@@ -132,7 +136,7 @@ function NigeriaHomeFiltersContent() {
             });
           }
         });
-        // Create payment method subcategories
+        // Create payment method subcategories from actual data
         const paymentSubcategories = Object.entries(paymentMethodCount).map(([name, count]) => ({ name, count }));
         
         // Advanced options with counts for payment methods
@@ -144,8 +148,7 @@ function NigeriaHomeFiltersContent() {
           {
             name: "License",
             subcategories: [
-              { name: "Lagos State Lotteries and Gaming Authority (LSLGA) - State level" },
-              { name: "National Lottery Regulatory Commission (NLRC) - Federal" }
+              { name: "Nigerian Gaming Commission (NGC) Licenses" }
             ]
           }
         ]);
@@ -160,20 +163,20 @@ function NigeriaHomeFiltersContent() {
   useEffect(() => {
     Promise.all([fetchBanners(), fetchComparison()])
       .then(([bannersData, comparisonData]) => {
-        // Attach imageUrl using urlFor
-        setBanners(bannersData.map(b => ({ 
-          ...b, 
-          imageUrl: b.image ? urlFor(b.image).width(1200).height(200).url() : undefined,
-          imageAlt: b.imageAlt || b.title
-        })));
-        
-        // Get the first active comparison content
-        setComparisonContent(comparisonData.length > 0 ? comparisonData[0] : null);
+        setBanners(bannersData);
+        setComparisonContent(comparisonData[0] || null);
       })
       .catch((err) => {
-        console.error("Failed to load banners or comparison content:", err);
+        console.error("Failed to load banners or comparison:", err);
       });
   }, []);
+
+  // If this is an individual offer page, render the offer details
+  if (isIndividualOffer) {
+    const pathParts = pathname.split('/');
+    const slug = pathParts[pathParts.length - 1];
+    return <OfferDetailsInner slug={slug} />;
+  }
 
   // Filter logic (case-insensitive, robust)
   const filteredOffers = offers.filter((offer) => {
@@ -320,7 +323,7 @@ function NigeriaHomeFiltersContent() {
     setSelectedBonusTypes([]);
     setSelectedBookmakers([]);
     setSelectedAdvanced([]);
-    router.push("/ng/offers");
+    router.push("/ng");
   };
 
   // Utility to get string from possible block array or string
@@ -467,6 +470,15 @@ function NigeriaHomeFiltersContent() {
         <div className="flex flex-col gap-4 mb-6">
           
           {error && <div className="text-center text-red-500">{error}</div>}
+          {loading && (
+            <div className="flex justify-center items-center py-12">
+              <div className="flex space-x-2">
+                <div className="w-3 h-3 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                <div className="w-3 h-3 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                <div className="w-3 h-3 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+              </div>
+            </div>
+          )}
           {!loading && !error && sortedOffers.length === 0 && (
             <div className="text-center text-gray-400">No bonus types found.</div>
           )}
@@ -474,7 +486,7 @@ function NigeriaHomeFiltersContent() {
             <div
               key={offer._id}
               className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex flex-col transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:border-gray-200 cursor-pointer"
-              onClick={() => router.push(`/ng/offers/${offer.slug?.current}`)}
+              onClick={() => router.push(`/ng/${offer.bonusType?.name?.toLowerCase().replace(/\s+/g, '-')}/${offer.slug?.current}`)}
             >
               {/* Top row */}
               <div className="flex justify-between items-center mb-2">

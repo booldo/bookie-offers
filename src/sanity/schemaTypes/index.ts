@@ -8,6 +8,7 @@ import faq from "./faq";
 import seoSettings from "./seoSettings";
 import clickTracking from "./clickTracking";
 import comparison from "./comparison";
+import affiliate from "./affiliate";
 
 export const schemaTypes = [
   bookmaker,
@@ -19,6 +20,7 @@ export const schemaTypes = [
   seoSettings,
   clickTracking,
   comparison,
+  affiliate,
 ];
 
 export const schema: { types: SchemaTypeDefinition[] } = {

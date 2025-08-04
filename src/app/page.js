@@ -25,9 +25,10 @@ export default function Home() {
         </p>
         <div className="flex flex-col gap-4 w-full">
           {flags.filter(flag => flag.name !== "World Wide").map((flag) => (
-            <div
+            <a
               key={flag.name}
-              className="flex items-center justify-between bg-white rounded-xl p-4 shadow-sm border border-gray-100 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:border-gray-200 cursor-pointer"
+              href={flag.path}
+              className="flex items-center justify-between bg-white rounded-xl p-4 shadow-sm border border-gray-100 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:border-gray-200 cursor-pointer block"
             >
               <div className="flex items-center gap-4">
                 <Image src={flag.src} alt={flag.name} width={36} height={36} className="rounded-full" />
@@ -36,16 +37,13 @@ export default function Home() {
                   <div className="text-sm text-gray-500">Discover local offers and bookies</div>
                 </div>
               </div>
-              <a
-                href={flag.path}
-                className="inline-flex items-center text-sm font-semibold text-gray-900 hover:underline"
-              >
+              <div className="inline-flex items-center text-sm font-semibold text-gray-900">
                 View Offers
                 <svg className="ml-1" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path d="M5 12h14M12 5l7 7-7 7" />
                 </svg>
-              </a>
-            </div>
+              </div>
+            </a>
           ))}
         </div>
       </main>

@@ -54,6 +54,13 @@ export const structure: StructureResolver = (S) =>
                     .title('Nigeria Homepage Content')
                     .filter('_type == "comparison" && country == "Nigeria"')
                 ),
+              S.listItem()
+                .title('Affiliate Links')
+                .child(
+                  S.documentList()
+                    .title('Nigeria Affiliate Links')
+                    .filter('_type == "affiliate" && country == "Nigeria"')
+                ),
             ])
         ),
 
@@ -105,6 +112,13 @@ export const structure: StructureResolver = (S) =>
                   S.documentList()
                     .title('Ghana Homepage Content')
                     .filter('_type == "comparison" && country == "Ghana"')
+                ),
+              S.listItem()
+                .title('Affiliate Links')
+                .child(
+                  S.documentList()
+                    .title('Ghana Affiliate Links')
+                    .filter('_type == "affiliate" && country == "Ghana"')
                 ),
             ])
         ),

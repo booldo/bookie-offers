@@ -1,14 +1,14 @@
 "use client";
 import React, { useLayoutEffect, useRef, useEffect, useState } from "react";
-import Navbar from "../../../../components/Navbar";
-import Footer from "../../../../components/Footer";
+import Navbar from "../../../components/Navbar";
+import Footer from "../../../components/Footer";
 import Image from "next/image";
 import Link from "next/link";
-import { client } from "../../../../sanity/lib/client";
-import { urlFor } from "../../../../sanity/lib/image";
+import { client } from "../../../sanity/lib/client";
+import { urlFor } from "../../../sanity/lib/image";
 import { PortableText } from '@portabletext/react';
 import { useRouter } from "next/navigation";
-import TrackedLink from "../../../../components/TrackedLink";
+import TrackedLink from "../../../components/TrackedLink";
 
 // Custom components for PortableText
 const portableTextComponents = {
@@ -88,9 +88,10 @@ function OfferDetailsInner({ slug }) {
     // Fetch the main offer and more offers from Sanity
     const fetchData = async () => {
       try {
-        // Fetch the main offer by slug
+        // Fetch the main offer by slug with metadata fields
         const mainOfferQuery = `*[_type == "offers" && country == "Nigeria" && slug.current == $slug][0]{
           _id,
+          title,
           bonusType->{name},
           slug,
           bookmaker->{
@@ -102,97 +103,107 @@ function OfferDetailsInner({ slug }) {
             license,
             country
           },
-          country,
           maxBonus,
           minDeposit,
           description,
           expires,
           published,
+          affiliateLink->{
+            _id,
+            name,
+            affiliateUrl,
+            isActive
+          },
+          banner,
+          bannerAlt,
           terms,
           howItWorks,
           faq,
-          banner,
-          bannerAlt,
-          affiliateLink
+          metaTitle,
+          metaDescription,
+          noindex,
+          nofollow,
+          canonicalUrl,
+          sitemapInclude
         }`;
         const mainOffer = await client.fetch(mainOfferQuery, { slug });
-        
-        // Get total count of offers (excluding current one)
-        const totalCountQuery = `count(*[_type == "offers" && country == "Nigeria" && slug.current != $slug])`;
-        const total = await client.fetch(totalCountQuery, { slug });
-        setTotalOffers(total);
-        
-        // Fetch more offers, excluding the current one
-        const moreOffersQuery = `*[_type == "offers" && country == "Nigeria" && slug.current != $slug] | order(_createdAt desc)[0...$count]{
+        setOffer(mainOffer);
+
+        // Fetch more offers (excluding the current one)
+        const moreOffersQuery = `*[_type == "offers" && country == "Nigeria" && slug.current != $slug] | order(_createdAt desc) [0...$count] {
           _id,
+          title,
           bonusType->{name},
           slug,
           bookmaker->{
             _id,
             name,
             logo,
-            logoAlt,
-            paymentMethods,
-            license,
-            country
+            logoAlt
           },
-          country,
-          maxBonus,
-          minDeposit,
           description,
           expires,
-          published,
-          terms,
-          howItWorks,
-          banner,
-          bannerAlt
+          published
         }`;
-        const more = await client.fetch(moreOffersQuery, { slug, count: loadMoreCount });
-        setOffer(mainOffer);
-        setMoreOffers(more);
-        setLoading(false);
+        const moreOffersData = await client.fetch(moreOffersQuery, { slug, count: loadMoreCount });
+        setMoreOffers(moreOffersData);
+
+        // Get total count for pagination
+        const totalQuery = `count(*[_type == "offers" && country == "Nigeria" && slug.current != $slug])`;
+        const total = await client.fetch(totalQuery, { slug });
+        setTotalOffers(total);
+
       } catch (err) {
-        setError("Failed to load offer details");
+        console.error('Error fetching offer data:', err);
+        setError('Failed to load offer details');
+      } finally {
         setLoading(false);
       }
     };
+
     fetchData();
   }, [slug, loadMoreCount]);
 
+  // Restore scroll position when component mounts
+  useLayoutEffect(() => {
+    if (shouldRestoreScroll && scrollPositionRef.current > 0) {
+      window.scrollTo(0, scrollPositionRef.current);
+      setShouldRestoreScroll(false);
+    }
+  }, [shouldRestoreScroll]);
+
+  // Save scroll position before navigation
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      scrollPositionRef.current = window.scrollY;
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
+
   const handleLoadMore = async () => {
-    if (isLoadingMore) return;
     setIsLoadingMore(true);
     try {
-      const newCount = loadMoreCount + 4;
-      const moreOffersQuery = `*[_type == "offers" && country == "Nigeria" && slug.current != $slug] | order(_createdAt desc)[$count...$newCount]{
+      const moreOffersQuery = `*[_type == "offers" && country == "Nigeria" && slug.current != $slug] | order(_createdAt desc) [0...$count] {
         _id,
+        title,
         bonusType->{name},
         slug,
         bookmaker->{
           _id,
           name,
           logo,
-          logoAlt,
-          paymentMethods,
-          license,
-          country
+          logoAlt
         },
-        country,
-        maxBonus,
-        minDeposit,
         description,
         expires,
-        published,
-        terms,
-        howItWorks,
-        banner,
-        bannerAlt
+        published
       }`;
-      const more = await client.fetch(moreOffersQuery, { slug, count: loadMoreCount, newCount });
-      setMoreOffers(more);
-      setLoadMoreCount(newCount);
+      const moreOffersData = await client.fetch(moreOffersQuery, { slug, count: loadMoreCount + 4 });
+      setMoreOffers(moreOffersData);
+      setLoadMoreCount(prev => prev + 4);
     } catch (err) {
-      console.error("Failed to load more offers:", err);
+      console.error('Error loading more offers:', err);
     } finally {
       setIsLoadingMore(false);
     }
@@ -206,6 +217,15 @@ function OfferDetailsInner({ slug }) {
     <div className="min-h-screen bg-[#fafbfc] flex flex-col">
       <Navbar />
       <main className="max-w-7xl mx-auto w-full px-2 sm:px-4 flex-1">
+        {loading && (
+          <div className="flex justify-center items-center py-20">
+            <div className="flex space-x-2">
+              <div className="w-3 h-3 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+              <div className="w-3 h-3 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+              <div className="w-3 h-3 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+            </div>
+          </div>
+        )}
         {/* Individual Offer Banner */}
         {!loading && !error && offer && offer.banner && (
           <div className="mt-6 mb-6">
@@ -219,14 +239,20 @@ function OfferDetailsInner({ slug }) {
           </div>
         )}
         
+        {/* Updated Breadcrumb */}
         <div className="mt-6 mb-4 flex items-center gap-2 text-sm text-gray-500 ml-2">
           <button type="button" onClick={() => router.back()} className="hover:underline flex items-center gap-1">
-            <Image src="/assets/back-arrow.png" alt="Back" width={24} height={24} />
+            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
             Home
           </button>
           <span className="mx-1">|</span>
           <span className="text-gray-700 font-medium">{offer?.bonusType?.name || "Bonus"}</span>
+          <span className="mx-1">|</span>
+          <span className="text-gray-700 font-medium">{offer?.title || "Offer"}</span>
         </div>
+        
         {/* Offer Card */}
         {error && <div className="text-center text-red-500">{error}</div>}
         {!error && offer && (
@@ -246,7 +272,7 @@ function OfferDetailsInner({ slug }) {
                 <span className="text-gray-500 text-sm">Published: {offer.published}</span>
               </div>
 
-              <h1 className="text-2xl font-bold text-gray-900 mb-2 sm:order-2">{offer.bonusType?.name}</h1>
+              <h1 className="text-2xl font-bold text-gray-900 mb-2 sm:order-2">{offer.title}</h1>
               <div className="text-gray-700 mb-4 sm:order-3">
                 {offer.description && <PortableText value={offer.description} components={portableTextComponents} />}
               </div>
@@ -256,9 +282,9 @@ function OfferDetailsInner({ slug }) {
                 <span className="text-green-700 text-sm font-medium">Expires: {offer.expires}</span>
               </div>
 
-              {offer.affiliateLink && (
+              {offer.affiliateLink?.affiliateUrl && offer.affiliateLink?.isActive && (
                 <TrackedLink
-                  href={`/${offer.slug?.current}`}
+                  href={offer.affiliateLink.affiliateUrl}
                   linkId={offer._id}
                   linkType="offer"
                   linkTitle={offer.title}
@@ -292,36 +318,27 @@ function OfferDetailsInner({ slug }) {
                   </div>
                 </div>
               )}
-              {/* Terms & Condition */}
+
+              {/* Terms and Conditions */}
               {offer.terms && (
                 <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6 sm:order-8">
+                  <div className="font-semibold text-gray-900 mb-3">Terms and Conditions</div>
                   <div className="text-gray-700 text-sm">
-                    {offer.terms && <PortableText value={offer.terms} components={portableTextComponents} />}
+                    <PortableText value={offer.terms} components={portableTextComponents} />
                   </div>
                 </div>
               )}
-              {/* License */}
-              {offer.bookmaker?.license && offer.bookmaker.license.length > 0 && (
-                <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6 sm:order-9">
-                  <div className="font-semibold text-gray-900 mb-1">License</div>
-                  <ul className="list-disc list-inside text-gray-700 text-sm space-y-1 pl-4">
-                    {offer.bookmaker.license.map((license, i) => (
-                      <li key={i}>{license}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
 
-              {/* FAQ */}
+              {/* FAQ Section */}
               {offer.faq && offer.faq.length > 0 && (
-                <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6 mt-6 order-10">
+                <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6 sm:order-9">
                   <div className="font-semibold text-gray-900 mb-4">Frequently Asked Questions</div>
                   <div className="space-y-3">
-                    {offer.faq.map((item, index) => (
+                    {offer.faq.map((faqItem, index) => (
                       <FAQItem 
                         key={index} 
-                        question={item.question} 
-                        answer={item.answer}
+                        question={faqItem.question}
+                        answer={faqItem.answer}
                         isOpen={openFAQIndex === index}
                         onToggle={() => handleFAQToggle(index)}
                       />
@@ -330,52 +347,54 @@ function OfferDetailsInner({ slug }) {
                 </div>
               )}
             </div>
-          </>
-        )}
-        {/* More Offers */}
-        {!loading && !error && moreOffers.length > 0 && (
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-10">
-            <div className="font-semibold text-lg text-gray-900 mb-3">More Offers</div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {moreOffers.map((o) => (
-                <Link
-                  key={o._id || o.id}
-                  href={`/ng/offers/${o.slug?.current}`}
-                  scroll={false}
-                  className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex flex-col justify-between transition cursor-pointer hover:bg-gray-50 hover:shadow-lg hover:scale-[1.03] focus:outline-none focus:ring-2 focus:ring-green-500"
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    {o.bookmaker?.logo ? (
-                      <Image src={urlFor(o.bookmaker.logo).width(28).height(28).url()} alt={o.bookmaker.logoAlt || o.bookmaker.name} width={28} height={28} className="rounded-md" />
-                    ) : (
-                      <div className="w-7 h-7 bg-gray-100 rounded-md" />
-                    )}
-                    <span className="font-semibold text-gray-900 text-base">{o.bookmaker?.name}</span>
-                    <span className="ml-auto text-xs text-gray-500">Published: {o.published}</span>
+
+            {/* More Offers Section */}
+            {moreOffers.length > 0 && (
+              <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6">
+                <div className="font-semibold text-gray-900 mb-4">More Offers</div>
+                <div className="space-y-4">
+                  {moreOffers.map((moreOffer) => (
+                    <div
+                      key={moreOffer._id}
+                      className="border border-gray-100 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                      onClick={() => router.push(`/ng/${moreOffer.bonusType?.name?.toLowerCase().replace(/\s+/g, '-')}/${moreOffer.slug?.current}`)}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-center gap-3">
+                          {moreOffer.bookmaker?.logo ? (
+                            <Image src={urlFor(moreOffer.bookmaker.logo).width(32).height(32).url()} alt={moreOffer.bookmaker.name} width={32} height={32} className="rounded-md" />
+                          ) : (
+                            <div className="w-8 h-8 bg-gray-100 rounded-md" />
+                          )}
+                          <div>
+                            <div className="font-semibold text-gray-900">{moreOffer.bookmaker?.name}</div>
+                            <div className="text-sm text-gray-600">{moreOffer.title}</div>
+                          </div>
+                        </div>
+                        <span className="text-xs text-gray-500">Published: {moreOffer.published}</span>
+                      </div>
+                      {moreOffer.description && (
+                        <div className="mt-2 text-sm text-gray-600">
+                          <PortableText value={moreOffer.description} components={portableTextComponents} />
                   </div>
-                  <div className="font-semibold text-gray-900 text-sm mb-1">{o.title}</div>
-                  <div className="text-xs text-gray-500 mb-2">
-                    {o.description && <PortableText value={o.description} />}
+                      )}
                   </div>
-                  <span className="flex items-center gap-1 text-green-700 text-xs font-medium">
-                    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
-                    Expires: {o.expires}
-                  </span>
-                </Link>
               ))}
             </div>
-            <div className="flex justify-center mt-6">
-              {loadMoreCount < totalOffers && (
+                {totalOffers > loadMoreCount && (
+                  <div className="mt-4 text-center">
                 <button 
                   onClick={handleLoadMore}
-                  className="px-6 py-2 rounded-lg border border-gray-200 bg-white text-gray-700 font-medium hover:bg-gray-50 transition" 
                   disabled={isLoadingMore}
+                      className="text-green-600 hover:text-green-700 font-medium disabled:opacity-50"
                 >
-                  {isLoadingMore ? "Loading..." : "Load More"}
+                      {isLoadingMore ? 'Loading...' : `Load ${Math.min(4, totalOffers - loadMoreCount)} more offers`}
                 </button>
+                  </div>
               )}
             </div>
-          </div>
+            )}
+          </>
         )}
       </main>
       <Footer />

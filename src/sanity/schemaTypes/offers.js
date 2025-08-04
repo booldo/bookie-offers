@@ -30,21 +30,28 @@ export default {
   }),
   preview: {
     select: {
-      bonusTypeName: 'bonusType.name',
+      title: 'title',
       bookmakerName: 'bookmaker.name',
       country: 'country',
       media: 'banner'
     },
     prepare(selection) {
-      const {bonusTypeName, bookmakerName, country} = selection
+      const {title, bookmakerName, country} = selection
       return {
-        title: bonusTypeName && bookmakerName ? `${bonusTypeName} - ${bookmakerName}` : 'Untitled Offer',
+        title: title && bookmakerName ? `${title} - ${bookmakerName}` : 'Untitled Offer',
         subtitle: country,
         media: selection.media
       }
     }
   },
   fields: [
+    {
+      name: "title",
+      title: "Offer Title",
+      type: "string",
+      validation: Rule => Rule.required(),
+      description: "The name of this offer (e.g., 'Get a €5 Free Bet Every Weekend with 1BET!')"
+    },
     {
       name: "country",
       title: "Country",
@@ -61,6 +68,7 @@ export default {
       name: "bonusType",
       title: "Bonus Type",
       type: "reference",
+      description: "The type of bonus this offer is (e.g., 'Free Bet', 'Deposit Bonus', 'Risk-Free Bet')",
       to: [{ type: "bonusType" }],
       validation: Rule => Rule.required(),
       options: {
@@ -95,7 +103,25 @@ export default {
         }
       }
     },
-    { name: "affiliateLink", title: "Affiliate Link", type: "url", description: "Affiliate/tracking link for the offer (Get Bonus)" },
+    {
+      name: "affiliateLink",
+      title: "Affiliate Link",
+      type: "reference",
+      to: [{ type: "affiliate" }],
+      description: "Select an affiliate link for this offer",
+      options: {
+        filter: ({document}) => {
+          // If no bookmaker is selected, show all affiliate links
+          if (!document?.bookmaker?._ref) return {}
+          
+          // Filter affiliate links by the selected bookmaker and active status
+          return {
+            filter: 'bookmaker._ref == $bookmakerId && isActive == true',
+            params: { bookmakerId: document.bookmaker._ref }
+          }
+        }
+      }
+    },
     {
       name: "slug",
       title: "Slug",
@@ -105,18 +131,8 @@ export default {
           const { getClient } = context;
           const client = getClient({ apiVersion: '2023-05-03' });
           
-          // Get the bonus type name
-          let bonusTypeName = "unknown";
-          if (doc.bonusType?._ref) {
-            try {
-              const bonusType = await client.fetch(`*[_type == "bonusType" && _id == $id][0]{
-                name
-              }`, { id: doc.bonusType._ref });
-              bonusTypeName = bonusType?.name || "unknown";
-            } catch (error) {
-              console.error("Error fetching bonus type:", error);
-            }
-          }
+          // Get the offer title
+          const offerTitle = doc.title || "unknown";
           
           // Get the bookmaker name
           let bookmakerName = "unknown";
@@ -135,9 +151,8 @@ export default {
           const today = new Date();
           const dateString = today.toISOString().split('T')[0]; // YYYY-MM-DD format
           
-          // Create slug: bonus-type-bookmaker-country-date
-          const country = doc.country || "unknown";
-          const slug = `${bonusTypeName.toLowerCase().replace(/\s+/g, '-')}-${bookmakerName.toLowerCase().replace(/\s+/g, '-')}-${country.toLowerCase()}-${dateString}`;
+          // Create slug: title-bookmaker-date
+          const slug = `${offerTitle.toLowerCase().replace(/\s+/g, '-')}-${bookmakerName.toLowerCase().replace(/\s+/g, '-')}-${dateString}`;
           
           return slug;
         },

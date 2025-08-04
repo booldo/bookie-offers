@@ -1,7 +1,7 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 
-export default function MultiSelectDropdown({ label, options, selected, setSelected, showCount = false, nested = false }) {
+export default function MultiSelectDropdown({ label, options, selected, setSelected, showCount = false, nested = false, loading = false }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [expandedCategories, setExpandedCategories] = useState({});
@@ -55,10 +55,27 @@ export default function MultiSelectDropdown({ label, options, selected, setSelec
             </div>
           )}
           <div className="flex flex-col gap-1 px-1">
-            {!nested && filtered.length === 0 && (
+                         {loading && (
+               <div className="flex justify-center items-center py-4">
+                 <div className="flex space-x-1">
+                   <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                   <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                   <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                 </div>
+               </div>
+             )}
+            {!loading && !nested && filtered.length === 0 && (
               <div className="text-gray-400 text-sm px-3 py-2">No results</div>
             )}
-            {nested ? (
+                         {loading ? (
+               <div className="flex justify-center items-center py-4">
+                 <div className="flex space-x-1">
+                   <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                   <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                   <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                 </div>
+               </div>
+             ) : nested ? (
               // Nested structure with collapsible categories
               options.map((category) => (
                 <div key={category.name} className="border-b border-gray-100 last:border-b-0">
@@ -98,7 +115,7 @@ export default function MultiSelectDropdown({ label, options, selected, setSelec
                   )}
                 </div>
               ))
-            ) : (
+            ) : !loading ? (
               // Regular flat structure
               filtered.map((b) => (
                 <label key={b.name} className="flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-50 transition">
@@ -114,7 +131,7 @@ export default function MultiSelectDropdown({ label, options, selected, setSelec
                   )}
                 </label>
               ))
-            )}
+            ) : null}
           </div>
     </div>
   );
@@ -125,11 +142,20 @@ export default function MultiSelectDropdown({ label, options, selected, setSelec
         type="button"
         className="w-full bg-white border border-gray-200 rounded-lg px-2 sm:px-3 py-2 text-left text-xs sm:text-sm flex items-center justify-between shadow-sm hover:border-gray-300 focus:outline-none"
         onClick={() => setOpen((v) => !v)}
+        disabled={loading}
       >
         <span className="truncate text-gray-700">
           {selected.length === 0 ? label : selected.join(", ")}
         </span>
-        <svg className={`ml-1 sm:ml-2 w-4 h-4 transition-transform ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" /></svg>
+                 {loading ? (
+           <div className="flex space-x-1 ml-1 sm:ml-2">
+             <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+             <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+             <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+           </div>
+         ) : (
+          <svg className={`ml-1 sm:ml-2 w-4 h-4 transition-transform ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" /></svg>
+        )}
       </button>
 
       {/* Mobile slide-up panel */}

@@ -1,14 +1,14 @@
 "use client";
 import React, { useLayoutEffect, useRef, useEffect, useState } from "react";
-import Navbar from "../../../../components/Navbar";
-import Footer from "../../../../components/Footer";
+import Navbar from "../../../components/Navbar";
+import Footer from "../../../components/Footer";
 import Image from "next/image";
 import Link from "next/link";
-import { client } from "../../../../sanity/lib/client";
-import { urlFor } from "../../../../sanity/lib/image";
+import { client } from "../../../sanity/lib/client";
+import { urlFor } from "../../../sanity/lib/image";
 import { PortableText } from '@portabletext/react';
 import { useRouter } from "next/navigation";
-import TrackedLink from "../../../../components/TrackedLink";
+import TrackedLink from "../../../components/TrackedLink";
 
 // Custom components for PortableText
 const portableTextComponents = {
@@ -88,9 +88,10 @@ function OfferDetailsInner({ slug }) {
     // Fetch the main offer and more offers from Sanity
     const fetchData = async () => {
       try {
-        // Fetch the main offer by slug
+        // Fetch the main offer by slug with metadata fields
         const mainOfferQuery = `*[_type == "offers" && country == "Ghana" && slug.current == $slug][0]{
           _id,
+          title,
           bonusType->{name},
           slug,
           bookmaker->{
@@ -102,28 +103,34 @@ function OfferDetailsInner({ slug }) {
             license,
             country
           },
-          country,
           maxBonus,
           minDeposit,
           description,
           expires,
           published,
+          affiliateLink->{
+            _id,
+            name,
+            affiliateUrl,
+            isActive
+          },
+          banner,
+          bannerAlt,
           terms,
           howItWorks,
           faq,
-          banner,
-          bannerAlt,
-          affiliateLink
+          metaTitle,
+          metaDescription,
+          noindex,
+          nofollow,
+          canonicalUrl,
+          sitemapInclude
         }`;
         const mainOffer = await client.fetch(mainOfferQuery, { slug });
-        
-        // Get total count of offers (excluding current one)
-        const totalCountQuery = `count(*[_type == "offers" && country == "Ghana" && slug.current != $slug])`;
-        const total = await client.fetch(totalCountQuery, { slug });
-        setTotalOffers(total);
-        
-        // Fetch more offers, excluding the current one
-        const moreOffersQuery = `*[_type == "offers" && country == "Ghana" && slug.current != $slug] | order(_createdAt desc)[0...$count]{
+        setOffer(mainOffer);
+
+        // Fetch more offers (excluding the current one)
+        const moreOffersQuery = `*[_type == "offers" && country == "Ghana" && slug.current != $slug] | order(_createdAt desc) [0...$count] {
           _id,
           bonusType->{name},
           slug,
@@ -131,40 +138,53 @@ function OfferDetailsInner({ slug }) {
             _id,
             name,
             logo,
-            logoAlt,
-            paymentMethods,
-            license,
-            country
+            logoAlt
           },
-          country,
-          maxBonus,
-          minDeposit,
+          title,
           description,
           expires,
-          published,
-          terms,
-          howItWorks,
-          banner,
-          bannerAlt
+          published
         }`;
-        const more = await client.fetch(moreOffersQuery, { slug, count: loadMoreCount });
-        setOffer(mainOffer);
-        setMoreOffers(more);
-        setLoading(false);
+        const moreOffersData = await client.fetch(moreOffersQuery, { slug, count: loadMoreCount });
+        setMoreOffers(moreOffersData);
+
+        // Get total count for pagination
+        const totalQuery = `count(*[_type == "offers" && country == "Ghana" && slug.current != $slug])`;
+        const total = await client.fetch(totalQuery, { slug });
+        setTotalOffers(total);
+
       } catch (err) {
-        setError("Failed to load offer details");
+        console.error('Error fetching offer data:', err);
+        setError('Failed to load offer details');
+      } finally {
         setLoading(false);
       }
     };
+
     fetchData();
   }, [slug, loadMoreCount]);
 
+  // Restore scroll position when component mounts
+  useLayoutEffect(() => {
+    if (shouldRestoreScroll && scrollPositionRef.current > 0) {
+      window.scrollTo(0, scrollPositionRef.current);
+      setShouldRestoreScroll(false);
+    }
+  }, [shouldRestoreScroll]);
+
+  // Save scroll position before navigation
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      scrollPositionRef.current = window.scrollY;
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
+
   const handleLoadMore = async () => {
-    if (isLoadingMore) return;
     setIsLoadingMore(true);
     try {
-      const newCount = loadMoreCount + 4;
-      const moreOffersQuery = `*[_type == "offers" && country == "Ghana" && slug.current != $slug] | order(_createdAt desc)[$count...$newCount]{
+      const moreOffersQuery = `*[_type == "offers" && country == "Ghana" && slug.current != $slug] | order(_createdAt desc) [0...$count] {
         _id,
         bonusType->{name},
         slug,
@@ -172,27 +192,18 @@ function OfferDetailsInner({ slug }) {
           _id,
           name,
           logo,
-          logoAlt,
-          paymentMethods,
-          license,
-          country
+          logoAlt
         },
-        country,
-        maxBonus,
-        minDeposit,
+        title,
         description,
         expires,
-        published,
-        terms,
-        howItWorks,
-        banner,
-        bannerAlt
+        published
       }`;
-      const more = await client.fetch(moreOffersQuery, { slug, count: loadMoreCount, newCount });
-      setMoreOffers(more);
-      setLoadMoreCount(newCount);
+      const moreOffersData = await client.fetch(moreOffersQuery, { slug, count: loadMoreCount + 4 });
+      setMoreOffers(moreOffersData);
+      setLoadMoreCount(prev => prev + 4);
     } catch (err) {
-      console.error("Failed to load more offers:", err);
+      console.error('Error loading more offers:', err);
     } finally {
       setIsLoadingMore(false);
     }
@@ -206,6 +217,15 @@ function OfferDetailsInner({ slug }) {
     <div className="min-h-screen bg-[#fafbfc] flex flex-col">
       <Navbar />
       <main className="max-w-7xl mx-auto w-full px-2 sm:px-4 flex-1">
+        {loading && (
+          <div className="flex justify-center items-center py-20">
+            <div className="flex space-x-2">
+              <div className="w-3 h-3 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+              <div className="w-3 h-3 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+              <div className="w-3 h-3 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+            </div>
+          </div>
+        )}
         {/* Individual Offer Banner */}
         {!loading && !error && offer && offer.banner && (
           <div className="mt-6 mb-6">
@@ -219,13 +239,18 @@ function OfferDetailsInner({ slug }) {
           </div>
         )}
         
+        {/* Updated Breadcrumb */}
         <div className="mt-6 mb-4 flex items-center gap-2 text-sm text-gray-500 ml-2">
           <button type="button" onClick={() => router.back()} className="hover:underline flex items-center gap-1">
-            <Image src="/assets/back-arrow.png" alt="Back" width={24} height={24} />
+            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
             Home
           </button>
           <span className="mx-1">|</span>
           <span className="text-gray-700 font-medium">{offer?.bonusType?.name || "Bonus"}</span>
+          <span className="mx-1">|</span>
+          <span className="text-gray-700 font-medium">{offer?.title || "Offer"}</span>
         </div>
         {/* Offer Card */}
         {error && <div className="text-center text-red-500">{error}</div>}
@@ -246,7 +271,7 @@ function OfferDetailsInner({ slug }) {
                 <span className="text-gray-500 text-sm">Published: {offer.published}</span>
               </div>
 
-              <h1 className="text-2xl font-bold text-gray-900 mb-2 sm:order-2">{offer.bonusType?.name}</h1>
+              <h1 className="text-2xl font-bold text-gray-900 mb-2 sm:order-2">{offer.title}</h1>
               <div className="text-gray-700 mb-4 sm:order-3">
                 {offer.description && <PortableText value={offer.description} components={portableTextComponents} />}
               </div>
@@ -256,9 +281,9 @@ function OfferDetailsInner({ slug }) {
                 <span className="text-green-700 text-sm font-medium">Expires: {offer.expires}</span>
               </div>
 
-              {offer.affiliateLink && (
+              {offer.affiliateLink?.affiliateUrl && offer.affiliateLink?.isActive && (
                 <TrackedLink
-                  href={`/${offer.slug?.current}`}
+                  href={offer.affiliateLink.affiliateUrl}
                   linkId={offer._id}
                   linkType="offer"
                   linkTitle={offer.title}
@@ -340,7 +365,7 @@ function OfferDetailsInner({ slug }) {
               {moreOffers.map((o) => (
                 <Link
                   key={o._id || o.id}
-                  href={`/gh/offers/${o.slug?.current}`}
+                  href={`/gh/offers/${o.bonusType?.name?.toLowerCase().replace(/\s+/g, '-')}/${o.slug?.current}`}
                   scroll={false}
                   className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex flex-col justify-between transition cursor-pointer hover:bg-gray-50 hover:shadow-lg hover:scale-[1.03] focus:outline-none focus:ring-2 focus:ring-green-500"
                 >
