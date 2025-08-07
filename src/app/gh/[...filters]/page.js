@@ -18,6 +18,7 @@ const fetchOffers = async () => {
   const query = `*[_type == "offers" && country == "Ghana"] | order(_createdAt desc) {
     _id,
     slug,
+    title,
     bonusType->{
       _id,
       name
@@ -41,7 +42,8 @@ const fetchOffers = async () => {
     bannerAlt,
     terms,
     howItWorks,
-    faq
+    faq,
+    offerSummary
   }`;
   return await client.fetch(query);
 };
@@ -510,11 +512,11 @@ function GhanaHomeFiltersContent() {
               </div>
 
               {/* Title */}
-              <h3 className="font-semibold text-green-700 text-lg hover:underline cursor-pointer mb-1">{offer.bonusType?.name}</h3>
+              <h3 className="font-semibold text-green-700 text-lg hover:underline cursor-pointer mb-1">{offer.title}</h3>
 
               {/* Description */}
               <div className="text-sm text-gray-500 mb-2">
-                {offer.description && <PortableText value={offer.description} />}
+                {offer.offerSummary && <PortableText value={offer.offerSummary} />}
               </div>
 
               {/* Expires */}

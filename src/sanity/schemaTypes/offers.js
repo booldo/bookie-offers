@@ -5,17 +5,19 @@ export default {
   validation: Rule => Rule.custom((doc, context) => {
     if (!doc?.slug?.current) return true // Skip validation if slug is missing
     
-    // Check if another offer with the same slug exists
     const { getClient } = context
     const client = getClient({ apiVersion: '2023-05-03' })
-    
-    // Exclude the current document being edited
+
+    // Exclude both draft and published versions of the current document
     const currentId = doc._id || 'draft'
-    const query = `count(*[_type == "offers" && slug.current == $slug && _id != $currentId])`
-    
-    return client.fetch(query, { 
+    const draftId = currentId.startsWith('drafts.') ? currentId : `drafts.${currentId}`
+    const publishedId = currentId.replace(/^drafts\./, '')
+    const query = `count(*[_type == "offers" && slug.current == $slug && !(_id in [$draftId, $publishedId])])`
+
+    return client.fetch(query, {
       slug: doc.slug.current,
-      currentId 
+      draftId,
+      publishedId
     })
       .then(count => {
         if (count > 0) {
@@ -169,8 +171,16 @@ export default {
     { name: "maxBonus", title: "Max Bonus", type: "number" },
     { name: "minDeposit", title: "Min Deposit", type: "number" },
     {
+      name: "offerSummary",
+      title: "Text Block 1 (offer summary)",
+      type: "array",
+      of: [{ type: "block" }],
+      validation: Rule => Rule.required(),
+      description: "A short summary of this offer (portable text, shown above the description)"
+    },
+    {
       name: "description",
-      title: "Text Block 1 (offer description)",
+      title: "Text Block 2 (offer description)",
       type: "array",
       of: [{ type: "block" }]
     },
@@ -180,13 +190,13 @@ export default {
     { name: "bannerAlt", title: "Banner Alt Text", type: "string", description: "Alternative text for accessibility and SEO" },
     {
       name: "howItWorks",
-      title: "Text Block 2 (how it works)",
+      title: "Text Block 3 (how it works)",
       type: "array",
       of: [{ type: "block" }]
     },
     {
       name: "terms",
-      title: "Text Block 3 (terms and conditions)",
+      title: "Text Block 4 (terms and conditions)",
       type: "array",
       of: [{ type: "block" }]
     },

@@ -125,7 +125,8 @@ function OfferDetailsInner({ slug }) {
           noindex,
           nofollow,
           canonicalUrl,
-          sitemapInclude
+          sitemapInclude,
+          offerSummary
         }`;
         const mainOffer = await client.fetch(mainOfferQuery, { slug });
         setOffer(mainOffer);
@@ -252,157 +253,102 @@ function OfferDetailsInner({ slug }) {
             />
           </div>
         )}
-        {/* Offer Card */}
+        {/* Offer Card (below banner, above how it works) */}
         {error && <div className="text-center text-red-500">{error}</div>}
         {!error && offer && (
-          <>
-            {/* Offer Card */}
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6 flex flex-col">
-              {/* Top row */}
-              <div className="flex justify-between items-center mb-4 sm:order-1">
-                <div className="flex items-center gap-3">
-                  {offer.bookmaker?.logo ? (
-                    <Image src={urlFor(offer.bookmaker.logo).width(40).height(40).url()} alt={offer.bookmaker.logoAlt || offer.bookmaker.name} width={40} height={40} className="rounded-md" />
-                  ) : (
-                    <div className="w-10 h-10 bg-gray-100 rounded-md" />
-                  )}
-                  <span className="font-semibold text-gray-900 text-lg">{offer.bookmaker?.name}</span>
-                </div>
-                <span className="text-gray-500 text-sm">Published: {formatDate(offer.published)}</span>
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6 flex flex-col">
+            <div className="flex justify-between items-center mb-4 sm:order-1">
+              <div className="flex items-center gap-3">
+                {offer.bookmaker?.logo ? (
+                  <Image src={urlFor(offer.bookmaker.logo).width(40).height(40).url()} alt={offer.bookmaker.logoAlt || offer.bookmaker.name} width={40} height={40} className="rounded-md" />
+                ) : (
+                  <div className="w-10 h-10 bg-gray-100 rounded-md" />
+                )}
+                <span className="font-semibold text-gray-900 text-lg">{offer.bookmaker?.name}</span>
               </div>
-
-              <h1 className="text-2xl font-bold text-gray-900 mb-2 sm:order-2">{offer.title}</h1>
-              <div className="text-gray-700 mb-4 sm:order-3">
-                {offer.description && <PortableText value={offer.description} components={portableTextComponents} />}
-              </div>
-              
-              <div className="flex items-center gap-2 mb-6 sm:order-4">
-                <img src="/assets/calendar.png" alt="Calendar" width="18" height="18" />
-                <span className="text-black text-sm">Expires: {formatDate(offer.expires)}</span>
-              </div>
-
-              {offer.affiliateLink?.affiliateUrl && offer.affiliateLink?.isActive && (
-                <TrackedLink
-                  href={offer.affiliateLink.affiliateUrl}
-                  linkId={offer._id}
-                  linkType="offer"
-                  linkTitle={offer.title}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  isAffiliate={true}
-                  offerSlug={`gh/${offer.slug?.current}`}
-                  className="w-full sm:w-fit sm:px-6 bg-[#018651] hover:bg-[#017a4a] text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 mb-6 sm:order-5"
-                >
-                  Get Bonus
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                  </svg>
-                </TrackedLink>
-              )}
-
-              {/* How it works */}
-              {offer.howItWorks && (
-                <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6 sm:order-6">
-                  <div className="text-gray-700 text-sm">
-                    {offer.howItWorks && <PortableText value={offer.howItWorks} components={portableTextComponents} />}
-                  </div>
-                </div>
-              )}
-              {/* Payment Method */}
-              {offer.bookmaker?.paymentMethods && offer.bookmaker.paymentMethods.length > 0 && (
-                <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6 sm:order-7">
-                  <div className="font-semibold text-gray-900 mb-1">Payment Method</div>
-                  <div className="flex flex-wrap gap-2 text-gray-700 text-sm">
-                    {offer.bookmaker.paymentMethods.map((pm, i) => (
-                      <span key={i} className="border border-gray-200 rounded px-2 py-1 bg-gray-50">{pm}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {/* Terms & Condition */}
-              {offer.terms && (
-                <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6 sm:order-8">
-                  <div className="text-gray-700 text-sm">
-                    {offer.terms && <PortableText value={offer.terms} components={portableTextComponents} />}
-                  </div>
-                </div>
-              )}
-              {/* License */}
-              {offer.bookmaker?.license && offer.bookmaker.license.length > 0 && (
-                <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6 sm:order-9">
-                  <div className="font-semibold text-gray-900 mb-1">License</div>
-                  <ul className="list-disc list-inside text-gray-700 text-sm space-y-1 pl-4">
-                    {offer.bookmaker.license.map((license, i) => (
-                      <li key={i}>{license}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* FAQ */}
-              {offer.faq && offer.faq.length > 0 && (
-                <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6 mt-6 order-10">
-                  <div className="font-semibold text-gray-900 mb-4">Frequently Asked Questions</div>
-                  <div className="space-y-3">
-                    {offer.faq.map((item, index) => (
-                      <FAQItem 
-                        key={index} 
-                        question={item.question} 
-                        answer={item.answer}
-                        isOpen={openFAQIndex === index}
-                        onToggle={() => handleFAQToggle(index)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
+              <span className="text-gray-500 text-sm">Published: {formatDate(offer.published)}</span>
             </div>
-          </>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2 sm:order-2">{offer.title}</h1>
+            <div className="text-gray-700 mb-4 sm:order-3">
+              {offer.description && <PortableText value={offer.description} components={portableTextComponents} />}
+            </div>
+            <div className="flex items-center gap-2 mb-6 sm:order-4">
+              <img src="/assets/calendar.png" alt="Calendar" width="18" height="18" />
+              <span className="text-black text-sm">Expires: {formatDate(offer.expires)}</span>
+            </div>
+            {offer.affiliateLink?.affiliateUrl && offer.affiliateLink?.isActive && (
+              <TrackedLink
+                href={offer.affiliateLink.affiliateUrl}
+                linkId={offer._id}
+                linkType="offer"
+                linkTitle={offer.title}
+                target="_blank"
+                rel="noopener noreferrer"
+                isAffiliate={true}
+                offerSlug={`gh/${offer.slug?.current}`}
+                className="w-full sm:w-fit sm:px-6 bg-[#018651] hover:bg-[#017a4a] text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 mb-6 sm:order-5"
+              >
+                Get Bonus
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </TrackedLink>
+            )}
+          </div>
         )}
-        {/* More Offers */}
-        {!loading && !error && moreOffers.length > 0 && (
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-10">
-            <div className="font-semibold text-lg text-gray-900 mb-3">More Offers</div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {moreOffers.map((o) => (
-                <Link
-                  key={o._id || o.id}
-                  href={`/gh/offers/${o.bonusType?.name?.toLowerCase().replace(/\s+/g, '-')}/${o.slug?.current}`}
-                  scroll={false}
-                  className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex flex-col justify-between transition cursor-pointer hover:bg-gray-50 hover:shadow-lg hover:scale-[1.03] focus:outline-none focus:ring-2 focus:ring-green-500"
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    {o.bookmaker?.logo ? (
-                      <Image src={urlFor(o.bookmaker.logo).width(28).height(28).url()} alt={o.bookmaker.logoAlt || o.bookmaker.name} width={28} height={28} className="rounded-md" />
-                    ) : (
-                      <div className="w-7 h-7 bg-gray-100 rounded-md" />
-                    )}
-                    <span className="font-semibold text-gray-900 text-base">{o.bookmaker?.name}</span>
-                    <span className="ml-auto text-xs text-gray-500">Published: {o.published}</span>
-                  </div>
-                  <div className="font-semibold text-gray-900 text-sm mb-1">{o.title}</div>
-                  <div className="text-xs text-gray-500 mb-2">
-                    {o.description && <PortableText value={o.description} />}
-                  </div>
-                  {o.expires && (
-                    <span className="flex items-center gap-1 text-black text-xs mt-2">
-                      <img src="/assets/calendar.png" alt="Calendar" width="16" height="16" className="flex-shrink-0" />
-                      Expires: {formatDate(o.expires)}
-                    </span>
-                  )}
-                </Link>
+        {/* How it works */}
+        {offer && offer.howItWorks && (
+          <div>
+            <div className="text-gray-700 text-sm">
+              {offer.howItWorks && <PortableText value={offer.howItWorks} components={portableTextComponents} />}
+            </div>
+          </div>
+        )}
+        {/* Payment Method */}
+        {offer && offer.bookmaker?.paymentMethods && offer.bookmaker.paymentMethods.length > 0 && (
+          <div>
+            <div className="font-semibold text-gray-900 mb-1">Payment Method</div>
+            <div className="flex flex-wrap gap-2 text-gray-700 text-sm">
+              {offer.bookmaker.paymentMethods.map((pm, i) => (
+                <span key={i} className="border border-gray-200 rounded px-2 py-1 bg-gray-50">{pm}</span>
               ))}
             </div>
-            <div className="flex justify-center mt-6">
-              {loadMoreCount < totalOffers && (
-                <button 
-                  onClick={handleLoadMore}
-                  className="px-6 py-2 rounded-lg border border-gray-200 bg-white text-gray-700 font-medium hover:bg-gray-50 transition" 
-                  disabled={isLoadingMore}
-                >
-                  {isLoadingMore ? "Loading..." : "Load More"}
-                </button>
-              )}
+          </div>
+        )}
+        {/* Terms & Condition */}
+        {offer && offer.terms && (
+          <div>
+            <div className="text-gray-700 text-sm">
+              {offer.terms && <PortableText value={offer.terms} components={portableTextComponents} />}
+            </div>
+          </div>
+        )}
+        {/* License */}
+        {offer && offer.bookmaker?.license && offer.bookmaker.license.length > 0 && (
+          <div>
+            <div className="font-semibold text-gray-900 mb-1">License</div>
+            <ul className="list-disc list-inside text-gray-700 text-sm space-y-1 pl-4">
+              {offer.bookmaker.license.map((license, i) => (
+                <li key={i}>{license}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* FAQ */}
+        {offer && offer.faq && offer.faq.length > 0 && (
+          <div>
+            <div className="font-semibold text-gray-900 mb-4">Frequently Asked Questions</div>
+            <div className="space-y-3">
+              {offer.faq.map((item, index) => (
+                <FAQItem 
+                  key={index} 
+                  question={item.question} 
+                  answer={item.answer}
+                  isOpen={openFAQIndex === index}
+                  onToggle={() => handleFAQToggle(index)}
+                />
+              ))}
             </div>
           </div>
         )}

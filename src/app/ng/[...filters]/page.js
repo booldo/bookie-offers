@@ -13,11 +13,6 @@ import { PortableText } from '@portabletext/react';
 import { formatDate } from '../../../utils/dateFormatter';
 import OfferDetailsInner from "./OfferDetailsInner";
 
-// Add redirect route for affiliate links
-export async function generateStaticParams() {
-  return [];
-}
-
 // Fetch offers from Sanity
 const fetchOffers = async () => {
   const query = `*[_type == "offers" && country == "Nigeria"] | order(_createdAt desc) {
@@ -46,7 +41,8 @@ const fetchOffers = async () => {
     bannerAlt,
     terms,
     howItWorks,
-    faq
+    faq,
+    offerSummary
   }`;
   return await client.fetch(query);
 };
@@ -508,11 +504,11 @@ function NigeriaHomeFiltersContent() {
               </div>
 
               {/* Title */}
-              <h3 className="font-semibold text-green-700 text-lg hover:underline cursor-pointer mb-1">{offer.bonusType?.name}</h3>
+              <h3 className="font-semibold text-green-700 text-lg hover:underline cursor-pointer mb-1">{offer.title}</h3>
 
-              {/* Description */}
+              {/* Description Summary*/}
               <div className="text-sm text-gray-500 mb-2">
-                {offer.description && <PortableText value={offer.description} />}
+                {offer.offerSummary && <PortableText value={offer.offerSummary} />}
               </div>
 
               {/* Expires */}

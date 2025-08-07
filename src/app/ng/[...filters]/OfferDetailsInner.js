@@ -302,16 +302,16 @@ function OfferDetailsInner({ slug }) {
               )}
 
               {/* How it works */}
-              {offer.howItWorks && (
-                <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6 sm:order-6">
+              {offer && offer.howItWorks && (
+                <div>
                   <div className="text-gray-700 text-sm">
                     {offer.howItWorks && <PortableText value={offer.howItWorks} components={portableTextComponents} />}
                   </div>
                 </div>
               )}
               {/* Payment Method */}
-              {offer.bookmaker?.paymentMethods && offer.bookmaker.paymentMethods.length > 0 && (
-                <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6 sm:order-7">
+              {offer && offer.bookmaker?.paymentMethods && offer.bookmaker.paymentMethods.length > 0 && (
+                <div>
                   <div className="font-semibold text-gray-900 mb-1">Payment Method</div>
                   <div className="flex flex-wrap gap-2 text-gray-700 text-sm">
                     {offer.bookmaker.paymentMethods.map((pm, i) => (
@@ -322,8 +322,8 @@ function OfferDetailsInner({ slug }) {
               )}
 
               {/* Terms and Conditions */}
-              {offer.terms && (
-                <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6 sm:order-8">
+              {offer && offer.terms && (
+                <div>
                   <div className="font-semibold text-gray-900 mb-3">Terms and Conditions</div>
                   <div className="text-gray-700 text-sm">
                     <PortableText value={offer.terms} components={portableTextComponents} />
@@ -332,8 +332,8 @@ function OfferDetailsInner({ slug }) {
               )}
 
               {/* FAQ Section */}
-              {offer.faq && offer.faq.length > 0 && (
-                <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6 sm:order-9">
+              {offer && offer.faq && offer.faq.length > 0 && (
+                <div>
                   <div className="font-semibold text-gray-900 mb-4">Frequently Asked Questions</div>
                   <div className="space-y-3">
                     {offer.faq.map((faqItem, index) => (
@@ -375,9 +375,9 @@ function OfferDetailsInner({ slug }) {
                         </div>
                         <span className="text-xs text-gray-500">Published: {formatDate(moreOffer.published)}</span>
                       </div>
-                      {moreOffer.description && (
+                      {moreOffer.offerSummary && (
                         <div className="mt-2 text-sm text-gray-600">
-                          <PortableText value={moreOffer.description} components={portableTextComponents} />
+                          <PortableText value={moreOffer.offerSummary} components={portableTextComponents} />
                         </div>
                       )}
                       {moreOffer.expires && (

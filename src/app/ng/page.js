@@ -40,7 +40,8 @@ const fetchOffers = async () => {
     bannerAlt,
     terms,
     howItWorks,
-    faq
+    faq,
+    offerSummary
   }`;
   return await client.fetch(query);
 };
@@ -500,11 +501,11 @@ function NigeriaHomeContent() {
               </div>
 
               {/* Title */}
-              <h3 className="font-semibold text-gray-900 text-lg hover:underline cursor-pointer mb-1 font-['General_Sans']">{offer.bonusType?.name}</h3>
+              <h3 className="font-semibold text-gray-900 text-lg hover:underline cursor-pointer mb-1 font-['General_Sans']">{offer.title}</h3>
 
-              {/* Description */}
+              {/* Description Summary*/}
               <div className="text-sm text-gray-500 mb-2 font-['General_Sans']">
-                {offer.description && <PortableText value={offer.description} />}
+                {offer.offerSummary && <PortableText value={offer.offerSummary} />}
               </div>
 
               {/* Expires */}
