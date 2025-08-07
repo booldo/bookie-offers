@@ -43,7 +43,7 @@ export default function MultiSelectDropdown({ label, options, selected, setSelec
   const dropdownContent = (
     <div className="overflow-y-auto max-h-[calc(80vh-6rem)] sm:max-h-full">
           {!nested && (
-            <div className="px-3 pb-2 pt-1 sticky top-0 bg-white z-10">
+            <div className="px-3 pb-2 pt-1 sticky top-0 bg-[#F5F5F7] z-10">
               <input
                 type="text"
                 className="w-full rounded-md border border-gray-200 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
@@ -140,7 +140,7 @@ export default function MultiSelectDropdown({ label, options, selected, setSelec
     <div className="relative w-full" ref={ref}>
       <button
         type="button"
-        className="w-full bg-white border border-gray-200 rounded-lg px-2 sm:px-3 py-2 text-left text-xs sm:text-sm flex items-center justify-between shadow-sm hover:border-gray-300 focus:outline-none"
+        className="w-full bg-[#F5F5F7] border border-gray-200 rounded-2xl px-2 sm:px-3 py-2 text-left text-xs sm:text-sm flex items-center justify-between shadow-sm hover:border-gray-300 focus:outline-none"
         onClick={() => setOpen((v) => !v)}
         disabled={loading}
       >
@@ -162,7 +162,7 @@ export default function MultiSelectDropdown({ label, options, selected, setSelec
       <div
         className={`
           sm:hidden fixed bottom-0 left-0 right-0 rounded-t-2xl p-4
-          bg-white shadow-2xl border-t border-black z-20
+          bg-[#F5F5F7] shadow-2xl border-t border-black z-20
           transform transition-transform duration-300 ease-in-out
           ${open ? 'translate-y-0' : 'translate-y-full'}
         `}
@@ -178,7 +178,7 @@ export default function MultiSelectDropdown({ label, options, selected, setSelec
 
       {/* Desktop dropdown panel */}
       {open && (
-        <div className="hidden sm:block absolute z-20 mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-100 py-2 animate-fade-in">
+        <div className="hidden sm:block absolute z-20 mt-2 w-64 bg-[#F5F5F7] rounded-xl shadow-xl border border-gray-100 py-2 animate-fade-in">
           {dropdownContent}
         </div>
       )}

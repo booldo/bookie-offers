@@ -10,6 +10,7 @@ import { client } from "../../../sanity/lib/client";
 import { urlFor } from "../../../sanity/lib/image";
 import BannerCarousel from "../../../components/BannerCarousel";
 import { PortableText } from '@portabletext/react';
+import { formatDate } from '../../../utils/dateFormatter';
 import OfferDetailsInner from "./OfferDetailsInner";
 
 // Fetch offers from Sanity
@@ -357,7 +358,7 @@ function GhanaHomeFiltersContent() {
               <label className="text-sm text-gray-500 mr-1">Sort By:</label>
               <div className="relative" ref={sortByRef}>
                 <button
-                  className="flex items-center gap-2 border border-gray-200 rounded-md px-3 py-1 text-sm focus:outline-none"
+                  className="flex items-center gap-2 rounded-md px-3 py-1 text-sm focus:outline-none text-gray-500"
                   onClick={() => setSortByOpen(p => !p)}
                 >
                   {sortBy}
@@ -505,7 +506,7 @@ function GhanaHomeFiltersContent() {
                 )}
                   <span className="font-semibold text-gray-900">{offer.bookmaker?.name}</span>
                 </div>
-                <span className="text-xs text-gray-900">Published: {offer.published}</span>
+                <span className="text-xs text-gray-900">Published: {formatDate(offer.published)}</span>
               </div>
 
               {/* Title */}
@@ -517,9 +518,9 @@ function GhanaHomeFiltersContent() {
               </div>
 
               {/* Expires */}
-              <div className="flex items-center gap-1 text-sm text-gray-500 mt-auto font-bold">
-                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" className="flex-shrink-0"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
-                <span className="text-xs">Expires: {offer.expires}</span>
+              <div className="flex items-center gap-1 text-sm text-black mt-auto">
+                <img src="/assets/calendar.png" alt="Calendar" width="16" height="16" className="flex-shrink-0" />
+                <span className="text-xs">Expires: {formatDate(offer.expires)}</span>
               </div>
             </div>
           ))}

@@ -1,9 +1,10 @@
-import { Geist } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { getSeoSettings } from "../sanity/lib/seo";
 
-const geist = Geist({
+const inter = Inter({
   subsets: ["latin"],
+  display: "swap",
 });
 
 export async function generateMetadata() {
@@ -40,7 +41,7 @@ export default function RootLayout({ children }) {
         <link rel="icon" href="/assets/favicon.ico" type="image/x-icon" />
         {hreflangTag}
       </head>
-      <body className={`${geist.className} antialiased`}>
+      <body className={`${inter.className} antialiased`}>
         {children}
       </body>
     </html>

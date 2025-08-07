@@ -12,6 +12,8 @@ interface TrackedLinkProps {
   target?: string;
   rel?: string;
   onClick?: (e: React.MouseEvent) => void;
+  isAffiliate?: boolean;
+  offerSlug?: string;
 }
 
 export const TrackedLink: React.FC<TrackedLinkProps> = ({
@@ -24,11 +26,18 @@ export const TrackedLink: React.FC<TrackedLinkProps> = ({
   target,
   rel,
   onClick,
+  isAffiliate = false,
+  offerSlug,
 }) => {
   const { trackLinkClick } = useClickTracking();
 
+  // Determine the display URL
+  const displayUrl = isAffiliate && offerSlug 
+    ? `/api/redirect/${offerSlug}` 
+    : href;
+
   const handleClick = async (e: React.MouseEvent) => {
-    // Track the click
+    // Track the click with the original affiliate URL
     await trackLinkClick(linkId, linkType, href, linkTitle);
     
     // Call the original onClick if provided
@@ -39,7 +48,7 @@ export const TrackedLink: React.FC<TrackedLinkProps> = ({
 
   return (
     <Link
-      href={href}
+      href={displayUrl}
       className={className}
       target={target}
       rel={rel}

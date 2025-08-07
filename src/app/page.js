@@ -4,8 +4,8 @@ import Image from "next/image";
 
 const flags = [
   { src: "/assets/flags.png", name: "World Wide", path: "/" },
-  { src: "/assets/ghana-circle.png", name: "Ghana", path: "/gh" },
-  { src: "/assets/nigeria-cirle.png", name: "Nigeria", path: "/ng" },
+  { src: "/assets/ghana-home.png", name: "Ghana", path: "/gh" },
+  { src: "/assets/nigeria-home.png", name: "Nigeria", path: "/ng" },
 ];
 
 export default function Home() {
@@ -19,7 +19,7 @@ export default function Home() {
         <h1 className="text-2xl sm:text-3xl font-bold text-center text-gray-900 mb-8">
           Just Betting Options.
         </h1>
-        <p className="text-center text-gray-600 mb-8">
+        <p className="text-center text-gray-600 mb-8 font-['General_Sans']">
           Booldo is built to help you bet smarter. We show you all the top bookmakers and offers, even those we<br />
           don't partner with, so you can decide with confidence. No noisy tips. No clutter. Just clear, honest info.
         </p>
@@ -28,10 +28,10 @@ export default function Home() {
             <a
               key={flag.name}
               href={flag.path}
-              className="flex items-center justify-between bg-white rounded-xl p-4 shadow-sm border border-gray-100 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:border-gray-200 cursor-pointer block"
+              className="flex items-center justify-between bg-[#F5F5F7] rounded-xl p-4 shadow-sm border border-gray-100 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:border-gray-200 cursor-pointer block"
             >
               <div className="flex items-center gap-4">
-                <Image src={flag.src} alt={flag.name} width={36} height={36} className="rounded-full" />
+                <img src={flag.src} alt={flag.name} className="rounded-full w-9 h-9" />
                 <div>
                   <div className="font-semibold text-gray-900">{flag.name}</div>
                   <div className="text-sm text-gray-500">Discover local offers and bookies</div>

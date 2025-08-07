@@ -261,7 +261,7 @@ export default function HomeNavbar() {
         </button>
         {/* Logo */}
         <Link href={pathname.startsWith("/ng") ? "/ng" : pathname.startsWith("/gh") ? "/gh" : "/"}>
-          <Image src="/assets/logo.png" alt="Booldo Logo" width={80} height={80} className="cursor-pointer" />
+          <img src="/assets/logo.png" alt="Booldo Logo" className="cursor-pointer w-15 h-7" />
         </Link>
       </div>
       {/* Search & Flag */}
@@ -315,7 +315,7 @@ export default function HomeNavbar() {
             className="flex items-center gap-1 p-2 rounded hover:bg-gray-100"
             onClick={() => setDropdownOpen((v) => !v)}
           >
-            <Image src={selectedFlag.topIcon} alt={selectedFlag.name} width={24} height={24} />
+            <img src={selectedFlag.topIcon} alt={selectedFlag.name} className="w-6 h-6" />
             <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path d="M6 9l6 6 6-6" />
             </svg>
@@ -329,7 +329,7 @@ export default function HomeNavbar() {
                   onClick={() => handleFlagSelect(flag)}
                 >
                   <div className="flex items-center gap-2">
-                    <Image src={flag.src} alt={flag.name} width={20} height={20} />
+                    <img src={flag.src} alt={flag.name} className="w-5 h-5" />
                     <span>{flag.name}</span>
                   </div>
                   {selectedFlag.name === flag.name && (
@@ -347,6 +347,7 @@ export default function HomeNavbar() {
       {/* Hamburger Menu Overlay */}
       {menuOpen && (
         <div ref={menuRef} className="fixed left-0 right-0 top-[64px] w-full bg-white shadow-2xl z-50 rounded-b-xl animate-slide-down">
+          <a href={pathname.startsWith('/ng') ? '/ng' : pathname.startsWith('/gh') ? '/gh' : '/'} className="block px-4 py-3 font-semibold text-gray-900 hover:bg-gray-100 rounded-xl mb-2">Home</a>
           <div className="flex flex-col gap-6 px-10 py-4 text-gray-800 text-base font-medium">
             <a href="/briefly" className="hover:underline">Blog</a>
             <a href="#" className="hover:underline">Calculator</a>
@@ -368,7 +369,7 @@ export default function HomeNavbar() {
         >
           <div className="max-w-5xl mx-auto px-4 pb-8">
             <div className="flex items-center gap-4 mb-6">
-              <Image src="/assets/logo.png" alt="Booldo Logo" width={100} height={40} className="hidden sm:block" />
+              <img src="/assets/logo.png" alt="Booldo Logo" className="hidden sm:block w-25 h-10" />
               <div className="flex-1 flex items-center bg-[#f6f7f9] border border-gray-200 rounded-lg px-3 py-2">
                 <svg className="text-gray-400 mr-2" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <circle cx="11" cy="11" r="8" />
@@ -619,15 +620,8 @@ export default function HomeNavbar() {
                             )}
                             {item._type === 'offers' && item.expires && (
                               <div className="flex items-center gap-2 text-xs text-gray-500 mt-2">
-                                <span className="inline-flex items-center gap-1">
-                                  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                                    <line x1="16" y1="2" x2="16" y2="6" />
-                                    <line x1="8" y1="2" x2="8" y2="6" />
-                                    <line x1="3" y1="10" x2="21" y2="10" />
-                                  </svg>
-                                  Expires: {item.expires}
-                                </span>
+                                <img src="/assets/calendar.png" alt="Calendar" width="16" height="16" className="flex-shrink-0" />
+                                Expires: {formatDate(item.expires)}
                               </div>
                             )}
                           </div>

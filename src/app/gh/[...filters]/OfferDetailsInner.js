@@ -7,6 +7,7 @@ import Link from "next/link";
 import { client } from "../../../sanity/lib/client";
 import { urlFor } from "../../../sanity/lib/image";
 import { PortableText } from '@portabletext/react';
+import { formatDate } from '../../../utils/dateFormatter';
 import { useRouter } from "next/navigation";
 import TrackedLink from "../../../components/TrackedLink";
 
@@ -226,9 +227,22 @@ function OfferDetailsInner({ slug }) {
             </div>
           </div>
         )}
-        {/* Individual Offer Banner */}
+        
+        {/* Breadcrumb */}
+        <div className="mt-6 mb-4 flex items-center gap-2 text-sm text-gray-500 ml-2">
+          <button type="button" onClick={() => router.back()} className="hover:underline flex items-center gap-1">
+            <img src="/assets/back-arrow.png" alt="Back" width="16" height="16" />
+            Home
+          </button>
+          <span className="mx-1">|</span>
+          <span className="text-gray-700 font-medium">{offer?.bonusType?.name || "Bonus"}</span>
+          <span className="mx-1">|</span>
+          <span className="text-gray-700 font-medium">{offer?.title || "Offer"}</span>
+        </div>
+        
+        {/* Offer Banner */}
         {!loading && !error && offer && offer.banner && (
-          <div className="mt-6 mb-6">
+          <div className="mb-6">
             <Image 
               src={urlFor(offer.banner).width(1200).height(200).url()} 
               alt={offer.bannerAlt || offer.title}
@@ -238,20 +252,6 @@ function OfferDetailsInner({ slug }) {
             />
           </div>
         )}
-        
-        {/* Updated Breadcrumb */}
-        <div className="mt-6 mb-4 flex items-center gap-2 text-sm text-gray-500 ml-2">
-          <button type="button" onClick={() => router.back()} className="hover:underline flex items-center gap-1">
-            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-            Home
-          </button>
-          <span className="mx-1">|</span>
-          <span className="text-gray-700 font-medium">{offer?.bonusType?.name || "Bonus"}</span>
-          <span className="mx-1">|</span>
-          <span className="text-gray-700 font-medium">{offer?.title || "Offer"}</span>
-        </div>
         {/* Offer Card */}
         {error && <div className="text-center text-red-500">{error}</div>}
         {!error && offer && (
@@ -268,7 +268,7 @@ function OfferDetailsInner({ slug }) {
                   )}
                   <span className="font-semibold text-gray-900 text-lg">{offer.bookmaker?.name}</span>
                 </div>
-                <span className="text-gray-500 text-sm">Published: {offer.published}</span>
+                <span className="text-gray-500 text-sm">Published: {formatDate(offer.published)}</span>
               </div>
 
               <h1 className="text-2xl font-bold text-gray-900 mb-2 sm:order-2">{offer.title}</h1>
@@ -277,8 +277,8 @@ function OfferDetailsInner({ slug }) {
               </div>
               
               <div className="flex items-center gap-2 mb-6 sm:order-4">
-                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
-                <span className="text-green-700 text-sm font-medium">Expires: {offer.expires}</span>
+                <img src="/assets/calendar.png" alt="Calendar" width="18" height="18" />
+                <span className="text-black text-sm">Expires: {formatDate(offer.expires)}</span>
               </div>
 
               {offer.affiliateLink?.affiliateUrl && offer.affiliateLink?.isActive && (
@@ -289,7 +289,9 @@ function OfferDetailsInner({ slug }) {
                   linkTitle={offer.title}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full sm:w-fit sm:px-6 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 mb-6 sm:order-5"
+                  isAffiliate={true}
+                  offerSlug={`gh/${offer.slug?.current}`}
+                  className="w-full sm:w-fit sm:px-6 bg-[#018651] hover:bg-[#017a4a] text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 mb-6 sm:order-5"
                 >
                   Get Bonus
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -382,10 +384,12 @@ function OfferDetailsInner({ slug }) {
                   <div className="text-xs text-gray-500 mb-2">
                     {o.description && <PortableText value={o.description} />}
                   </div>
-                  <span className="flex items-center gap-1 text-green-700 text-xs font-medium">
-                    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
-                    Expires: {o.expires}
-                  </span>
+                  {o.expires && (
+                    <span className="flex items-center gap-1 text-black text-xs mt-2">
+                      <img src="/assets/calendar.png" alt="Calendar" width="16" height="16" className="flex-shrink-0" />
+                      Expires: {formatDate(o.expires)}
+                    </span>
+                  )}
                 </Link>
               ))}
             </div>

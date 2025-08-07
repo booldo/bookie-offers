@@ -13,11 +13,11 @@ export default function Footer() {
           <div className="flex gap-4 mb-4 md:justify-center">
             {/* X (Twitter) */}
             <a href="#" aria-label="X" className="hover:opacity-80">
-              <Image src="/assets/x.png" alt="X" width={28} height={28} />
+              <img src="/assets/x.png" alt="X" width={28} height={28} />
             </a>
             {/* Telegram */}
             <a href="#" aria-label="Telegram" className="hover:opacity-80">
-              <Image src="/assets/telegram.png" alt="Telegram" width={28} height={28} />
+              <img src="/assets/telegram.png" alt="Telegram" width={28} height={28} />
             </a>
           </div>
           <hr className="my-2 border-gray-200" />
