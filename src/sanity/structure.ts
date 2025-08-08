@@ -139,6 +139,22 @@ export const structure: StructureResolver = (S) =>
                 ),
 
               S.listItem()
+                .title('About')
+                .child(
+                  S.documentList()
+                    .title('About')
+                    .filter('_type == "about"')
+                ),
+
+              S.listItem()
+                .title('Contact')
+                .child(
+                  S.documentList()
+                    .title('Contact')
+                    .filter('_type == "contact"')
+                ),
+
+              S.listItem()
                 .title('FAQs')
                 .child(
                   S.documentList()

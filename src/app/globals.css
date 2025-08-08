@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
-body {
-  font-family: inherit;
+/* General Sans font import (via Fontshare CDN) */
+@import url('https://api.fontshare.com/v2/css?f[]=general-sans@300,400,500,600,700,800&display=swap');
+
+:root {
+  --font-sans: 'General Sans', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+}
+
+html, body {
+  font-family: var(--font-sans);
 }

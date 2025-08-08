@@ -7,6 +7,7 @@ import imageUrlBuilder from '@sanity/image-url';
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { PortableText } from '@portabletext/react';
 
 const builder = imageUrlBuilder(client);
 function urlFor(source) {
@@ -14,29 +15,39 @@ function urlFor(source) {
 }
 
 export default function AboutPage() {
+  const [about, setAbout] = useState(null);
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const router = useRouter();
 
   useEffect(() => {
-    async function fetchArticles() {
+    async function fetchData() {
       setLoading(true);
       try {
-        const allArticles = await client.fetch(`*[_type == "article"]|order(_createdAt desc)[0...5]{
-          _id,
-          title,
-          slug,
-          mainImage
-        }`);
+        const [aboutDoc, allArticles] = await Promise.all([
+          client.fetch(`*[_type == "about"][0]{
+            _id,
+            title,
+            mainImage,
+            content
+          }`),
+          client.fetch(`*[_type == "article"]|order(_createdAt desc)[0...5]{
+            _id,
+            title,
+            slug,
+            mainImage
+          }`)
+        ]);
+        setAbout(aboutDoc);
         setArticles(allArticles);
         setLoading(false);
       } catch (err) {
-        setError("Failed to load articles");
+        setError("Failed to load content");
         setLoading(false);
       }
     }
-    fetchArticles();
+    fetchData();
   }, []);
 
   return (
@@ -51,16 +62,16 @@ export default function AboutPage() {
           >
             <Image src="/assets/back-arrow.png" alt="Back" width={28} height={28} />
           </button>
-          <h1 className="text-4xl font-bold">About us</h1>
+          <h1 className="text-4xl font-bold">{about?.title || 'About us'}</h1>
         </div>
         <div className="flex flex-col md:flex-row gap-8">
           {/* Main About Content */}
           <div className="flex-1 text-gray-800 text-base space-y-5">
-            <p>At Booldo.com, we are industry enthusiasts with years of experience in online sports betting. After working in major companies, we wanted to do things differently. In 2022, we started building Booldo with a clear mission: to create a site that focuses on what truly matters – reliable information and a wide selection of bookmakers and offers.</p>
-            <p>We are an affiliate website, which means we may receive compensation if a user places a bet after visiting a bookmaker through our site. However, unlike many other affiliate sites that only showcase bookmakers they have deals with, we strive to list as many bookmakers and offers as possible – even those we don’t have partnerships with. Our goal is to provide bettors with the full picture, not just a curated selection.</p>
-            <p>Currently, we operate in Nigeria, Kenya, and Ghana, and we are continuously working to expand our coverage. We also don’t focus on betting tips – over the years, we’ve found that good information and choice serve bettors better than predictions.</p>
-            <p>Booldo is an independent sports betting affiliate platform – we are not a bookmaker, do not accept or process bets, and do not hold any gaming licenses. Our mission is to help users in Nigeria, Ghana, and Kenya discover the latest offers from betting brands licensed by reputable local and international regulatory authorities. Whether or not we maintain an affiliate partnership with a brand, we are committed to providing transparent, up-to-date information so users can make fully informed choices.</p>
-            <p>We believe in letting our work speak for itself. That’s why you won’t find our faces or LinkedIn profiles here. Booldo isn’t about us – it’s about giving you the best betting options, with no distractions.</p>
+            {about?.content ? (
+              <PortableText value={about.content} />
+            ) : (
+              <p className="text-gray-500">No content available yet.</p>
+            )}
           </div>
           {/* Sidebar */}
           <aside className="w-full md:w-80 flex-shrink-0">

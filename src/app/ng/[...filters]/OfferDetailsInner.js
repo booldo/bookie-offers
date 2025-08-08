@@ -387,11 +387,11 @@ function OfferDetailsInner({ slug }) {
             {moreOffers.length > 0 && (
               <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6">
                 <div className="font-semibold text-gray-900 mb-4">More Offers</div>
-                <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {moreOffers.map((moreOffer) => (
                     <div
                       key={moreOffer._id}
-                      className="border border-gray-100 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                      className="border border-gray-100 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer h-full"
                       onClick={() => router.push(`/ng/${moreOffer.bonusType?.name?.toLowerCase().replace(/\s+/g, '-')}/${moreOffer.slug?.current}`)}
                     >
                       <div className="flex justify-between items-start">
@@ -403,10 +403,10 @@ function OfferDetailsInner({ slug }) {
                           )}
                           <div>
                             <div className="font-semibold text-gray-900">{moreOffer.bookmaker?.name}</div>
-                            <div className="text-sm text-gray-600">{moreOffer.title}</div>
+                            <div className="text-sm text-gray-600 line-clamp-2">{moreOffer.title}</div>
                           </div>
                         </div>
-                        <span className="text-xs text-gray-500">Published: {formatDate(moreOffer.published)}</span>
+                        <span className="text-xs text-gray-500">{formatDate(moreOffer.published)}</span>
                       </div>
                       {moreOffer.offerSummary && (
                         <div className="mt-2 text-sm text-gray-600">
@@ -419,21 +419,21 @@ function OfferDetailsInner({ slug }) {
                           <span className="text-xs">Expires: {formatDate(moreOffer.expires)}</span>
                         </div>
                       )}
-                  </div>
-              ))}
-            </div>
+                    </div>
+                  ))}
+                </div>
                 {totalOffers > loadMoreCount && (
                   <div className="mt-4 text-center">
-                <button 
-                  onClick={handleLoadMore}
-                  disabled={isLoadingMore}
+                    <button
+                      onClick={handleLoadMore}
+                      disabled={isLoadingMore}
                       className="text-green-600 hover:text-green-700 font-medium disabled:opacity-50"
-                >
+                    >
                       {isLoadingMore ? 'Loading...' : `Load ${Math.min(4, totalOffers - loadMoreCount)} more offers`}
-                </button>
+                    </button>
                   </div>
-              )}
-            </div>
+                )}
+              </div>
             )}
           </>
         )}

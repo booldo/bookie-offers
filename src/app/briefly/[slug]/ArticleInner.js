@@ -15,6 +15,90 @@ function urlFor(source) {
   return builder.image(source).url();
 }
 
+// Custom components for PortableText rendering
+const portableTextComponents = {
+  block: {
+    h1: ({ children }) => (
+      <h1 className="text-3xl font-bold text-gray-900 mb-4">{children}</h1>
+    ),
+    h2: ({ children }) => (
+      <h2 className="text-2xl font-semibold text-gray-900 mb-3">{children}</h2>
+    ),
+    h3: ({ children }) => (
+      <h3 className="text-xl font-semibold text-gray-900 mb-2">{children}</h3>
+    ),
+    h4: ({ children }) => (
+      <h4 className="text-lg font-semibold text-gray-900 mb-2">{children}</h4>
+    ),
+    normal: ({ children }) => (
+      <p className="text-gray-800 leading-relaxed mb-4">{children}</p>
+    ),
+    blockquote: ({ children }) => (
+      <blockquote className="border-l-4 border-gray-300 pl-4 italic text-gray-700 my-4">
+        {children}
+      </blockquote>
+    ),
+  },
+  list: {
+    bullet: ({ children }) => (
+      <ul className="list-disc list-inside space-y-1 text-gray-800 mb-4">{children}</ul>
+    ),
+    number: ({ children }) => (
+      <ol className="list-decimal list-inside space-y-1 text-gray-800 mb-4">{children}</ol>
+    ),
+  },
+  listItem: {
+    bullet: ({ children }) => <li className="ml-1">{children}</li>,
+    number: ({ children }) => <li className="ml-1">{children}</li>,
+  },
+  marks: {
+    strong: ({ children }) => (
+      <strong className="font-semibold text-gray-900">{children}</strong>
+    ),
+    em: ({ children }) => <em className="italic">{children}</em>,
+    code: ({ children }) => (
+      <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono">
+        {children}
+      </code>
+    ),
+    link: ({ value, children }) => {
+      const href = value?.href || '#';
+      const isExternal = href.startsWith('http');
+      return (
+        <a
+          href={href}
+          target={isExternal ? '_blank' : undefined}
+          rel={isExternal ? 'noopener noreferrer' : undefined}
+          className="text-green-700 hover:text-green-800 underline"
+        >
+          {children}
+        </a>
+      );
+    },
+  },
+  types: {
+    image: ({ value }) => {
+      const src = value ? imageUrlBuilder(client).image(value).width(1200).url() : '';
+      const alt = value?.alt || value?.asset?._ref || 'Article image';
+      if (!src) return null;
+      return (
+        <figure className="my-6">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={src}
+            alt={alt}
+            className="w-full h-auto rounded-md"
+            loading="lazy"
+          />
+          {value?.caption && (
+            <figcaption className="text-sm text-gray-500 mt-2">{value.caption}</figcaption>
+          )}
+        </figure>
+      );
+    },
+  },
+};
+
 function ArticleInner({ slug }) {
   const router = useRouter();
   const [article, setArticle] = useState(null);
@@ -80,8 +164,8 @@ function ArticleInner({ slug }) {
         <div className="flex flex-col md:flex-row gap-8">
           {/* Main Article Content */}
           <div className="flex-1">
-            <div className="text-gray-700 text-base space-y-6 mb-8">
-              <PortableText value={article.content} />
+            <div className="text-gray-800 text-base space-y-6 mb-8">
+              <PortableText value={article.content} components={portableTextComponents} />
             </div>
           </div>
           {/* Sidebar */}

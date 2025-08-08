@@ -1,11 +1,5 @@
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { getSeoSettings } from "../sanity/lib/seo";
-
-const inter = Inter({
-  subsets: ["latin"],
-  display: "swap",
-});
 
 export async function generateMetadata() {
   const seo = await getSeoSettings();
@@ -41,7 +35,7 @@ export default function RootLayout({ children }) {
         <link rel="icon" href="/assets/favicon.ico" type="image/x-icon" />
         {hreflangTag}
       </head>
-      <body className={`${inter.className} antialiased`}>
+      <body className={`antialiased`}>
         {children}
       </body>
     </html>
