@@ -347,8 +347,8 @@ export default function HomeNavbar() {
       {/* Hamburger Menu Overlay */}
       {menuOpen && (
         <div ref={menuRef} className="fixed left-0 right-0 top-[64px] w-full bg-white shadow-2xl z-50 rounded-b-xl animate-slide-down">
-          <a href={pathname.startsWith('/ng') ? '/ng' : pathname.startsWith('/gh') ? '/gh' : '/'} className="block px-4 py-3 font-semibold text-gray-900 hover:bg-gray-100 rounded-xl mb-2">Home</a>
           <div className="flex flex-col gap-6 px-10 py-4 text-gray-800 text-base font-medium">
+            <a href={pathname.startsWith('/ng') ? '/ng' : pathname.startsWith('/gh') ? '/gh' : '/'} className="hover:underline">Home</a>
             <a href="/briefly" className="hover:underline">Blog</a>
             <a href="#" className="hover:underline">Calculator</a>
             <a href="/about" className="hover:underline">About Us</a>

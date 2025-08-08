@@ -235,10 +235,8 @@ function OfferDetailsInner({ slug }) {
             <img src="/assets/back-arrow.png" alt="Back" width="16" height="16" />
             Home
           </button>
-          <span className="mx-1">|</span>
+          <span className="mx-1">/</span>
           <span className="text-gray-700 font-medium">{offer?.bonusType?.name || "Bonus"}</span>
-          <span className="mx-1">|</span>
-          <span className="text-gray-700 font-medium">{offer?.title || "Offer"}</span>
         </div>
         
         {/* Offer Banner */}
@@ -249,15 +247,17 @@ function OfferDetailsInner({ slug }) {
               alt={offer.bannerAlt || offer.title}
               width={1200}
               height={200}
-              className="w-full h-auto rounded-xl"
+              className="w-full h-24 sm:h-48 object-cover rounded-xl"
             />
           </div>
         )}
-        {/* Offer Card (below banner, above how it works) */}
+        {/* Offer Card */}
         {error && <div className="text-center text-red-500">{error}</div>}
         {!error && offer && (
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6 flex flex-col">
-            <div className="flex justify-between items-center mb-4 sm:order-1">
+          <>
+            {/* Offer Card */}
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6 flex flex-col">
+            <div className="flex justify-between items-center mb-4">
               <div className="flex items-center gap-3">
                 {offer.bookmaker?.logo ? (
                   <Image src={urlFor(offer.bookmaker.logo).width(40).height(40).url()} alt={offer.bookmaker.logoAlt || offer.bookmaker.name} width={40} height={40} className="rounded-md" />
@@ -268,14 +268,16 @@ function OfferDetailsInner({ slug }) {
               </div>
               <span className="text-gray-500 text-sm">Published: {formatDate(offer.published)}</span>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2 sm:order-2">{offer.title}</h1>
-            <div className="text-gray-700 mb-4 sm:order-3">
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">{offer.title}</h1>
+            <div className="text-gray-700 mb-4">
               {offer.description && <PortableText value={offer.description} components={portableTextComponents} />}
             </div>
-            <div className="flex items-center gap-2 mb-6 sm:order-4">
+            <div className="flex items-center gap-2 mb-6">
               <img src="/assets/calendar.png" alt="Calendar" width="18" height="18" />
               <span className="text-black text-sm">Expires: {formatDate(offer.expires)}</span>
             </div>
+
+            {/* Desktop Get Bonus Button */}
             {offer.affiliateLink?.affiliateUrl && offer.affiliateLink?.isActive && (
               <TrackedLink
                 href={offer.affiliateLink.affiliateUrl}
@@ -286,7 +288,7 @@ function OfferDetailsInner({ slug }) {
                 rel="noopener noreferrer"
                 isAffiliate={true}
                 offerSlug={`gh/${offer.slug?.current}`}
-                className="w-full sm:w-fit sm:px-6 bg-[#018651] hover:bg-[#017a4a] text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 mb-6 sm:order-5"
+                className="hidden sm:flex sm:w-fit sm:px-6 bg-[#018651] hover:bg-[#017a4a] text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 items-center justify-center gap-2 mb-6"
               >
                 Get Bonus
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -294,63 +296,143 @@ function OfferDetailsInner({ slug }) {
                 </svg>
               </TrackedLink>
             )}
-          </div>
-        )}
-        {/* How it works */}
-        {offer && offer.howItWorks && (
-          <div>
-            <div className="text-gray-700 text-sm">
-              {offer.howItWorks && <PortableText value={offer.howItWorks} components={portableTextComponents} />}
-            </div>
-          </div>
-        )}
-        {/* Payment Method */}
-        {offer && offer.bookmaker?.paymentMethods && offer.bookmaker.paymentMethods.length > 0 && (
-          <div>
-            <div className="font-semibold text-gray-900 mb-1">Payment Method</div>
-            <div className="flex flex-wrap gap-2 text-gray-700 text-sm">
-              {offer.bookmaker.paymentMethods.map((pm, i) => (
-                <span key={i} className="border border-gray-200 rounded px-2 py-1 bg-gray-50">{pm}</span>
-              ))}
-            </div>
-          </div>
-        )}
-        {/* Terms & Condition */}
-        {offer && offer.terms && (
-          <div>
-            <div className="text-gray-700 text-sm">
-              {offer.terms && <PortableText value={offer.terms} components={portableTextComponents} />}
-            </div>
-          </div>
-        )}
-        {/* License */}
-        {offer && offer.bookmaker?.license && offer.bookmaker.license.length > 0 && (
-          <div>
-            <div className="font-semibold text-gray-900 mb-1">License</div>
-            <ul className="list-disc list-inside text-gray-700 text-sm space-y-1 pl-4">
-              {offer.bookmaker.license.map((license, i) => (
-                <li key={i}>{license}</li>
-              ))}
-            </ul>
-          </div>
-        )}
 
-        {/* FAQ */}
-        {offer && offer.faq && offer.faq.length > 0 && (
-          <div>
-            <div className="font-semibold text-gray-900 mb-4">Frequently Asked Questions</div>
-            <div className="space-y-3">
-              {offer.faq.map((item, index) => (
-                <FAQItem 
-                  key={index} 
-                  question={item.question} 
-                  answer={item.answer}
-                  isOpen={openFAQIndex === index}
-                  onToggle={() => handleFAQToggle(index)}
-                />
-              ))}
-            </div>
+            {/* How it works */}
+            {offer && offer.howItWorks && (
+              <div className="mb-6">
+                <div className="font-semibold text-gray-900 mb-3">How it works</div>
+                <div className="text-gray-700 text-sm">
+                  <PortableText value={offer.howItWorks} components={portableTextComponents} />
+                </div>
+              </div>
+            )}
+
+            {/* Payment Method */}
+            {offer && offer.bookmaker?.paymentMethods && offer.bookmaker.paymentMethods.length > 0 && (
+              <div className="mb-6">
+                <div className="font-semibold text-gray-900 mb-3">Payment Methods</div>
+                <div className="flex flex-wrap gap-2 text-gray-700 text-sm">
+                  {offer.bookmaker.paymentMethods.map((pm, i) => (
+                    <span key={i} className="border border-gray-200 rounded px-2 py-1 bg-gray-50">{pm}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* License */}
+            {offer && offer.bookmaker?.license && offer.bookmaker.license.length > 0 && (
+              <div className="mb-6">
+                <div className="font-semibold text-gray-900 mb-3">License</div>
+                <ul className="list-disc list-inside text-gray-700 text-sm space-y-1 pl-4">
+                  {offer.bookmaker.license.map((license, i) => (
+                    <li key={i}>{license}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Mobile Get Bonus Button */}
+            {offer.affiliateLink?.affiliateUrl && offer.affiliateLink?.isActive && (
+              <TrackedLink
+                href={offer.affiliateLink.affiliateUrl}
+                linkId={offer._id}
+                linkType="offer"
+                linkTitle={offer.title}
+                target="_blank"
+                rel="noopener noreferrer"
+                isAffiliate={true}
+                offerSlug={`gh/${offer.slug?.current}`}
+                className="sm:hidden w-full bg-[#018651] hover:bg-[#017a4a] text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 mb-6"
+              >
+                Get Bonus
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </TrackedLink>
+            )}
+
+            {/* Terms and Conditions */}
+            {offer && offer.terms && (
+              <div className="mb-6">
+                <div className="font-semibold text-gray-900 mb-3">Terms and Conditions</div>
+                <div className="text-gray-700 text-sm">
+                  <PortableText value={offer.terms} components={portableTextComponents} />
+                </div>
+              </div>
+            )}
+
+            {/* FAQ Section */}
+            {offer && offer.faq && offer.faq.length > 0 && (
+              <div>
+                <div className="font-semibold text-gray-900 mb-4">Frequently Asked Questions</div>
+                <div className="space-y-3">
+                  {offer.faq.map((item, index) => (
+                    <FAQItem 
+                      key={index} 
+                      question={item.question} 
+                      answer={item.answer}
+                      isOpen={openFAQIndex === index}
+                      onToggle={() => handleFAQToggle(index)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
+
+          {/* More Offers Section */}
+          {moreOffers.length > 0 && (
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6">
+              <div className="font-semibold text-gray-900 mb-4">More Offers</div>
+              <div className="space-y-4">
+                {moreOffers.map((moreOffer) => (
+                  <div
+                    key={moreOffer._id}
+                    className="border border-gray-100 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                    onClick={() => router.push(`/gh/${moreOffer.bonusType?.name?.toLowerCase().replace(/\s+/g, '-')}/${moreOffer.slug?.current}`)}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center gap-3">
+                        {moreOffer.bookmaker?.logo ? (
+                          <Image src={urlFor(moreOffer.bookmaker.logo).width(32).height(32).url()} alt={moreOffer.bookmaker.name} width={32} height={32} className="rounded-md" />
+                        ) : (
+                          <div className="w-8 h-8 bg-gray-100 rounded-md" />
+                        )}
+                        <div>
+                          <div className="font-semibold text-gray-900">{moreOffer.bookmaker?.name}</div>
+                          <div className="text-sm text-gray-600">{moreOffer.title}</div>
+                        </div>
+                      </div>
+                      <span className="text-xs text-gray-500">Published: {formatDate(moreOffer.published)}</span>
+                    </div>
+                    {moreOffer.offerSummary && (
+                      <div className="mt-2 text-sm text-gray-600">
+                        <PortableText value={moreOffer.offerSummary} components={portableTextComponents} />
+                      </div>
+                    )}
+                    {moreOffer.expires && (
+                      <div className="flex items-center gap-1 text-sm text-black mt-2">
+                        <img src="/assets/calendar.png" alt="Calendar" width="16" height="16" className="flex-shrink-0" />
+                        <span className="text-xs">Expires: {formatDate(moreOffer.expires)}</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {totalOffers > loadMoreCount && (
+                <div className="mt-4 text-center">
+                  <button 
+                    onClick={handleLoadMore}
+                    disabled={isLoadingMore}
+                    className="text-green-600 hover:text-green-700 font-medium disabled:opacity-50"
+                  >
+                    {isLoadingMore ? 'Loading...' : `Load ${Math.min(4, totalOffers - loadMoreCount)} more offers`}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </>
         )}
       </main>
       <Footer />

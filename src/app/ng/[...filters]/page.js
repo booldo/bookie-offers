@@ -42,7 +42,8 @@ const fetchOffers = async () => {
     terms,
     howItWorks,
     faq,
-    offerSummary
+    offerSummary,
+    title
   }`;
   return await client.fetch(query);
 };
