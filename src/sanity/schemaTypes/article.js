@@ -1,6 +1,6 @@
 export default {
   name: 'article',
-  title: 'Article',
+  title: 'Blog',
   type: 'document',
   fields: [
     {
@@ -21,7 +21,7 @@ export default {
     },
     {
       name: 'mainImage',
-      title: 'Main Image',
+      title: 'Blog Cover Image',
       type: 'image',
       options: {
         hotspot: true,
@@ -29,9 +29,9 @@ export default {
     },
     {
       name: 'mainImageAlt',
-      title: 'Main Image Alt Text',
+      title: 'Blog Image Alt Text',
       type: 'string',
-      description: 'Alternative text for accessibility and SEO',
+      description: 'Alternative text for image accessibility and SEO',
     },
     {
       name: 'content',

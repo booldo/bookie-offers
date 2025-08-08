@@ -126,7 +126,7 @@ export default {
     },
     {
       name: "slug",
-      title: "Slug",
+      title: "Generate Pretty Link",
       type: "slug",
       options: {
         source: async (doc, context) => {
@@ -175,10 +175,32 @@ export default {
       title: "Text Block 1 (offer summary)",
       type: "array",
       of: [{ type: "block" }],
-      validation: Rule => Rule.required(),
-      description: "A short summary of this offer (portable text, shown above the description)"
+      validation: Rule => Rule.required().custom(blocks => {
+        if (!blocks || blocks.length === 0) {
+          return "Summary is required.";
+        }
+
+        const plainText = blocks
+          .map(block => {
+            if (block._type === 'block' && Array.isArray(block.children)) {
+              return block.children.map(child => child.text).join('');
+            }
+            return '';
+          })
+          .join(' ');
+
+        const wordCount = plainText.trim().split(/\s+/).filter(Boolean).length;
+
+        if (wordCount > 15) {
+          return `Offer summary must not exceed 15 words. Current count: ${wordCount}`;
+        }
+
+        return true;
+      }),
+      description: "A short summary of this offer (max 15 words)"
     },
-    {
+
+  {
       name: "description",
       title: "Text Block 2 (offer description)",
       type: "array",
