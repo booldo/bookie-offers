@@ -191,15 +191,7 @@ export default function OffersClient({
 
   return (
     <>
-      {/* PPR Success Indicator */}
-      <div className="text-center py-4 mb-4">
-        <div className="inline-flex items-center px-3 py-1 text-sm text-green-600 bg-green-100 rounded-full">
-          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-          </svg>
-          PPR Streaming Complete - {offers.length} offers loaded
-        </div>
-      </div>
+
 
       {/* Best Offers Header */}
       <div className="sticky top-16 z-10 bg-white sm:static sm:bg-transparent">

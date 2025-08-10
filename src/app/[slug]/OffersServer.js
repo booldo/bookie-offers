@@ -3,12 +3,11 @@ import { urlFor } from "../../sanity/lib/image";
 import { formatDate } from '../../utils/dateFormatter';
 import { PortableText } from '@portabletext/react';
 import OffersClient from './OffersClient';
-import StreamingIndicator from './StreamingIndicator';
 
 // Server-side data fetching for offers
 async function getOffersData(countryName) {
   if (!countryName) {
-    console.log('❌ getOffersData: No country name provided');
+    console.log('getOffersData: No country name provided');
     return { offers: [], bonusTypeOptions: [], bookmakerOptions: [], advancedOptions: [] };
   }
   
@@ -118,9 +117,6 @@ async function getOffersData(countryName) {
 }
 
 export default async function OffersServer({ countrySlug }) {
-  // Show initial loading state
-  console.log('Starting PPR streaming for:', countrySlug);
-  
   // First fetch country data to get the country name
   const countryData = await client.fetch(`
     *[_type == "countryPage" && slug.current == $slug && isActive == true][0]{
@@ -137,11 +133,6 @@ export default async function OffersServer({ countrySlug }) {
     );
   }
   
-  console.log('Country data fetched:', countryData.country);
-  
-  // Add a small delay to demonstrate PPR streaming (remove this in production)
-  await new Promise(resolve => setTimeout(resolve, 1500));
-  
   // Fetch offers data
   const { offers, bonusTypeOptions, bookmakerOptions, advancedOptions } = await getOffersData(countryData.country);
   
@@ -152,8 +143,6 @@ export default async function OffersServer({ countrySlug }) {
       </div>
     );
   }
-  
-  console.log('✅ Offers data fetched:', offers.length, 'offers');
   
   return (
     <OffersClient 

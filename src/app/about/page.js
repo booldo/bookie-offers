@@ -91,17 +91,7 @@ function ArticlesSidebar({ articles }) {
 }
 
 // Back button component (client-side)
-function BackButton() {
-  return (
-    <button
-      onClick={() => window.history.back()}
-      className="focus:outline-none"
-      aria-label="Go back"
-    >
-      <Image src="/assets/back-arrow.png" alt="Back" width={28} height={28} />
-    </button>
-  );
-}
+import BackButton from './BackButton';
 
 // Main About page component with PPR
 export default async function AboutPage() {
