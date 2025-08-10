@@ -11,7 +11,7 @@ async function getOffersData(countryName) {
     return { offers: [], bonusTypeOptions: [], bookmakerOptions: [], advancedOptions: [] };
   }
   
-  console.log('🔍 Fetching offers for country:', countryName);
+  console.log('Fetching offers for country:', countryName);
   
   const query = `*[_type == "offers" && country->country == $countryName] | order(_createdAt desc) {
     _id,

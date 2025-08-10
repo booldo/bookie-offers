@@ -6,6 +6,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { client } from "../sanity/lib/client";
 import { urlFor } from "../sanity/lib/image";
 import Link from "next/link";
+import { formatDate } from "../utils/dateFormatter";
 
 const flags = [
   { src: "/assets/flags.png", name: "World Wide", path: "/", topIcon: "/assets/dropdown.png" },
@@ -628,7 +629,7 @@ export default function HomeNavbar() {
                         </div>
                         <div className="flex flex-col items-end mt-4 sm:mt-0">
                           <span className="text-xs text-gray-400 mb-2">
-                            {getItemDate() && `Published: ${getItemDate()}`}
+                            {getItemDate() && `Published: ${formatDate(getItemDate())}`}
                           </span>
                           <span className="text-xs text-gray-400 capitalize">{item._type}</span>
                         </div>
