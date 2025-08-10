@@ -3,7 +3,7 @@ export default {
   title: "Bonus Types",
   type: "document",
   validation: Rule => Rule.custom((doc, context) => {
-    if (!doc?.name || !doc?.country) return true // Skip validation if required fields are missing
+    if (!doc?.name || !doc?.country?._ref) return true // Skip validation if required fields are missing
     
     // Check if another bonus type with same name and country exists
     const { getClient } = context
@@ -11,12 +11,12 @@ export default {
     
     // Use a more reliable way to exclude the current document
     const currentId = doc._id || 'draft'
-    const query = `count(*[_type == "bonusType" && name == $name && country == $country && _id != $currentId])`
+    const query = `count(*[_type == "bonusType" && name == $name && country._ref == $countryId && _id != $currentId])`
     
-    return client.fetch(query, { name: doc.name, country: doc.country, currentId })
+    return client.fetch(query, { name: doc.name, countryId: doc.country._ref, currentId })
       .then(count => {
         if (count > 0) {
-          return `A bonus type with name "${doc.name}" already exists in ${doc.country}`
+          return `A bonus type with name "${doc.name}" already exists in this country`
         }
         return true
       })
@@ -28,14 +28,14 @@ export default {
   preview: {
     select: {
       title: 'name',
-      subtitle: 'country',
+      country: 'country.country'
     },
     prepare(selection) {
-      const {title, subtitle} = selection
+      const { title, country } = selection;
       return {
-        title: title || 'Untitled Bonus Type',
-        subtitle: subtitle,
-      }
+        title: title,
+        subtitle: country || 'Unknown Country'
+      };
     }
   },
   fields: [
@@ -56,13 +56,12 @@ export default {
     {
       name: "country",
       title: "Country",
-      type: "string",
+      type: "reference",
+      to: [{ type: "countryPage" }],
       validation: Rule => Rule.required(),
+      description: "Country (must match a country from Countries section)",
       options: {
-        list: [
-          { title: "Nigeria", value: "Nigeria" },
-          { title: "Ghana", value: "Ghana" }
-        ]
+        filter: 'isActive == true'
       }
     },
   ]

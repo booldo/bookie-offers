@@ -5,14 +5,14 @@ export default {
   preview: {
     select: {
       title: 'title',
-      subtitle: 'country'
+      country: 'country.country'
     },
     prepare(selection) {
-      const {title, subtitle} = selection
+      const { title, country } = selection;
       return {
-        title: title || 'Untitled Comparison',
-        subtitle: subtitle
-      }
+        title: title,
+        subtitle: country || 'Unknown Country'
+      };
     }
   },
   fields: [
@@ -26,15 +26,13 @@ export default {
     {
       name: "country",
       title: "Country",
-      type: "string",
+      type: "reference",
+      to: [{ type: "countryPage" }],
       validation: Rule => Rule.required(),
+      description: "Country this comparison is for",
       options: {
-        list: [
-          { title: "Nigeria", value: "Nigeria" },
-          { title: "Ghana", value: "Ghana" }
-        ]
-      },
-      description: "Which country this comparison content is for"
+        filter: 'isActive == true'
+      }
     },
     {
       name: "content",

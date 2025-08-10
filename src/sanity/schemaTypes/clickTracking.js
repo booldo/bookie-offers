@@ -40,13 +40,12 @@ export default {
     {
       name: 'country',
       title: 'Country',
-      type: 'string',
+      type: 'reference',
+      to: [{ type: 'countryPage' }],
+      validation: Rule => Rule.required(),
+      description: 'Country this click tracking is for',
       options: {
-        list: [
-          { title: 'Nigeria', value: 'Nigeria' },
-          { title: 'Ghana', value: 'Ghana' },
-          { title: 'World Wide', value: 'World Wide' }
-        ]
+        filter: 'isActive == true'
       }
     },
     {
@@ -91,14 +90,14 @@ export default {
     select: {
       title: 'linkTitle',
       linkType: 'linkType',
-      country: 'country',
+      country: 'country.country',
       clickedAt: 'clickedAt'
     },
     prepare(selection) {
       const { title, linkType, country, clickedAt } = selection;
       return {
         title: title || 'Untitled Link',
-        subtitle: `${linkType} - ${country} - ${clickedAt ? new Date(clickedAt).toLocaleDateString() : 'No date'}`
+        subtitle: `${linkType} - ${country || 'Unknown Country'} - ${clickedAt ? new Date(clickedAt).toLocaleDateString() : 'No date'}`
       };
     }
   }

@@ -12,14 +12,13 @@ export default {
     {
       name: "country",
       title: "Country",
-      type: "string",
+      type: "reference",
+      to: [{ type: "countryPage" }],
       validation: Rule => Rule.required(),
+      description: "Country this banner is for",
       options: {
-        list: [
-          { title: "Ghana", value: "Ghana" },
-          { title: "Nigeria", value: "Nigeria" },
-        ],
-      },
+        filter: 'isActive == true'
+      }
     },
     {
       name: "image",
@@ -95,17 +94,17 @@ export default {
   ],
   preview: {
     select: {
-      title: "title",
-      country: "country",
-      media: "image",
+      title: 'title',
+      country: 'country.country',
+      image: 'image'
     },
     prepare(selection) {
-      const { title, country, media } = selection;
+      const { title, country, image } = selection;
       return {
         title: title,
-        subtitle: country,
-        media: media,
+        subtitle: country || 'Unknown Country',
+        media: image
       };
-    },
+    }
   },
 }; 

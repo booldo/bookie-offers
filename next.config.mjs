@@ -2,6 +2,7 @@
 const nextConfig = {
   experimental: {
     optimizePackageImports: ['@portabletext/react'],
+    ppr: 'incremental',
   },
   images: {
     remotePatterns: [

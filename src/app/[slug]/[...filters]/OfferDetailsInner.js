@@ -10,6 +10,7 @@ import { PortableText } from '@portabletext/react';
 import { formatDate } from '../../../utils/dateFormatter';
 import { useRouter } from "next/navigation";
 import TrackedLink from "../../../components/TrackedLink";
+import { useCountryContext } from '../../../hooks/useCountryContext';
 
 // Custom components for PortableText
 const portableTextComponents = {
@@ -71,6 +72,7 @@ const FAQItem = ({ question, answer, isOpen, onToggle }) => {
 };
 
 function OfferDetailsInner({ slug }) {
+  const { countryData, loading: countryLoading, error: countryError, isCountryLoaded, getCountryName, getCountrySlug } = useCountryContext();
   const router = useRouter();
   const [offer, setOffer] = useState(null);
   const [moreOffers, setMoreOffers] = useState([]);
@@ -85,12 +87,17 @@ function OfferDetailsInner({ slug }) {
 
   useEffect(() => {
     if (!slug) return;
+    if (!isCountryLoaded()) return;
+    
+    const countryName = getCountryName();
+    if (!countryName) return;
+
     setLoading(true);
-    // Fetch the main offer and more offers from Sanity
+    // Fetch the main offer and more offers from Sanity - now dynamic by country
     const fetchData = async () => {
       try {
-        // Fetch the main offer by slug with metadata fields
-        const mainOfferQuery = `*[_type == "offers" && country == "Ghana" && slug.current == $slug][0]{
+        
+        const mainOfferQuery = `*[_type == "offers" && country == $countryName && slug.current == $slug][0]{
           _id,
           title,
           bonusType->{name},
@@ -128,11 +135,11 @@ function OfferDetailsInner({ slug }) {
           sitemapInclude,
           offerSummary
         }`;
-        const mainOffer = await client.fetch(mainOfferQuery, { slug });
+        const mainOffer = await client.fetch(mainOfferQuery, { slug, countryName });
         setOffer(mainOffer);
 
-        // Fetch more offers (excluding the current one)
-        const moreOffersQuery = `*[_type == "offers" && country == "Ghana" && slug.current != $slug] | order(_createdAt desc) [0...$count] {
+        // Fetch more offers (excluding the current one) - now dynamic
+        const moreOffersQuery = `*[_type == "offers" && country == $countryName && slug.current != $slug] | order(_createdAt desc) [0...$count] {
           _id,
           bonusType->{name},
           slug,
@@ -147,12 +154,12 @@ function OfferDetailsInner({ slug }) {
           expires,
           published
         }`;
-        const moreOffersData = await client.fetch(moreOffersQuery, { slug, count: loadMoreCount });
+        const moreOffersData = await client.fetch(moreOffersQuery, { slug, count: loadMoreCount, countryName });
         setMoreOffers(moreOffersData);
 
-        // Get total count for pagination
-        const totalQuery = `count(*[_type == "offers" && country == "Ghana" && slug.current != $slug])`;
-        const total = await client.fetch(totalQuery, { slug });
+        // Get total count for pagination - now dynamic
+        const totalQuery = `count(*[_type == "offers" && country == $countryName && slug.current != $slug])`;
+        const total = await client.fetch(totalQuery, { slug, countryName });
         setTotalOffers(total);
 
       } catch (err) {
@@ -164,7 +171,7 @@ function OfferDetailsInner({ slug }) {
     };
 
     fetchData();
-  }, [slug, loadMoreCount]);
+  }, [slug, loadMoreCount, isCountryLoaded, getCountryName]);
 
   // Restore scroll position when component mounts
   useLayoutEffect(() => {
@@ -184,9 +191,12 @@ function OfferDetailsInner({ slug }) {
   }, []);
 
   const handleLoadMore = async () => {
+    const countryName = getCountryName();
+    if (!countryName) return;
+
     setIsLoadingMore(true);
     try {
-      const moreOffersQuery = `*[_type == "offers" && country == "Ghana" && slug.current != $slug] | order(_createdAt desc) [0...$count] {
+      const moreOffersQuery = `*[_type == "offers" && country == $countryName && slug.current != $slug] | order(_createdAt desc) [0...$count] {
         _id,
         bonusType->{name},
         slug,
@@ -201,7 +211,7 @@ function OfferDetailsInner({ slug }) {
         expires,
         published
       }`;
-      const moreOffersData = await client.fetch(moreOffersQuery, { slug, count: loadMoreCount + 4 });
+      const moreOffersData = await client.fetch(moreOffersQuery, { slug, count: loadMoreCount + 4, countryName });
       setMoreOffers(moreOffersData);
       setLoadMoreCount(prev => prev + 4);
     } catch (err) {
@@ -214,6 +224,49 @@ function OfferDetailsInner({ slug }) {
   const handleFAQToggle = (index) => {
     setOpenFAQIndex(openFAQIndex === index ? null : index);
   };
+
+  // Show loading state while country is loading
+  if (countryLoading) {
+    return (
+      <div className="min-h-screen bg-[#fafbfc] flex flex-col">
+        <Navbar />
+        <main className="max-w-7xl mx-auto w-full px-2 sm:px-4 flex-1">
+          <div className="flex justify-center items-center py-20">
+            <div className="flex space-x-2">
+              <div className="w-3 h-3 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+              <div className="w-3 h-3 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+              <div className="w-3 h-3 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Show error state if country not found
+  if (countryError || !countryData) {
+    return (
+      <div className="min-h-screen bg-[#fafbfc] flex flex-col">
+        <Navbar />
+        <main className="max-w-7xl mx-auto w-full px-2 sm:px-4 flex-1">
+          <div className="flex justify-center items-center py-20">
+            <div className="text-center">
+              <h1 className="text-2xl font-bold text-gray-900 mb-4">Country Not Found</h1>
+              <p className="text-gray-600 mb-4">{countryError || "The requested country page could not be found."}</p>
+              <button
+                onClick={() => router.push('/')}
+                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+              >
+                Go Home
+              </button>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#fafbfc] flex flex-col">
@@ -287,7 +340,7 @@ function OfferDetailsInner({ slug }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 isAffiliate={true}
-                offerSlug={`gh/${offer.slug?.current}`}
+                offerSlug={`${getCountrySlug()}/${offer.slug?.current}`}
                 className="hidden sm:flex sm:w-fit sm:px-6 bg-[#018651] hover:bg-[#017a4a] text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 items-center justify-center gap-2 mb-6"
               >
                 Get Bonus
@@ -341,7 +394,7 @@ function OfferDetailsInner({ slug }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 isAffiliate={true}
-                offerSlug={`gh/${offer.slug?.current}`}
+                offerSlug={`${getCountrySlug()}/${offer.slug?.current}`}
                 className="sm:hidden w-full bg-[#018651] hover:bg-[#017a4a] text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 mb-6"
               >
                 Get Bonus
@@ -389,7 +442,7 @@ function OfferDetailsInner({ slug }) {
                   <div
                     key={moreOffer._id}
                     className="border border-gray-100 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
-                    onClick={() => router.push(`/gh/${moreOffer.bonusType?.name?.toLowerCase().replace(/\s+/g, '-')}/${moreOffer.slug?.current}`)}
+                    onClick={() => router.push(`/${getCountrySlug()}/${moreOffer.bonusType?.name?.toLowerCase().replace(/\s+/g, '-')}/${moreOffer.slug?.current}`)}
                   >
                     <div className="flex justify-between items-start">
                       <div className="flex items-center gap-3">

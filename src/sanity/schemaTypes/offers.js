@@ -34,15 +34,13 @@ export default {
     select: {
       title: 'title',
       bookmakerName: 'bookmaker.name',
-      country: 'country',
-      media: 'banner'
+      country: 'country.country'
     },
     prepare(selection) {
       const {title, bookmakerName, country} = selection
       return {
-        title: title && bookmakerName ? `${title} - ${bookmakerName}` : 'Untitled Offer',
-        subtitle: country,
-        media: selection.media
+        title: title,
+        subtitle: `${bookmakerName || 'No Bookmaker'} - ${country || 'Unknown Country'}`
       }
     }
   },
@@ -56,14 +54,12 @@ export default {
     },
     {
       name: "country",
-      title: "Country",
-      type: "string",
+      title: "Page",
+      type: "reference",
+      to: [{ type: "countryPage" }],
       validation: Rule => Rule.required(),
       options: {
-        list: [
-          { title: "Nigeria", value: "Nigeria" },
-          { title: "Ghana", value: "Ghana" }
-        ]
+        filter: 'isActive == true'
       }
     },
     {
@@ -76,12 +72,12 @@ export default {
       options: {
         filter: ({document}) => {
           // If no country is selected, show all bonus types
-          if (!document?.country) return {}
+          if (!document?.country?._ref) return {}
           
-          // Filter bonus types by the selected country
+          // Filter bonus types by the selected country reference
           return {
-            filter: 'country == $country',
-            params: { country: document.country }
+            filter: 'country._ref == $countryId',
+            params: { countryId: document.country._ref }
           }
         }
       }
@@ -95,12 +91,12 @@ export default {
       options: {
         filter: ({document}) => {
           // If no country is selected, show all bookmakers
-          if (!document?.country) return {}
+          if (!document?.country?._ref) return {}
           
-          // Filter bookmakers by the selected country
+          // Filter bookmakers by the selected country reference
           return {
-            filter: 'country == $country',
-            params: { country: document.country }
+            filter: 'country._ref == $countryId',
+            params: { countryId: document.country._ref }
           }
         }
       }
@@ -128,6 +124,7 @@ export default {
       name: "slug",
       title: "Generate Pretty Link",
       type: "slug",
+      description: "This will appear as www.booldo.com/pretty link",
       options: {
         source: async (doc, context) => {
           const { getClient } = context;

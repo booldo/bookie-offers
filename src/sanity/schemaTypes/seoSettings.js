@@ -11,15 +11,14 @@ export default {
   fields: [
     {
       name: "country",
-      title: "Country Page",
-      type: "string",
+      title: "Country",
+      type: "reference",
+      to: [{ type: "countryPage" }],
       validation: Rule => Rule.required(),
+      description: "Country these SEO settings are for",
       options: {
-        list: [
-          { title: "Ghana", value: "Ghana" },
-          { title: "Nigeria", value: "Nigeria" },
-        ],
-      },
+        filter: 'isActive == true'
+      }
     },
     {
       name: "defaultMetaTitle",

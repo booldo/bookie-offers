@@ -11,6 +11,7 @@ import comparison from "./comparison";
 import affiliate from "./affiliate";
 import about from "./about";
 import contact from "./contact";
+import countryPage from "./countryPage";
 
 export const schemaTypes = [
   bookmaker,
@@ -25,6 +26,7 @@ export const schemaTypes = [
   affiliate,
   about,
   contact,
+  countryPage,
 ];
 
 export const schema: { types: SchemaTypeDefinition[] } = {

@@ -5,130 +5,96 @@ export const structure: StructureResolver = (S) =>
   S.list()
     .title('Content')
     .items([
-      // Nigeria Section
+      // Dynamic Countries Section
       S.listItem()
-        .title('🇳🇬 Nigeria')
+        .title('Countries')
         .child(
-          S.list()
-            .title('Nigeria Content')
-            .items([
-              S.listItem()
-                .title('Bookmakers')
-                .child(
-                  S.documentList()
-                    .title('Nigeria Bookmakers')
-                    .filter('_type == "bookmaker" && country == "Nigeria"')
-                ),
-              S.listItem()
-                .title('Bonus Types')
-                .child(
-                  S.documentList()
-                    .title('Nigeria Bonus Types')
-                    .filter('_type == "bonusType" && country == "Nigeria"')
-                ),
-              S.listItem()
-                .title('Offers')
-                .child(
-                  S.documentList()
-                    .title('Nigeria Offers')
-                    .filter('_type == "offers" && bookmaker->country == "Nigeria"')
-                ),
-              S.listItem()
-                .title('Homepage Metadata')
-                .child(
-                  S.documentList()
-                    .title('Nigeria Homepage Metadata')
-                    .filter('_type == "seoSettings" && country == "Nigeria"')
-                ),
-              S.listItem()
-                .title('Homepage Banners')
-                .child(
-                  S.documentList()
-                    .title('Nigeria Homepage Banners')
-                    .filter('_type == "banner" && country == "Nigeria"')
-                ),
-              S.listItem()
-                .title('Homepage Content')
-                .child(
-                  S.documentList()
-                    .title('Nigeria Homepage Content')
-                    .filter('_type == "comparison" && country == "Nigeria"')
-                ),
-              S.listItem()
-                .title('Affiliate Links')
-                .child(
-                  S.documentList()
-                    .title('Nigeria Affiliate Links')
-                    .filter('_type == "affiliate" && country == "Nigeria"')
-                ),
-            ])
+          S.documentTypeList('countryPage')
+            .title('Countries')
+            .child((countryId) =>
+              S.list()
+                .title('Country Management')
+                .items([
+                  // Country Settings
+                  S.listItem()
+                    .title('Add Country')
+                    .child(
+                      S.document()
+                        .documentId(countryId)
+                        .schemaType('countryPage')
+                    ),
+                  
+                  S.divider(),
+                  
+                  // Bookmakers
+                  S.listItem()
+                    .title('Bookmakers')
+                    .child(
+                      S.documentList()
+                        .title('Bookmakers')
+                        .filter('_type == "bookmaker" && country._ref == $countryId')
+                        .params({countryId})
+                    ),
+                  
+                  // Offers
+                  S.listItem()
+                    .title('Offers')
+                    .child(
+                      S.documentList()
+                        .title('Offers')
+                        .filter('_type == "offers" && bookmaker->country._ref == $countryId')
+                        .params({countryId})
+                    ),
+                  
+                  // Bonus Types
+                  S.listItem()
+                    .title('Bonus Types')
+                    .child(
+                      S.documentList()
+                        .title('Bonus Types')
+                        .filter('_type == "bonusType" && country._ref == $countryId')
+                        .params({countryId})
+                    ),
+                  
+                  // Homepage Banners
+                  S.listItem()
+                    .title('Homepage Banners')
+                    .child(
+                      S.documentList()
+                        .title('Homepage Banners')
+                        .filter('_type == "banner" && country._ref == $countryId')
+                        .params({countryId})
+                    ),
+                  
+                  // Homepage Content
+                  S.listItem()
+                    .title('Homepage Content')
+                    .child(
+                      S.documentList()
+                        .title('Homepage Content')
+                        .filter('_type == "comparison" && country._ref == $countryId')
+                        .params({countryId})
+                    ),
+                  
+                  // Affiliate Links
+                  S.listItem()
+                    .title('Affiliate Links')
+                    .child(
+                      S.documentList()
+                        .title('Affiliate Links')
+                        .filter('_type == "affiliate" && bookmaker->country._ref == $countryId')
+                        .params({countryId})
+                    ),
+                ])
+            )
         ),
 
-      // Ghana Section
+      // Content Management Section
       S.listItem()
-        .title('🇬🇭 Ghana')
+        .title('Content Management')
         .child(
           S.list()
-            .title('Ghana Content')
-            .items([
-              S.listItem()
-                .title('Bookmakers')
-                .child(
-                  S.documentList()
-                    .title('Ghana Bookmakers')
-                    .filter('_type == "bookmaker" && country == "Ghana"')
-                ),
-              S.listItem()
-                .title('Bonus Types')
-                .child(
-                  S.documentList()
-                    .title('Ghana Bonus Types')
-                    .filter('_type == "bonusType" && country == "Ghana"')
-                ),
-              S.listItem()
-                .title('Offers')
-                .child(
-                  S.documentList()
-                    .title('Ghana Offers')
-                    .filter('_type == "offers" && bookmaker->country == "Ghana"')
-                ),
-              S.listItem()
-                .title('Homepage Metadata')
-                .child(
-                  S.documentList()
-                    .title('Ghana Homepage Metadata')
-                    .filter('_type == "seoSettings" && country == "Ghana"')
-                ),
-              S.listItem()
-                .title('Homepage Banners')
-                .child(
-                  S.documentList()
-                    .title('Ghana Homepage Banners')
-                    .filter('_type == "banner" && country == "Ghana"')
-                ),
-              S.listItem()
-                .title('Homepage Content')
-                .child(
-                  S.documentList()
-                    .title('Ghana Homepage Content')
-                    .filter('_type == "comparison" && country == "Ghana"')
-                ),
-              S.listItem()
-                .title('Affiliate Links')
-                .child(
-                  S.documentList()
-                    .title('Ghana Affiliate Links')
-                    .filter('_type == "affiliate" && country == "Ghana"')
-                ),
-            ])
-        ),
-
-      // Worldwide Section
-      S.listItem()
-        .title('🌍 Worldwide')
-        .child(
-          S.list()
-            .title('Worldwide Content')
+            .title('Content Management')
             .items([
               S.listItem()
                 .title('Articles')
@@ -137,7 +103,6 @@ export const structure: StructureResolver = (S) =>
                     .title('Articles')
                     .filter('_type == "article"')
                 ),
-
               S.listItem()
                 .title('About')
                 .child(
@@ -145,7 +110,6 @@ export const structure: StructureResolver = (S) =>
                     .title('About')
                     .filter('_type == "about"')
                 ),
-
               S.listItem()
                 .title('Contact')
                 .child(
@@ -153,7 +117,6 @@ export const structure: StructureResolver = (S) =>
                     .title('Contact')
                     .filter('_type == "contact"')
                 ),
-
               S.listItem()
                 .title('FAQs')
                 .child(
@@ -162,10 +125,10 @@ export const structure: StructureResolver = (S) =>
                     .filter('_type == "faq"')
                 ),
               S.listItem()
-                .title('Homepage Metadata')
+                .title('SEO Settings')
                 .child(
                   S.documentList()
-                    .title('Homepage Metadata')
+                    .title('SEO Settings')
                     .filter('_type == "seoSettings"')
                 ),
               S.listItem()
@@ -175,7 +138,6 @@ export const structure: StructureResolver = (S) =>
                     .title('Click Tracking')
                     .filter('_type == "clickTracking"')
                 ),
-
             ])
         ),
 
@@ -184,7 +146,7 @@ export const structure: StructureResolver = (S) =>
 
       // All Documents (for admin purposes)
       S.listItem()
-        .title('📋 All Documents')
+        .title('All Documents')
         .child(
           S.list()
             .title('All Documents')
