@@ -1,7 +1,5 @@
 "use client";
 import React, { useLayoutEffect, useRef, useEffect, useState } from "react";
-import Navbar from "../../../components/Navbar";
-import Footer from "../../../components/Footer";
 import Image from "next/image";
 import Link from "next/link";
 import { client } from "../../../sanity/lib/client";
@@ -229,7 +227,6 @@ function OfferDetailsInner({ slug }) {
   if (countryLoading) {
     return (
       <div className="min-h-screen bg-[#fafbfc] flex flex-col">
-        <Navbar />
         <main className="max-w-7xl mx-auto w-full px-2 sm:px-4 flex-1">
           <div className="flex justify-center items-center py-20">
             <div className="flex space-x-2">
@@ -239,7 +236,6 @@ function OfferDetailsInner({ slug }) {
             </div>
           </div>
         </main>
-        <Footer />
       </div>
     );
   }
@@ -248,7 +244,6 @@ function OfferDetailsInner({ slug }) {
   if (countryError || !countryData) {
     return (
       <div className="min-h-screen bg-[#fafbfc] flex flex-col">
-        <Navbar />
         <main className="max-w-7xl mx-auto w-full px-2 sm:px-4 flex-1">
           <div className="flex justify-center items-center py-20">
             <div className="text-center">
@@ -263,14 +258,12 @@ function OfferDetailsInner({ slug }) {
             </div>
           </div>
         </main>
-        <Footer />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-[#fafbfc] flex flex-col">
-      <Navbar />
       <main className="max-w-7xl mx-auto w-full px-2 sm:px-4 flex-1">
         {loading && (
           <div className="flex justify-center items-center py-20">
@@ -282,7 +275,7 @@ function OfferDetailsInner({ slug }) {
           </div>
         )}
         
-        {/* Breadcrumb */}
+        {/* Updated Breadcrumb */}
         <div className="mt-6 mb-4 flex items-center gap-2 text-sm text-gray-500 ml-2">
           <button type="button" onClick={() => router.back()} className="hover:underline flex items-center gap-1">
             <img src="/assets/back-arrow.png" alt="Back" width="16" height="16" />
@@ -292,7 +285,7 @@ function OfferDetailsInner({ slug }) {
           <span className="text-gray-700 font-medium">{offer?.bonusType?.name || "Bonus"}</span>
         </div>
         
-        {/* Offer Banner */}
+        {/* Individual Offer Banner */}
         {!loading && !error && offer && offer.banner && (
           <div className="mb-6">
             <Image 
@@ -304,12 +297,14 @@ function OfferDetailsInner({ slug }) {
             />
           </div>
         )}
+        
         {/* Offer Card */}
         {error && <div className="text-center text-red-500">{error}</div>}
         {!error && offer && (
           <>
             {/* Offer Card */}
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6 flex flex-col">
+              {/* Top row */}
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center gap-3">
                 {offer.bookmaker?.logo ? (
@@ -321,10 +316,12 @@ function OfferDetailsInner({ slug }) {
               </div>
               <span className="text-gray-500 text-sm">Published: {formatDate(offer.published)}</span>
             </div>
+
             <h1 className="text-2xl font-bold text-gray-900 mb-2">{offer.title}</h1>
             <div className="text-gray-700 mb-4">
               {offer.description && <PortableText value={offer.description} components={portableTextComponents} />}
             </div>
+              
             <div className="flex items-center gap-2 mb-6">
               <img src="/assets/calendar.png" alt="Calendar" width="18" height="18" />
               <span className="text-black text-sm">Expires: {formatDate(offer.expires)}</span>
@@ -419,11 +416,11 @@ function OfferDetailsInner({ slug }) {
               <div>
                 <div className="font-semibold text-gray-900 mb-4">Frequently Asked Questions</div>
                 <div className="space-y-3">
-                  {offer.faq.map((item, index) => (
+                    {offer.faq.map((faqItem, index) => (
                     <FAQItem 
                       key={index} 
-                      question={item.question} 
-                      answer={item.answer}
+                        question={faqItem.question}
+                        answer={faqItem.answer}
                       isOpen={openFAQIndex === index}
                       onToggle={() => handleFAQToggle(index)}
                     />
@@ -437,11 +434,11 @@ function OfferDetailsInner({ slug }) {
           {moreOffers.length > 0 && (
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6">
               <div className="font-semibold text-gray-900 mb-4">More Offers</div>
-              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {moreOffers.map((moreOffer) => (
                   <div
                     key={moreOffer._id}
-                    className="border border-gray-100 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                      className="border border-gray-100 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer h-full"
                     onClick={() => router.push(`/${getCountrySlug()}/${moreOffer.bonusType?.name?.toLowerCase().replace(/\s+/g, '-')}/${moreOffer.slug?.current}`)}
                   >
                     <div className="flex justify-between items-start">
@@ -453,10 +450,10 @@ function OfferDetailsInner({ slug }) {
                         )}
                         <div>
                           <div className="font-semibold text-gray-900">{moreOffer.bookmaker?.name}</div>
-                          <div className="text-sm text-gray-600">{moreOffer.title}</div>
+                            <div className="text-sm text-gray-600 line-clamp-2">{moreOffer.title}</div>
+                          </div>
                         </div>
-                      </div>
-                      <span className="text-xs text-gray-500">Published: {formatDate(moreOffer.published)}</span>
+                        <span className="text-xs text-gray-500">{formatDate(moreOffer.published)}</span>
                     </div>
                     {moreOffer.offerSummary && (
                       <div className="mt-2 text-sm text-gray-600">
@@ -488,7 +485,6 @@ function OfferDetailsInner({ slug }) {
         </>
         )}
       </main>
-      <Footer />
     </div>
   );
 }

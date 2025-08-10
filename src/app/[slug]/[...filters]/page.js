@@ -1,5 +1,6 @@
 import CountryPageShell, { generateStaticParams, generateMetadata } from '../CountryPageShell';
 import DynamicOffers from '../DynamicOffers';
+import OfferDetailsInner from './OfferDetailsInner';
 import { Suspense } from "react";
 
 // Use the same static generation functions from CountryPageShell
@@ -7,6 +8,30 @@ export { generateStaticParams, generateMetadata };
 
 export default async function CountryFiltersPage({ params }) {
   const awaitedParams = await params;
+  
+  // Check if this is an offer details page (has 3 segments: country/bonus-type/offer-slug)
+  const isOfferDetailsPage = awaitedParams.filters && awaitedParams.filters.length >= 2;
+  
+  if (isOfferDetailsPage) {
+    // Extract the offer slug from the last segment
+    const offerSlug = awaitedParams.filters[awaitedParams.filters.length - 1];
+    return (
+      <CountryPageShell params={awaitedParams}>
+        <Suspense fallback={
+          <div className="flex justify-center items-center py-20">
+            <div className="flex space-x-2">
+              <div className="w-3 h-3 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+              <div className="w-3 h-3 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+              <div className="w-3 h-3 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+            </div>
+          </div>
+        }>
+          <OfferDetailsInner slug={offerSlug} />
+        </Suspense>
+      </CountryPageShell>
+    );
+  }
+  
   return (
     <CountryPageShell params={awaitedParams}>
       <Suspense fallback={

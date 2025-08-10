@@ -1,8 +1,9 @@
 import { client } from "../../../sanity/lib/client";
 
 export async function generateMetadata({ params }) {
-  const pathname = params?.filters || [];
-  const countrySlug = params?.slug;
+  const awaitedParams = await params;
+  const pathname = awaitedParams?.filters || [];
+  const countrySlug = awaitedParams?.slug;
   
   // First, get the country data
   let countryData = null;

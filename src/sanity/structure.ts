@@ -12,9 +12,9 @@ export const structure: StructureResolver = (S) =>
           S.documentTypeList('countryPage')
             .title('Countries')
             .child((countryId) =>
-              S.list()
+          S.list()
                 .title('Country Management')
-                .items([
+            .items([
                   // Country Settings
                   S.listItem()
                     .title('Add Country')
@@ -27,65 +27,65 @@ export const structure: StructureResolver = (S) =>
                   S.divider(),
                   
                   // Bookmakers
-                  S.listItem()
-                    .title('Bookmakers')
-                    .child(
-                      S.documentList()
+              S.listItem()
+                .title('Bookmakers')
+                .child(
+                  S.documentList()
                         .title('Bookmakers')
                         .filter('_type == "bookmaker" && country._ref == $countryId')
                         .params({countryId})
                     ),
                   
                   // Offers
-                  S.listItem()
-                    .title('Offers')
-                    .child(
-                      S.documentList()
+              S.listItem()
+                .title('Offers')
+                .child(
+                  S.documentList()
                         .title('Offers')
                         .filter('_type == "offers" && bookmaker->country._ref == $countryId')
                         .params({countryId})
                     ),
                   
                   // Bonus Types
-                  S.listItem()
-                    .title('Bonus Types')
-                    .child(
-                      S.documentList()
+              S.listItem()
+                .title('Bonus Types')
+                .child(
+                  S.documentList()
                         .title('Bonus Types')
                         .filter('_type == "bonusType" && country._ref == $countryId')
                         .params({countryId})
                     ),
                   
                   // Homepage Banners
-                  S.listItem()
-                    .title('Homepage Banners')
-                    .child(
-                      S.documentList()
+              S.listItem()
+                .title('Homepage Banners')
+                .child(
+                  S.documentList()
                         .title('Homepage Banners')
                         .filter('_type == "banner" && country._ref == $countryId')
                         .params({countryId})
-                    ),
+                ),
                   
                   // Homepage Content
-                  S.listItem()
-                    .title('Homepage Content')
-                    .child(
-                      S.documentList()
+              S.listItem()
+                .title('Homepage Content')
+                .child(
+                  S.documentList()
                         .title('Homepage Content')
                         .filter('_type == "comparison" && country._ref == $countryId')
                         .params({countryId})
-                    ),
+                ),
                   
                   // Affiliate Links
-                  S.listItem()
-                    .title('Affiliate Links')
-                    .child(
-                      S.documentList()
+              S.listItem()
+                .title('Affiliate Links')
+                .child(
+                  S.documentList()
                         .title('Affiliate Links')
                         .filter('_type == "affiliate" && bookmaker->country._ref == $countryId')
                         .params({countryId})
-                    ),
-                ])
+                ),
+            ])
             )
         ),
 

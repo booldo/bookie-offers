@@ -116,6 +116,8 @@ export default function DynamicOffers({ countrySlug }) {
   const [advancedOptions, setAdvancedOptions] = useState([]);
   const [loadingStage, setLoadingStage] = useState('initial'); // 'initial', 'country', 'offers', 'complete'
   const [filterLoading, setFilterLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [offersPerPage] = useState(10);
   const sortByRef = useRef();
 
   // Helper functions for URL/Filter sync
@@ -242,12 +244,12 @@ export default function DynamicOffers({ countrySlug }) {
         const data = await fetchCountryData();
         if (!data) return;
         
-        console.log('🏳️ Country data fetched:', data);
+        console.log(' Country data fetched:', data);
         setLoadingStage('offers');
         const offersData = await fetchOffers(data.country);
         
         if (!offersData) {
-          console.log('⚠️ No offers data returned');
+          console.log(' No offers data returned');
           setOffers([]);
           setError('No offers data available');
           setLoading(false);
@@ -255,7 +257,7 @@ export default function DynamicOffers({ countrySlug }) {
           return;
         }
         
-        console.log('📦 Processing', offersData.length, 'offers for', data.country);
+        console.log('Processing', offersData.length, 'offers for', data.country);
         
         if (offersData.length === 0) {
           setError(`No offers found for ${data.country}. Please check if offers exist in Sanity CMS for this country.`);
@@ -323,7 +325,7 @@ export default function DynamicOffers({ countrySlug }) {
         
         setLoading(false);
       } catch (error) {
-        console.error('❌ Error loading data:', error);
+        console.error(' Error loading data:', error);
         setError('Failed to load offers. Please try again.');
         setLoading(false);
         setLoadingStage('initial');
@@ -408,6 +410,22 @@ export default function DynamicOffers({ countrySlug }) {
     });
   }
 
+  // Pagination logic
+  const totalPages = Math.ceil(sortedOffers.length / offersPerPage);
+  const startIndex = (currentPage - 1) * offersPerPage;
+  const endIndex = startIndex + offersPerPage;
+  const currentOffers = sortedOffers.slice(startIndex, endIndex);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedBonusTypes, selectedBookmakers, selectedAdvanced]);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   // Loading indicator component
   const LoadingIndicator = ({ stage }) => {
     const getStageText = () => {
@@ -448,11 +466,7 @@ export default function DynamicOffers({ countrySlug }) {
             </svg>
             {getStageText()}
           </div>
-          <p className="text-gray-600 text-sm mt-2">
-            {stage === 'country' && 'Fetching country information...'}
-            {stage === 'offers' && 'Loading offers and filters...'}
-            {stage === 'complete' && 'All data loaded successfully!'}
-          </p>
+
         </div>
       </div>
     );
@@ -465,6 +479,11 @@ export default function DynamicOffers({ countrySlug }) {
         <div className="flex items-center justify-between my-4">
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900 whitespace-nowrap font-['General_Sans']">
             Best Offers <span className="text-gray-400 font-normal text-base sm:text-xl">{offers.length}</span>
+            {totalPages > 1 && (
+              <span className="text-gray-400 font-normal text-base sm:text-xl ml-2">
+                (Page {currentPage} of {totalPages})
+              </span>
+            )}
           </h1>
           <div className="flex items-center gap-2">
             <label className="text-sm text-gray-500 mr-1">Sort By:</label>
@@ -592,7 +611,7 @@ export default function DynamicOffers({ countrySlug }) {
         {loading && (
           <LoadingIndicator stage={loadingStage} />
         )}
-                  {!loading && !error && sortedOffers.length === 0 && (
+                  {!loading && !error && currentOffers.length === 0 && (
             <div className="text-center py-12">
               <p className="text-gray-500 mb-4">No offers match your current filters.</p>
               <button
@@ -617,23 +636,10 @@ export default function DynamicOffers({ countrySlug }) {
             </div>
           )}
         
-        {/* Filter loading indicator */}
-        {filterLoading && (
-          <div className="text-center py-4">
-            <div className="inline-flex items-center px-3 py-1 text-sm text-blue-600 bg-blue-100 rounded-full">
-              <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Updating filters...
-            </div>
-          </div>
-        )}
-        
         {/* Offers list */}
-        {!loading && !error && sortedOffers.length > 0 && (
+        {!loading && !error && currentOffers.length > 0 && (
           <div className="flex flex-col gap-4 mb-6">
-            {sortedOffers.map((offer) => (
+            {currentOffers.map((offer) => (
               <div
                 key={offer._id}
                 className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex flex-col transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:border-gray-200 cursor-pointer"
@@ -671,6 +677,41 @@ export default function DynamicOffers({ countrySlug }) {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Pagination Controls */}
+        {!loading && !error && totalPages > 1 && (
+          <div className="flex justify-center items-center gap-2 mt-8 mb-6">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+            
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                onClick={() => handlePageChange(page)}
+                className={`px-3 py-2 text-sm font-medium rounded-md ${
+                  currentPage === page
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+            
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
           </div>
         )}
       </div>

@@ -23,10 +23,10 @@ async function getAboutData() {
         content
       }`),
       client.fetch(`*[_type == "article"]|order(_createdAt desc)[0...5]{
-        _id,
-        title,
-        slug,
-        mainImage
+          _id,
+          title,
+          slug,
+          mainImage
       }`)
     ]);
     
@@ -60,33 +60,33 @@ function ArticlesLoading() {
           </div>
         </div>
       ))}
-    </div>
+          </div>
   );
 }
 
 // Articles sidebar component
 function ArticlesSidebar({ articles }) {
   return (
-    <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-4">
       {articles.map((article) => (
-        <Link
-          key={article._id}
-          href={`/briefly/${article.slug.current}`}
-          className="flex gap-3 items-center bg-white rounded-lg shadow-sm p-2 transition hover:shadow-lg hover:scale-[1.03] cursor-pointer"
-        >
-          <div className="w-16 h-16 flex-shrink-0 rounded overflow-hidden bg-gray-100">
-            {article.mainImage ? (
-              <img src={urlFor(article.mainImage)} alt={article.title} className="object-cover w-full h-full" />
-            ) : (
-              <div className="w-full h-full bg-gray-200" />
-            )}
-          </div>
-          <div className="text-sm font-semibold text-gray-900 leading-tight">
-            {article.title}
-          </div>
-        </Link>
-      ))}
-    </div>
+                <Link
+                  key={article._id}
+                  href={`/briefly/${article.slug.current}`}
+                  className="flex gap-3 items-center bg-white rounded-lg shadow-sm p-2 transition hover:shadow-lg hover:scale-[1.03] cursor-pointer"
+                >
+                  <div className="w-16 h-16 flex-shrink-0 rounded overflow-hidden bg-gray-100">
+                    {article.mainImage ? (
+                      <img src={urlFor(article.mainImage)} alt={article.title} className="object-cover w-full h-full" />
+                    ) : (
+                      <div className="w-full h-full bg-gray-200" />
+                    )}
+                  </div>
+                  <div className="text-sm font-semibold text-gray-900 leading-tight">
+                    {article.title}
+                  </div>
+                </Link>
+              ))}
+            </div>
   );
 }
 
@@ -126,4 +126,4 @@ export default async function AboutPage() {
       <Footer />
     </div>
   );
-}
+} 
