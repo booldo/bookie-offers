@@ -40,7 +40,6 @@ async function getOfferDetailsData(slug, countryName) {
       affiliateLink,
       banner,
       bannerAlt,
-      terms,
       howItWorks,
       faq,
       offerSummary,

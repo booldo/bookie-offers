@@ -214,12 +214,6 @@ export default {
       of: [{ type: "block" }]
     },
     {
-      name: "terms",
-      title: "Text Block 4 (terms and conditions)",
-      type: "array",
-      of: [{ type: "block" }]
-    },
-    {
       name: "faq",
       title: "FAQ",
       type: "array",

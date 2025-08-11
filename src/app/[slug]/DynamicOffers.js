@@ -66,7 +66,6 @@ const fetchOffers = async (countryData) => {
     affiliateLink,
     banner,
     bannerAlt,
-    terms,
     howItWorks,
     faq,
     offerSummary,
@@ -75,24 +74,24 @@ const fetchOffers = async (countryData) => {
   
   try {
     const result = await client.fetch(query, { countryName });
-    console.log('✅ Offers fetched:', result.length, 'offers found for', countryName);
+    console.log('Offers fetched:', result.length, 'offers found for', countryName);
     
     // Debug: Let's also check what countries exist in offers
     const allCountries = await client.fetch(`*[_type == "offers"]{ country->country }`);
     const uniqueCountries = [...new Set(allCountries.map(o => o.country?.country).filter(Boolean))];
-    console.log('🌍 Available countries in offers:', uniqueCountries);
+    console.log('Available countries in offers:', uniqueCountries);
     
     // Debug: Check if there are any offers at all
     const totalOffers = await client.fetch(`count(*[_type == "offers"])`);
-    console.log('📊 Total offers in system:', totalOffers);
+    console.log('Total offers in system:', totalOffers);
     
     // Debug: Check offers for this specific country
     const countryOffers = await client.fetch(`*[_type == "offers" && country->country == $countryName]{ title, country->country }`, { countryName });
-    console.log('🎯 Offers for', countryName, ':', countryOffers);
+    console.log('Offers for', countryName, ':', countryOffers);
     
     return result;
   } catch (error) {
-    console.error('❌ Error fetching offers:', error);
+    console.error('Error fetching offers:', error);
     throw error;
   }
 };
