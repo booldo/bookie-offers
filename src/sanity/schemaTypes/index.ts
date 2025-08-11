@@ -27,7 +27,6 @@ export const schemaTypes = [
   about,
   contact,
   countryPage,
-  codeInput,
 ];
 
 export const schema: { types: SchemaTypeDefinition[] } = {
