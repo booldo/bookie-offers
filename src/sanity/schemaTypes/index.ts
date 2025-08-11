@@ -1,5 +1,4 @@
 import { type SchemaTypeDefinition } from 'sanity'
-import codeInput from 'sanity-plugin-code-input'
 import bookmaker from './bookmaker'
 import bonusType from './bonusType'
 import offers from './offers'
