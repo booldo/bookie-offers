@@ -360,7 +360,7 @@ export default function HomeNavbar() {
             className="flex items-center gap-1 p-2 rounded hover:bg-gray-100"
             onClick={() => setDropdownOpen((v) => !v)}
           >
-            <img src={selectedFlag.topIcon} alt={selectedFlag.name} className="w-6 h-6 rounded-full" />
+            <img src={selectedFlag.topIcon} alt={selectedFlag.name || selectedFlag.country} className="w-6 h-6 rounded-full" />
             <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path d="M6 9l6 6 6-6" />
             </svg>
@@ -368,16 +368,16 @@ export default function HomeNavbar() {
           {dropdownOpen && (
             <div className="absolute right-0 mt-2 w-56 bg-white border rounded shadow-lg z-20">
               {flags.map(flag => (
-                <button
-                  key={flag.name}
+                                  <button
+                  key={flag.name || flag.country}
                   className="flex items-center justify-between w-full px-4 py-2 hover:bg-gray-100"
                   onClick={() => handleFlagSelect(flag)}
                 >
                   <div className="flex items-center gap-2">
-                    <img src={flag.src} alt={flag.name} className="w-5 h-5" />
-                    <span>{flag.name}</span>
+                    <img src={flag.src} alt={flag.name || flag.country} className="w-5 h-5" />
+                    <span>{flag.name || flag.country}</span>
                   </div>
-                  {selectedFlag.name === flag.name && (
+                                      {(selectedFlag.name || selectedFlag.country) === (flag.name || flag.country) && (
                     <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="green" strokeWidth="3">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>

@@ -11,7 +11,7 @@ export default {
     },
     {
       name: 'slug',
-      title: 'Slug',
+      title: 'Generate URL',
       type: 'slug',
       options: {
         source: 'title',

@@ -33,7 +33,7 @@ export const TrackedLink: React.FC<TrackedLinkProps> = ({
 
   // Determine the display URL
   const displayUrl = isAffiliate && offerSlug 
-    ? `/api/redirect/${offerSlug}` 
+    ? `/${offerSlug}` 
     : href;
 
   const handleClick = async (e: React.MouseEvent) => {

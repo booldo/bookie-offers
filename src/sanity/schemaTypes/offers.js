@@ -243,7 +243,7 @@ export default {
     { name: "bannerAlt", title: "Banner Alt Text", type: "string", description: "Alternative text for accessibility and SEO" },
     {
       name: "howItWorks",
-      title: "Text Block 3 (how it works)",
+      title: "Content",
       type: "array",
       of: [{ type: "block" }]
     },
