@@ -128,7 +128,7 @@ export async function generateMetadata({ params }) {
 }
 
 // Main country page shell component
-export default async function CountryPageShell({ params, children }) {
+export default async function CountryPageShell({ params, children, isOfferDetailsPage = false }) {
   const awaitedParams = await params;
   const data = await getCountryPageData(awaitedParams.slug);
   
@@ -172,8 +172,8 @@ export default async function CountryPageShell({ params, children }) {
           </div>
         )}
         
-        {/* Static banner carousel - prerendered */}
-        {banners && banners.length > 0 && (
+        {/* Static banner carousel - prerendered; hidden on offer details */}
+        {!isOfferDetailsPage && banners && banners.length > 0 && (
           <div className="flex flex-col items-center mb-6">
             <BannerCarousel banners={banners} />
           </div>

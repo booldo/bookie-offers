@@ -34,13 +34,47 @@ export default {
     select: {
       title: 'title',
       bookmakerName: 'bookmaker.name',
-      country: 'country.country'
+      country: 'country.country',
+      bonusType: 'bonusType.name',
+      expires: 'expires',
+      published: 'published',
+      maxBonus: 'maxBonus',
+      minDeposit: 'minDeposit'
     },
     prepare(selection) {
-      const {title, bookmakerName, country} = selection
+      const {title, bookmakerName, country, bonusType, expires, published, maxBonus, minDeposit} = selection
+      
+      // Format dates
+      const formatDate = (date) => {
+        if (!date) return '';
+        return new Date(date).toLocaleDateString('en-US', { 
+          month: 'short', 
+          day: 'numeric', 
+          year: 'numeric' 
+        });
+      };
+      
+      // Build subtitle with key info
+      const subtitleParts = [];
+      if (bookmakerName) subtitleParts.push(bookmakerName);
+      if (bonusType) subtitleParts.push(bonusType);
+      if (country) subtitleParts.push(country);
+      
+      const subtitle = subtitleParts.join(' • ');
+      
+      // Build description with additional details
+      const descriptionParts = [];
+      if (maxBonus) descriptionParts.push(`Max: ${maxBonus}`);
+      if (minDeposit) descriptionParts.push(`Min: ${minDeposit}`);
+      if (expires) descriptionParts.push(`Expires: ${formatDate(expires)}`);
+      if (published) descriptionParts.push(`Published: ${formatDate(published)}`);
+      
+      const description = descriptionParts.join(' | ');
+      
       return {
-        title: title,
-        subtitle: `${bookmakerName || 'No Bookmaker'} - ${country || 'Unknown Country'}`
+        title: title || 'Untitled Offer',
+        subtitle: subtitle || 'No details available',
+        description: description || ''
       }
     }
   },

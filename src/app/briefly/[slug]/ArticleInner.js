@@ -96,6 +96,47 @@ const portableTextComponents = {
         </figure>
       );
     },
+    codeBlock: ({ value }) => {
+      if (!value?.code) return null;
+      
+      // embed and run the code
+      if (value.type === 'execute') {
+        return (
+          <div className="my-6">
+            {value.filename && (
+              <div className="bg-blue-50 px-3 py-2 text-sm text-blue-700 font-medium border border-blue-200 rounded-t">
+                <span className="font-semibold">Embedded Code:</span> {value.filename}
+              </div>
+            )}
+            {value.description && (
+              <div className="bg-gray-50 px-3 py-2 text-sm text-gray-600 border-b border-gray-200">
+                {value.description}
+              </div>
+            )}
+            <div 
+              className={`border border-gray-200 rounded-lg overflow-hidden ${value.filename || value.description ? 'rounded-t-none' : ''}`}
+              dangerouslySetInnerHTML={{ __html: value.code }}
+            />
+          </div>
+        );
+      }
+      
+      // Handle display type - show syntax highlighted code
+      return (
+        <div className="my-6">
+          {value.filename && (
+            <div className="bg-gray-100 px-3 py-1 text-sm text-gray-600 font-mono border-b border-gray-200 rounded-t">
+              {value.filename}
+            </div>
+          )}
+          <pre className={`p-4 bg-[#0b1020] text-[#e2e8f0] rounded-lg overflow-auto text-sm ${value.filename ? 'rounded-t-none' : ''}`}>
+            <code className={`language-${value.language || 'javascript'}`}>
+              {value.code}
+            </code>
+          </pre>
+        </div>
+      );
+    },
   },
 };
 

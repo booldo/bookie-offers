@@ -37,10 +37,10 @@ function CountryCards({ countries }) {
               <img
                 src={urlFor(country.pageFlag).width(36).height(36).url()}
                 alt={`${country.country} flag`}
-                className="rounded-full w-9 h-9 object-cover"
+                className="w-9 h-9 object-cover"
               />
             ) : (
-              <div className="rounded-full w-9 h-9 bg-gray-300 flex items-center justify-center">
+              <div className="w-9 h-9 bg-gray-300 flex items-center justify-center">
                 <span className="text-xs font-bold text-gray-600">
                   {country.countryCode?.toUpperCase() || country.country?.charAt(0) || '?'}
                 </span>
@@ -67,10 +67,10 @@ function CountryCards({ countries }) {
 function CountryCardsLoading() {
   return (
     <div className="flex flex-col gap-4 w-full">
-      {[1, 2, 3].map((i) => (
+      {[1, 2, 3, 4, 5, 6].map((i) => (
         <div key={i} className="flex items-center justify-between bg-[#F5F5F7] rounded-xl p-4 shadow-sm border border-gray-100 animate-pulse">
           <div className="flex items-center gap-4">
-            <div className="rounded-full w-9 h-9 bg-gray-300"></div>
+            <div className="w-9 h-9 bg-gray-300 rounded"></div>
             <div>
               <div className="h-4 bg-gray-300 rounded w-20 mb-1"></div>
               <div className="h-3 bg-gray-300 rounded w-32"></div>

@@ -8,11 +8,7 @@ import { urlFor } from "../sanity/lib/image";
 import Link from "next/link";
 import { formatDate } from "../utils/dateFormatter";
 
-const flags = [
-  { src: "/assets/flags.png", name: "World Wide", path: "/", topIcon: "/assets/dropdown.png" },
-  { src: "/assets/ghana-square.png", name: "Ghana", path: "/gh", topIcon: "/assets/ghana.png" },
-  { src: "/assets/nigeria-square.png", name: "Nigeria", path: "/ng", topIcon: "/assets/nigeria.png" },
-];
+const WORLD_WIDE_FLAG = { src: "/assets/flags.png", name: "World Wide", path: "/", topIcon: "/assets/dropdown.png" };
 
 const popularSearches = [
   "Welcome bonus",
@@ -24,7 +20,8 @@ const popularSearches = [
 
 export default function Navbar() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [selectedFlag, setSelectedFlag] = useState(flags[0]);
+  const [flags, setFlags] = useState([WORLD_WIDE_FLAG]);
+  const [selectedFlag, setSelectedFlag] = useState(WORLD_WIDE_FLAG);
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
@@ -61,21 +58,44 @@ export default function Navbar() {
     });
   };
 
+  // Load countries dynamically and build flags list (keep Worldwide)
+  useEffect(() => {
+    const fetchCountries = async () => {
+      try {
+        const countries = await client.fetch(`*[_type == "countryPage" && isActive == true]{
+          country,
+          slug,
+          navigationBarFlag
+        } | order(country asc)`);
+        const dynamicFlags = countries.map(c => ({
+          src: c.navigationBarFlag ? urlFor(c.navigationBarFlag).width(24).height(24).url() : "/assets/flags.png",
+          name: c.country,
+          path: `/${c.slug?.current || ''}`,
+          topIcon: c.navigationBarFlag ? urlFor(c.navigationBarFlag).width(24).height(24).url() : "/assets/dropdown.png",
+          slug: c.slug?.current || ''
+        }));
+        setFlags([WORLD_WIDE_FLAG, ...dynamicFlags]);
+      } catch (e) {
+        // ignore
+      }
+    };
+    fetchCountries();
+  }, []);
+
   // Update selected flag based on current path
   useEffect(() => {
-    let currentFlag = flags[0];
-    if (pathname.startsWith("/ng")) {
-      currentFlag = flags.find(flag => flag.name === "Nigeria");
-    } else if (pathname.startsWith("/gh")) {
-      currentFlag = flags.find(flag => flag.name === "Ghana");
-    } else if (pathname === "/") {
-      currentFlag = flags[0];
+    if (!pathname) return;
+    const parts = pathname.split('/').filter(Boolean);
+    if (parts.length === 0) {
+      setSelectedFlag(WORLD_WIDE_FLAG);
+      return;
     }
-    setSelectedFlag(currentFlag);
-  }, [pathname]);
+    const match = flags.find(f => f.slug === parts[0] || f.path === `/${parts[0]}`);
+    setSelectedFlag(match || WORLD_WIDE_FLAG);
+  }, [pathname, flags]);
 
   // Determine country from pathname
-  const country = pathname.startsWith("/ng") ? "Nigeria" : pathname.startsWith("/gh") ? "Ghana" : null;
+  const currentCountrySlug = pathname.split('/').filter(Boolean)[0] || null;
 
   // Search handler
   const handleSearch = async (term) => {
@@ -91,8 +111,8 @@ export default function Navbar() {
       let results = [];
       
       // Search offers (filtered by current country only)
-      if (country) {
-        const offersQuery = `*[_type == "offers" && country == $country && (
+      if (currentCountrySlug) {
+        const offersQuery = `*[_type == "offers" && country->slug.current == $countrySlug && (
         bonusType->name match $term ||
           bookmaker->name match $term ||
           pt::text(description) match $term
@@ -109,7 +129,7 @@ export default function Navbar() {
             logo,
             paymentMethods
           },
-        country,
+        country->{country, slug},
         maxBonus,
         minDeposit,
         description,
@@ -117,7 +137,7 @@ export default function Navbar() {
         published,
           _type
         }`;
-        const offersResults = await client.fetch(offersQuery, { country, term: `*${term}*` });
+        const offersResults = await client.fetch(offersQuery, { countrySlug: currentCountrySlug, term: `*${term}*` });
         console.log('Offers search results:', offersResults); // Debug log
         results = [...results, ...offersResults];
       }
@@ -179,8 +199,8 @@ export default function Navbar() {
       results = [...results, ...bonusTypesResults];
       
       // Search banners (current country only)
-      if (country) {
-        const bannersQuery = `*[_type == "banner" && country == $country && (
+      if (currentCountrySlug) {
+        const bannersQuery = `*[_type == "banner" && country->slug.current == $countrySlug && (
           title match $term ||
           pt::text(imageAlt) match $term
         )] | order(order asc) {
@@ -188,30 +208,30 @@ export default function Navbar() {
           title,
           image,
           imageAlt,
-          country,
+          country->{country, slug},
           order,
           isActive,
           _type
         }`;
-        const bannersResults = await client.fetch(bannersQuery, { country, term: `*${term}*` });
+        const bannersResults = await client.fetch(bannersQuery, { countrySlug: currentCountrySlug, term: `*${term}*` });
         results = [...results, ...bannersResults];
       }
       
       // Search comparison content (current country only)
-      if (country) {
-        const comparisonQuery = `*[_type == "comparison" && country == $country && (
+      if (currentCountrySlug) {
+        const comparisonQuery = `*[_type == "comparison" && country->slug.current == $countrySlug && (
           title match $term ||
           pt::text(content) match $term
         )] | order(order asc) {
           _id,
           title,
           content,
-          country,
+          country->{country, slug},
           isActive,
           order,
           _type
         }`;
-        const comparisonResults = await client.fetch(comparisonQuery, { country, term: `*${term}*` });
+        const comparisonResults = await client.fetch(comparisonQuery, { countrySlug: currentCountrySlug, term: `*${term}*` });
         results = [...results, ...comparisonResults];
       }
       
@@ -275,6 +295,30 @@ export default function Navbar() {
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [menuOpen]);
+
+  // Close dropdown when clicking outside or scrolling
+  useEffect(() => {
+    if (!dropdownOpen) return;
+    
+    function handleClick(e) {
+      const dropdownElement = e.target.closest('.flag-dropdown');
+      if (!dropdownElement) {
+        setDropdownOpen(false);
+      }
+    }
+    
+    function handleScroll() {
+      setDropdownOpen(false);
+    }
+    
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("scroll", handleScroll, true);
+    
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("scroll", handleScroll, true);
+    };
+  }, [dropdownOpen]);
 
   const handleFlagSelect = (flag) => {
     setSelectedFlag(flag);
@@ -351,12 +395,12 @@ export default function Navbar() {
           </div>
         )}
         {/* Flag dropdown */}
-        <div className="relative">
+        <div className="relative flag-dropdown">
           <button
             className="flex items-center gap-1 p-2 rounded hover:bg-gray-100"
             onClick={() => setDropdownOpen((v) => !v)}
           >
-            <img src={selectedFlag.topIcon} alt={selectedFlag.name} className="w-6 h-6" />
+            <img src={selectedFlag.topIcon} alt={selectedFlag.name} className="w-6 h-6 rounded-full" />
             <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path d="M6 9l6 6 6-6" />
             </svg>
@@ -554,9 +598,10 @@ export default function Navbar() {
                       switch (item._type) {
                         case 'offers':
                           if (item.slug?.current) {
-                            return `/${country === "Nigeria" ? "ng" : "gh"}/offers/${item.slug.current}`;
+                            const countrySlug = item.country?.slug?.current || currentCountrySlug;
+                            if (countrySlug) return `/${countrySlug}/offers/${item.slug.current}`;
                           }
-                          return `/${country === "Nigeria" ? "ng" : "gh"}/offers`;
+                          return `/${currentCountrySlug || ''}`;
                         case 'article':
                           if (item.slug?.current) {
                             return `/briefly/${item.slug.current}`;

@@ -1,6 +1,6 @@
 export default {
-  name: 'blogs',
-  title: 'articles',
+  name: 'article',
+  title: 'Blogs',
   type: 'document',
   fields: [
     {
@@ -39,6 +39,7 @@ export default {
       type: 'array',
       of: [
         { type: 'block' },
+        { type: 'codeBlock' },
         {
           type: 'image',
           options: { hotspot: true },

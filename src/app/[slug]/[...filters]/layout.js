@@ -25,8 +25,8 @@ export async function generateMetadata({ params }) {
     const slug = pathname[pathname.length - 1];
     
     try {
-      // Fetch the offer metadata from Sanity - now dynamic by country
-      const offerQuery = `*[_type == "offers" && country == $countryName && slug.current == $slug][0]{
+      // Fetch the offer metadata from Sanity - now dynamic by country (country is a reference)
+      const offerQuery = `*[_type == "offers" && country->country == $countryName && slug.current == $slug][0]{
         title,
         bonusType->{name},
         bookmaker->{name},

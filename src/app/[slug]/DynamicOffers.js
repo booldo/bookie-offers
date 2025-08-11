@@ -31,9 +31,7 @@ const fetchOffers = async (countryData) => {
     return [];
   }
   
-  console.log('🔍 Fetching offers for country:', countryName);
-  
-  // Updated query to handle country as a reference
+  // Query offers by country reference name
   const query = `*[_type == "offers" && country->country == $countryName] | order(_createdAt desc) {
     _id,
     slug,
@@ -74,25 +72,11 @@ const fetchOffers = async (countryData) => {
   
   try {
     const result = await client.fetch(query, { countryName });
-    console.log('Offers fetched:', result.length, 'offers found for', countryName);
-    
-    // Debug: Let's also check what countries exist in offers
-    const allCountries = await client.fetch(`*[_type == "offers"]{ country->country }`);
-    const uniqueCountries = [...new Set(allCountries.map(o => o.country?.country).filter(Boolean))];
-    console.log('Available countries in offers:', uniqueCountries);
-    
-    // Debug: Check if there are any offers at all
-    const totalOffers = await client.fetch(`count(*[_type == "offers"])`);
-    console.log('Total offers in system:', totalOffers);
-    
-    // Debug: Check offers for this specific country
-    const countryOffers = await client.fetch(`*[_type == "offers" && country->country == $countryName]{ title, country->country }`, { countryName });
-    console.log('Offers for', countryName, ':', countryOffers);
-    
     return result;
   } catch (error) {
     console.error('Error fetching offers:', error);
-    throw error;
+    // Be resilient on filter URL updates: return empty array instead of throwing
+    return [];
   }
 };
 
@@ -113,8 +97,7 @@ export default function DynamicOffers({ countrySlug }) {
   const [bonusTypeOptions, setBonusTypeOptions] = useState([]);
   const [bookmakerOptions, setBookmakerOptions] = useState([]);
   const [advancedOptions, setAdvancedOptions] = useState([]);
-  const [loadingStage, setLoadingStage] = useState('initial'); // 'initial', 'country', 'offers', 'complete'
-  const [filterLoading, setFilterLoading] = useState(false);
+  const [loadingStage, setLoadingStage] = useState('initial');
   const [currentPage, setCurrentPage] = useState(1);
   const [offersPerPage] = useState(10);
   const sortByRef = useRef();
@@ -146,12 +129,12 @@ export default function DynamicOffers({ countrySlug }) {
         if (bonusTypeOptions.some(opt => opt.name === bt)) bonusTypes = [bt];
       }
       if (bookmakerOptions.length && bonusTypes.length === 0) {
-        const bm = unslugify(slug, bookmakerOptions);
+          const bm = unslugify(slug, bookmakerOptions);
         if (bookmakerOptions.some(opt => opt.name === bm)) bookmakers = [bm];
       }
       if (advancedOptions.length && bonusTypes.length === 0 && bookmakers.length === 0) {
-        const advFlat = advancedOptions.flatMap(cat => cat.subcategories || []);
-        const adv = unslugify(slug, advFlat);
+          const advFlat = advancedOptions.flatMap(cat => cat.subcategories || []);
+          const adv = unslugify(slug, advFlat);
         if (advFlat.some(opt => opt.name === adv)) advanced = [adv];
       }
     }
@@ -163,11 +146,11 @@ export default function DynamicOffers({ countrySlug }) {
       bonusTypes = getArr("bonustypes");
       bookmakers = getArr("bookmakers");
       advanced = getArr("advanced");
-      if (bonusTypeOptions.length) bonusTypes = bonusTypes.map(slug => unslugify(slugify(slug), bonusTypeOptions));
-      if (bookmakerOptions.length) bookmakers = bookmakers.map(slug => unslugify(slugify(slug), bookmakerOptions));
+      if (bonusTypeOptions.length) bonusTypes = bonusTypes.map(s => unslugify(slugify(s), bonusTypeOptions));
+      if (bookmakerOptions.length) bookmakers = bookmakers.map(s => unslugify(slugify(s), bookmakerOptions));
       if (advancedOptions.length) {
         const advFlat = advancedOptions.flatMap(cat => cat.subcategories || []);
-        advanced = advanced.map(slug => unslugify(slugify(slug), advFlat));
+        advanced = advanced.map(s => unslugify(slugify(s), advFlat));
       }
     }
     return { bonusTypes, bookmakers, advanced };
@@ -209,6 +192,7 @@ export default function DynamicOffers({ countrySlug }) {
   useEffect(() => {
     if (!countrySlug) return;
 
+    setError(null);
     setLoading(true);
     setLoadingStage('initial');
     
@@ -248,7 +232,6 @@ export default function DynamicOffers({ countrySlug }) {
         const offersData = await fetchOffers(data.country);
         
         if (!offersData) {
-          console.log(' No offers data returned');
           setOffers([]);
           setError('No offers data available');
           setLoading(false);
@@ -386,13 +369,15 @@ export default function DynamicOffers({ countrySlug }) {
     const offerBookmaker = offer.bookmaker?.name ? offer.bookmaker.name.toLowerCase() : "";
     const offerBonusType = offer.bonusType?.name ? offer.bonusType.name.toLowerCase() : "";
     const offerPaymentMethods = Array.isArray(offer.bookmaker?.paymentMethods) ? offer.bookmaker.paymentMethods.map(pm => pm.toLowerCase()) : [];
+    const offerLicenses = Array.isArray(offer.bookmaker?.license) ? offer.bookmaker.license.map(lc => lc.toLowerCase()) : [];
 
     if (selectedBookmakers.length > 0 && !selectedBookmakers.some(bm => bm.toLowerCase() === offerBookmaker)) return false;
     if (selectedBonusTypes.length > 0 && !selectedBonusTypes.some(bt => bt.toLowerCase() === offerBonusType)) return false;
     if (selectedAdvanced.length > 0) {
       const selectedAdvancedLower = selectedAdvanced.map(a => a.toLowerCase());
       const paymentMatch = offerPaymentMethods.some(pm => selectedAdvancedLower.includes(pm));
-      if (!paymentMatch) return false;
+      const licenseMatch = offerLicenses.some(lc => selectedAdvancedLower.includes(lc));
+      if (!paymentMatch && !licenseMatch) return false;
     }
     return true;
   });
@@ -426,50 +411,42 @@ export default function DynamicOffers({ countrySlug }) {
   };
 
   // Loading indicator component
-  const LoadingIndicator = ({ stage }) => {
-    const getStageText = () => {
-      switch (stage) {
-        case 'initial': return 'Initializing...';
-        case 'country': return 'Loading country data...';
-        case 'offers': return 'Fetching offers...';
-        case 'complete': return 'Complete!';
-        default: return 'Loading...';
-      }
-    };
-
-    const getStageProgress = () => {
-      switch (stage) {
-        case 'initial': return 25;
-        case 'country': return 50;
-        case 'offers': return 75;
-        case 'complete': return 100;
-        default: return 0;
-      }
-    };
-
-    return (
-      <div className="text-center py-8">
-        <div className="max-w-md mx-auto">
-          <div className="mb-4">
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
-                className="bg-blue-500 h-2 rounded-full transition-all duration-500 ease-out"
-                style={{ width: `${getStageProgress()}%` }}
-              ></div>
+  const LoadingIndicator = () => (
+      <div className="space-y-6">
+        {/* Filter skeleton */}
+        <div className="sticky top-16 z-10 bg-white sm:static sm:bg-transparent">
+          <div className="flex items-center justify-between my-4">
+            <div className="h-8 bg-gray-200 rounded w-32 animate-pulse"></div>
+            <div className="h-6 bg-gray-200 rounded w-20 animate-pulse"></div>
+          </div>
+          <div className="sm:max-w-md">
+            <div className="grid grid-cols-3 gap-2 mb-6">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="h-10 bg-gray-200 rounded animate-pulse"></div>
+              ))}
             </div>
           </div>
-          <div className="inline-flex items-center px-4 py-2 font-semibold leading-6 text-sm shadow rounded-md text-white bg-blue-500">
-            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            {getStageText()}
           </div>
 
+        {/* Offer cards skeleton */}
+        <div className="flex flex-col gap-4 mb-6">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 animate-pulse">
+              <div className="flex justify-between items-center mb-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-gray-200 rounded-md"></div>
+                  <div className="h-4 bg-gray-200 rounded w-24"></div>
+                </div>
+                <div className="h-3 bg-gray-200 rounded w-20"></div>
+              </div>
+              <div className="h-5 bg-gray-200 rounded w-3/4 mb-2"></div>
+              <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
+              <div className="h-3 bg-gray-200 rounded w-32"></div>
+            </div>
+          ))}
         </div>
       </div>
     );
-  };
 
   return (
     <>
@@ -622,18 +599,7 @@ export default function DynamicOffers({ countrySlug }) {
             </div>
           )}
           
-          {/* Filter loading indicator */}
-          {filterLoading && (
-            <div className="text-center py-4">
-              <div className="inline-flex items-center px-3 py-1 text-sm text-blue-600 bg-blue-100 rounded-full">
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Updating filters...
-              </div>
-            </div>
-          )}
+          {/* Removed filter loading indicator */}
         
         {/* Offers list */}
         {!loading && !error && currentOffers.length > 0 && (

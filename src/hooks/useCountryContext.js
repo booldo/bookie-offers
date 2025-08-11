@@ -1,19 +1,31 @@
 "use client";
 import { useState, useEffect, createContext, useContext } from 'react';
 import { client } from '../sanity/lib/client';
-import { useParams } from 'next/navigation';
+import { useParams, usePathname } from 'next/navigation';
 
 const CountryContext = createContext(null);
 
 export function CountryProvider({ children }) {
   const params = useParams();
+  const pathname = usePathname();
   const [countryData, setCountryData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchCountryData = async () => {
-      if (!params.slug) {
+      // Determine slug from params or pathname (supports nested routes under /[slug]/...)
+      let slugFromParams = params?.slug;
+      let resolvedSlug = typeof slugFromParams === 'string' ? slugFromParams : Array.isArray(slugFromParams) ? slugFromParams[0] : slugFromParams;
+      if (!resolvedSlug && pathname) {
+        const parts = pathname.split('/').filter(Boolean);
+        // first segment is the country slug when inside /[slug]/...
+        if (parts.length > 0) {
+          resolvedSlug = parts[0];
+        }
+      }
+
+      if (!resolvedSlug) {
         setLoading(false);
         return;
       }
@@ -40,10 +52,10 @@ export function CountryProvider({ children }) {
           sitemapInclude
         }`;
         
-        const data = await client.fetch(query, { slug: params.slug });
+        const data = await client.fetch(query, { slug: resolvedSlug });
         
         if (!data) {
-          setError(`Country page not found for slug: ${params.slug}`);
+          setError(`Country page not found for slug: ${resolvedSlug}`);
         } else {
           setCountryData(data);
         }
@@ -56,7 +68,7 @@ export function CountryProvider({ children }) {
     };
 
     fetchCountryData();
-  }, [params.slug]);
+  }, [params?.slug, pathname]);
 
   const value = {
     countryData,

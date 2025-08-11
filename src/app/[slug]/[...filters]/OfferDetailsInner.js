@@ -9,6 +9,7 @@ import { formatDate } from '../../../utils/dateFormatter';
 import { useRouter } from "next/navigation";
 import TrackedLink from "../../../components/TrackedLink";
 import { useCountryContext } from '../../../hooks/useCountryContext';
+import ExpiredOfferPage from './ExpiredOfferPage';
 
 // Custom components for PortableText
 const portableTextComponents = {
@@ -95,7 +96,7 @@ function OfferDetailsInner({ slug }) {
     const fetchData = async () => {
       try {
         
-        const mainOfferQuery = `*[_type == "offers" && country == $countryName && slug.current == $slug][0]{
+        const mainOfferQuery = `*[_type == "offers" && country->country == $countryName && slug.current == $slug][0]{
           _id,
           title,
           bonusType->{name},
@@ -136,7 +137,7 @@ function OfferDetailsInner({ slug }) {
         setOffer(mainOffer);
 
         // Fetch more offers (excluding the current one) - now dynamic
-        const moreOffersQuery = `*[_type == "offers" && country == $countryName && slug.current != $slug] | order(_createdAt desc) [0...$count] {
+        const moreOffersQuery = `*[_type == "offers" && country->country == $countryName && slug.current != $slug] | order(_createdAt desc) [0...$count] {
           _id,
           bonusType->{name},
           slug,
@@ -155,7 +156,7 @@ function OfferDetailsInner({ slug }) {
         setMoreOffers(moreOffersData);
 
         // Get total count for pagination - now dynamic
-        const totalQuery = `count(*[_type == "offers" && country == $countryName && slug.current != $slug])`;
+        const totalQuery = `count(*[_type == "offers" && country->country == $countryName && slug.current != $slug])`;
         const total = await client.fetch(totalQuery, { slug, countryName });
         setTotalOffers(total);
 
@@ -228,14 +229,31 @@ function OfferDetailsInner({ slug }) {
       <div className="min-h-screen bg-[#fafbfc] flex flex-col">
         <main className="max-w-7xl mx-auto w-full px-2 sm:px-4 flex-1">
           <div className="flex justify-center items-center py-20">
-            <div className="flex space-x-2">
-              <div className="w-3 h-3 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-              <div className="w-3 h-3 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-              <div className="w-3 h-3 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+            <div className="w-full max-w-3xl">
+              <div className="h-6 bg-gray-200 rounded w-1/3 mb-4 animate-pulse"></div>
+              <div className="h-10 bg-gray-200 rounded w-2/3 mb-6 animate-pulse"></div>
+              <div className="h-24 bg-gray-200 rounded w-full mb-4 animate-pulse"></div>
+              <div className="h-6 bg-gray-200 rounded w-1/2 animate-pulse"></div>
             </div>
           </div>
         </main>
       </div>
+    );
+  }
+
+  // If offer is expired, show ExpiredOfferPage without extra layout
+  const isExpired = offer?.expires ? new Date(offer.expires) < new Date() : false;
+  if (!loading && offer && isExpired) {
+    return (
+      <ExpiredOfferPage 
+        offer={{
+          title: offer.title,
+          bookmaker: offer.bookmaker?.name,
+          expires: formatDate(offer.expires)
+        }}
+        embedded={true}
+        countrySlug={getCountrySlug()}
+      />
     );
   }
 
@@ -264,16 +282,6 @@ function OfferDetailsInner({ slug }) {
   return (
     <div className="min-h-screen bg-[#fafbfc] flex flex-col">
       <main className="max-w-7xl mx-auto w-full px-2 sm:px-4 flex-1">
-        {loading && (
-          <div className="flex justify-center items-center py-20">
-            <div className="flex space-x-2">
-              <div className="w-3 h-3 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-              <div className="w-3 h-3 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-              <div className="w-3 h-3 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-            </div>
-          </div>
-        )}
-        
         {/* Updated Breadcrumb */}
         <div className="mt-6 mb-4 flex items-center gap-2 text-sm text-gray-500 ml-2">
           <button type="button" onClick={() => router.back()} className="hover:underline flex items-center gap-1">
@@ -283,6 +291,17 @@ function OfferDetailsInner({ slug }) {
           <span className="mx-1">/</span>
           <span className="text-gray-700 font-medium">{offer?.bonusType?.name || "Bonus"}</span>
         </div>
+        
+        {loading && (
+          <div className="flex justify-center items-center py-20">
+            <div className="w-full max-w-3xl">
+              <div className="h-6 bg-gray-200 rounded w-1/3 mb-4 animate-pulse"></div>
+              <div className="h-10 bg-gray-200 rounded w-2/3 mb-6 animate-pulse"></div>
+              <div className="h-24 bg-gray-200 rounded w-full mb-4 animate-pulse"></div>
+              <div className="h-6 bg-gray-200 rounded w-1/2 animate-pulse"></div>
+            </div>
+          </div>
+        )}
         
         {/* Individual Offer Banner */}
         {!loading && !error && offer && offer.banner && (
@@ -317,9 +336,22 @@ function OfferDetailsInner({ slug }) {
             </div>
 
             <h1 className="text-2xl font-bold text-gray-900 mb-2">{offer.title}</h1>
+            
+            {/* Offer Summary */}
+            {offer.offerSummary && (
+              <div className="text-gray-700 mb-4">
+                <PortableText value={offer.offerSummary} components={portableTextComponents} />
+              </div>
+            )}
+            
+            {/* Offer Description */}
+            {offer.description && (
             <div className="text-gray-700 mb-4">
-              {offer.description && <PortableText value={offer.description} components={portableTextComponents} />}
-            </div>
+                <PortableText value={offer.description} components={portableTextComponents} />
+              </div>
+            )}
+            
+
               
             <div className="flex items-center gap-2 mb-6">
               <img src="/assets/calendar.png" alt="Calendar" width="18" height="18" />

@@ -8,11 +8,7 @@ import { urlFor } from "../sanity/lib/image";
 import Link from "next/link";
 import { formatDate } from "../utils/dateFormatter";
 
-const flags = [
-  { src: "/assets/flags.png", name: "World Wide", path: "/", topIcon: "/assets/dropdown.png" },
-  { src: "/assets/ghana-square.png", name: "Ghana", path: "/gh", topIcon: "/assets/ghana.png" },
-  { src: "/assets/nigeria-square.png", name: "Nigeria", path: "/ng", topIcon: "/assets/nigeria.png" },
-];
+const WORLD_WIDE_FLAG = { src: "/assets/flags.png", name: "World Wide", path: "/", topIcon: "/assets/dropdown.png" };
 
 const popularSearches = [
   "Welcome bonus",
@@ -24,7 +20,8 @@ const popularSearches = [
 
 export default function HomeNavbar() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [selectedFlag, setSelectedFlag] = useState(flags[0]);
+  const [flags, setFlags] = useState([WORLD_WIDE_FLAG]);
+  const [selectedFlag, setSelectedFlag] = useState(WORLD_WIDE_FLAG);
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
@@ -61,18 +58,41 @@ export default function HomeNavbar() {
     });
   };
 
-  // Update selected flag based on current path
+  // Load countries from Sanity and build flags
   useEffect(() => {
-    let currentFlag = flags[0];
-    if (pathname.startsWith("/ng")) {
-      currentFlag = flags.find(flag => flag.name === "Nigeria");
-    } else if (pathname.startsWith("/gh")) {
-      currentFlag = flags.find(flag => flag.name === "Ghana");
-    } else if (pathname === "/") {
-      currentFlag = flags[0];
+    const fetchCountries = async () => {
+      try {
+        const countries = await client.fetch(`*[_type == "countryPage" && isActive == true]{
+          country,
+          slug,
+          navigationBarFlag
+        } | order(country asc)`);
+        const dynamicFlags = countries.map(c => ({
+          src: c.navigationBarFlag ? urlFor(c.navigationBarFlag).width(24).height(24).url() : "/assets/flags.png",
+          name: c.country,
+          path: `/${c.slug?.current || ''}`,
+          topIcon: c.navigationBarFlag ? urlFor(c.navigationBarFlag).width(24).height(24).url() : "/assets/dropdown.png",
+          slug: c.slug?.current || ''
+        }));
+        setFlags([WORLD_WIDE_FLAG, ...dynamicFlags]);
+      } catch (e) {
+        // fail silently, keep default worldwide
+      }
+    };
+    fetchCountries();
+  }, []);
+
+  // Update selected flag based on current path (dynamic)
+  useEffect(() => {
+    if (!pathname) return;
+    const parts = pathname.split('/').filter(Boolean);
+    if (parts.length === 0) {
+      setSelectedFlag(WORLD_WIDE_FLAG);
+      return;
     }
-    setSelectedFlag(currentFlag);
-  }, [pathname]);
+    const match = flags.find(f => f.slug === parts[0] || f.path === `/${parts[0]}`);
+    setSelectedFlag(match || WORLD_WIDE_FLAG);
+  }, [pathname, flags]);
 
   // Search handler
   const handleSearch = async (term) => {
@@ -105,7 +125,7 @@ export default function HomeNavbar() {
           logo,
           paymentMethods
         },
-        country,
+        country->{country, slug},
         maxBonus,
         minDeposit,
         description,
@@ -242,6 +262,30 @@ export default function HomeNavbar() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [menuOpen]);
 
+  // Close dropdown when clicking outside or scrolling
+  useEffect(() => {
+    if (!dropdownOpen) return;
+    
+    function handleClick(e) {
+      const dropdownElement = e.target.closest('.flag-dropdown');
+      if (!dropdownElement) {
+        setDropdownOpen(false);
+      }
+    }
+    
+    function handleScroll() {
+      setDropdownOpen(false);
+    }
+    
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("scroll", handleScroll, true);
+    
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("scroll", handleScroll, true);
+    };
+  }, [dropdownOpen]);
+
   return (
     <>
     <nav className="w-full flex items-center justify-between px-4 py-3 border-b bg-white sticky top-0 z-10">
@@ -311,12 +355,12 @@ export default function HomeNavbar() {
           </div>
         )}
         {/* Flag dropdown */}
-        <div className="relative">
+        <div className="relative flag-dropdown">
           <button
             className="flex items-center gap-1 p-2 rounded hover:bg-gray-100"
             onClick={() => setDropdownOpen((v) => !v)}
           >
-            <img src={selectedFlag.topIcon} alt={selectedFlag.name} className="w-6 h-6" />
+            <img src={selectedFlag.topIcon} alt={selectedFlag.name} className="w-6 h-6 rounded-full" />
             <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path d="M6 9l6 6 6-6" />
             </svg>
@@ -502,9 +546,10 @@ export default function HomeNavbar() {
                       switch (item._type) {
                         case 'offers':
                           if (item.slug?.current) {
-                            return `/${item.country === "Nigeria" ? "ng" : "gh"}/offers/${item.slug.current}`;
+                            const countrySlug = item.country?.slug?.current;
+                            if (countrySlug) return `/${countrySlug}/offers/${item.slug.current}`;
                           }
-                          return `/${item.country === "Nigeria" ? "ng" : "gh"}/offers`;
+                          return '/';
                         case 'article':
                           if (item.slug?.current) {
                             return `/briefly/${item.slug.current}`;
@@ -590,7 +635,6 @@ export default function HomeNavbar() {
                           if (url && url !== '#') {
                             // Close search first, then navigate
                             setSearchOpen(false);
-                            // Small delay to ensure search closes before navigation
                             setTimeout(() => {
                               router.replace(url);
                             }, 100);

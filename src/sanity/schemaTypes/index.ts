@@ -12,6 +12,7 @@ import affiliate from "./affiliate";
 import about from "./about";
 import contact from "./contact";
 import countryPage from "./countryPage";
+import codeBlock from "./codeBlock";
 
 export const schemaTypes = [
   bookmaker,
@@ -27,6 +28,7 @@ export const schemaTypes = [
   about,
   contact,
   countryPage,
+  codeBlock,
 ];
 
 export const schema: { types: SchemaTypeDefinition[] } = {

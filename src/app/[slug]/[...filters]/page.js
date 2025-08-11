@@ -16,7 +16,7 @@ export default async function CountryFiltersPage({ params }) {
     // Extract the offer slug from the last segment
     const offerSlug = awaitedParams.filters[awaitedParams.filters.length - 1];
     return (
-      <CountryPageShell params={awaitedParams}>
+      <CountryPageShell params={awaitedParams} isOfferDetailsPage={true}>
         <Suspense fallback={
           <div className="flex justify-center items-center py-20">
             <div className="flex space-x-2">
