@@ -188,7 +188,11 @@ function OfferDetailsInner({ slug }) {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, []);
 
-  const handleLoadMore = async () => {
+  const handleLoadMore = async (e) => {
+    // Prevent default button behavior to avoid scroll issues
+    e.preventDefault();
+    e.stopPropagation();
+    
     const countryName = getCountryName();
     if (!countryName) return;
 
@@ -284,7 +288,7 @@ function OfferDetailsInner({ slug }) {
       <main className="max-w-7xl mx-auto w-full px-2 sm:px-4 flex-1">
         {/* Updated Breadcrumb */}
         <div className="mt-6 mb-4 flex items-center gap-2 text-sm text-gray-500 ml-2">
-          <button type="button" onClick={() => router.back()} className="hover:underline flex items-center gap-1">
+          <button type="button" onClick={() => router.push(`/${getCountrySlug()}`)} className="hover:underline flex items-center gap-1">
             <img src="/assets/back-arrow.png" alt="Back" width="16" height="16" />
             Home
           </button>
@@ -293,10 +297,10 @@ function OfferDetailsInner({ slug }) {
         </div>
         
         {loading && (
-          <div className="flex justify-center items-center py-20">
-            <div className="w-full max-w-3xl">
-              {/* Banner skeleton */}
-              <div className="h-24 sm:h-48 bg-gray-200 rounded-xl w-full mb-6 animate-pulse"></div>
+          <div className="flex justify-center items-center py-6">
+            <div className="w-full max-w-7xl px-2">
+              {/* Banner skeleton - match final dimensions */}
+              <div className="w-full h-24 sm:h-48 bg-gray-200 rounded-xl mb-6 animate-pulse"></div>
               {/* Content skeleton */}
               <div className="h-6 bg-gray-200 rounded w-1/3 mb-4 animate-pulse"></div>
               <div className="h-10 bg-gray-200 rounded w-2/3 mb-6 animate-pulse"></div>
@@ -370,7 +374,9 @@ function OfferDetailsInner({ slug }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 isAffiliate={true}
-                offerSlug={`${getCountrySlug()}/${offer.slug?.current}`}
+                countryCode={getCountrySlug()}
+                bookmaker={offer.bookmaker?.name?.toLowerCase().replace(/\s+/g, '-')}
+                bonusType={offer.bonusType?.name?.toLowerCase().replace(/\s+/g, '-')}
                 className="hidden sm:flex sm:w-fit sm:px-6 bg-[#018651] hover:bg-[#017a4a] text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 items-center justify-center gap-2 mb-6"
               >
                 Get Bonus
@@ -424,7 +430,9 @@ function OfferDetailsInner({ slug }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 isAffiliate={true}
-                offerSlug={`${getCountrySlug()}/${offer.slug?.current}`}
+                countryCode={getCountrySlug()}
+                bookmaker={offer.bookmaker?.name?.toLowerCase().replace(/\s+/g, '-')}
+                bonusType={offer.bonusType?.name?.toLowerCase().replace(/\s+/g, '-')}
                 className="sm:hidden w-full bg-[#018651] hover:bg-[#017a4a] text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 mb-6"
               >
                 Get Bonus
@@ -457,7 +465,7 @@ function OfferDetailsInner({ slug }) {
           {moreOffers.length > 0 && (
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6">
               <div className="font-semibold text-gray-900 mb-4">More Offers</div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {moreOffers.map((moreOffer) => (
                   <div
                     key={moreOffer._id}
@@ -497,7 +505,7 @@ function OfferDetailsInner({ slug }) {
                   <button 
                     onClick={handleLoadMore}
                     disabled={isLoadingMore}
-                    className="text-green-600 hover:text-green-700 font-medium disabled:opacity-50"
+                    className="border-2 border-gray-300 hover:border-gray-400 disabled:border-gray-200 disabled:text-gray-400 text-gray-700 hover:text-gray-800 px-8 py-3 rounded-lg font-semibold transition-all duration-200 text-lg bg-white hover:bg-gray-50"
                   >
                     {isLoadingMore ? 'Loading...' : `Load ${Math.min(4, totalOffers - loadMoreCount)} more offers`}
                   </button>

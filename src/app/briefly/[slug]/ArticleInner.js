@@ -121,7 +121,7 @@ const portableTextComponents = {
         );
       }
       
-      // Handle display type - show syntax highlighted code
+      // show syntax highlighted code
       return (
         <div className="my-6">
           {value.filename && (
@@ -178,7 +178,41 @@ function ArticleInner({ slug }) {
   }, [slug]);
 
   if (loading) {
-    return <div className="min-h-screen flex flex-col bg-[#fafbfc]"><HomeNavbar /><main className="flex-1 max-w-4xl mx-auto py-16 px-4">Loading...</main><Footer /></div>;
+    return (
+      <div className="min-h-screen flex flex-col bg-[#fafbfc]">
+        <HomeNavbar />
+        <main className="flex-1 max-w-6xl mx-auto py-10 px-4 w-full">
+          {/* Header skeleton */}
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-7 h-7 bg-gray-200 rounded animate-pulse" />
+            <div className="h-8 w-2/3 bg-gray-200 rounded animate-pulse" />
+          </div>
+          <div className="flex flex-col md:flex-row gap-8">
+            {/* Main content skeleton */}
+            <div className="flex-1 space-y-3">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="h-4 bg-gray-200 rounded animate-pulse" />
+              ))}
+            </div>
+            {/* Sidebar skeleton */}
+            <aside className="w-full md:w-80 flex-shrink-0">
+              <div className="flex flex-col gap-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="flex gap-3 items-center bg-white rounded-lg shadow-sm p-2">
+                    <div className="w-16 h-16 bg-gray-200 rounded animate-pulse" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse" />
+                      <div className="h-4 bg-gray-200 rounded w-1/2 animate-pulse" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </aside>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
   }
   if (error || !article) {
     return <div className="min-h-screen flex flex-col bg-[#fafbfc]"><HomeNavbar /><main className="flex-1 max-w-4xl mx-auto py-16 px-4">Article not found</main><Footer /></div>;
@@ -194,7 +228,7 @@ function ArticleInner({ slug }) {
       <main className="flex-1 max-w-6xl mx-auto py-10 px-4 w-full">
         <div className="flex items-center gap-2 mb-4">
           <button
-            onClick={() => router.back()}
+            onClick={() => router.push('/briefly')}
             className="focus:outline-none"
             aria-label="Go back"
           >

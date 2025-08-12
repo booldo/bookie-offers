@@ -56,7 +56,11 @@ export default function OfferDetailsClient({ offer, moreOffers, totalOffers, cou
     setOpenFAQIndex(openFAQIndex === index ? null : index);
   };
 
-  const handleLoadMore = async () => {
+  const handleLoadMore = async (e) => {
+    // Prevent default button behavior to avoid scroll issues
+    e.preventDefault();
+    e.stopPropagation();
+    
     setIsLoadingMore(true);
     await new Promise(resolve => setTimeout(resolve, 500));
     setLoadMoreCount(prev => prev + 4);
@@ -143,6 +147,13 @@ export default function OfferDetailsClient({ offer, moreOffers, totalOffers, cou
         <div className="text-center pt-6 border-t border-gray-200">
           <TrackedLink
             href={offer.affiliateLink || '#'}
+            linkId={`bonus-${offer._id}`}
+            linkType="offer"
+            linkTitle={offer.title}
+            isAffiliate={true}
+            countryCode={countryName.toLowerCase().replace(/\s+/g, '-')}
+            bookmaker={offer.bookmaker?.name?.toLowerCase().replace(/\s+/g, '-')}
+            bonusType={offer.bonusType?.name?.toLowerCase().replace(/\s+/g, '-')}
             className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-lg text-lg font-semibold transition-colors inline-block"
           >
             Claim Bonus Now
@@ -180,7 +191,7 @@ export default function OfferDetailsClient({ offer, moreOffers, totalOffers, cou
             </span>
           </div>
           
-          <div className="space-y-4">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {moreOffers.slice(0, loadMoreCount).map((moreOffer) => (
               <div key={moreOffer._id} className="border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors">
                 <div className="flex items-center justify-between">
@@ -227,7 +238,7 @@ export default function OfferDetailsClient({ offer, moreOffers, totalOffers, cou
               <button
                 onClick={handleLoadMore}
                 disabled={isLoadingMore}
-                className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                className="border-2 border-gray-300 hover:border-gray-400 disabled:border-gray-200 disabled:text-gray-400 text-gray-700 hover:text-gray-800 px-8 py-3 rounded-lg font-semibold transition-all duration-200 text-lg bg-white hover:bg-gray-50"
               >
                 {isLoadingMore ? 'Loading...' : 'Load More Offers'}
               </button>

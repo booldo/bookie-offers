@@ -38,7 +38,7 @@ export default function BrieflyPage() {
       <main className="flex-1 max-w-6xl mx-auto py-10 px-4 w-full">
         <div className="flex items-center gap-2 mb-6">
           <button
-            onClick={() => router.back()}
+            onClick={() => router.push('/')} 
             className="focus:outline-none"
             aria-label="Go back"
           >

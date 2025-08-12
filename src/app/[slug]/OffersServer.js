@@ -3,6 +3,7 @@ import { urlFor } from "../../sanity/lib/image";
 import { formatDate } from '../../utils/dateFormatter';
 import { PortableText } from '@portabletext/react';
 import OffersClient from './OffersClient';
+import ExpiredOfferPage from './[...filters]/ExpiredOfferPage';
 
 // Server-side data fetching for offers
 async function getOffersData(countryName) {
@@ -137,9 +138,12 @@ export default async function OffersServer({ countrySlug }) {
   
   if (offers.length === 0) {
     return (
-      <div className="text-center py-8">
-        <div className="text-gray-500">No offers found for {countryData.country}</div>
-      </div>
+      <ExpiredOfferPage 
+        embedded={true}
+        isCountryEmpty={true}
+        countryName={countryData.country}
+        countrySlug={countryData.slug?.current || countrySlug}
+      />
     );
   }
   

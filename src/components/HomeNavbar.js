@@ -288,7 +288,7 @@ export default function HomeNavbar() {
 
   return (
     <>
-    <nav className="w-full flex items-center justify-between px-4 py-3 border-b bg-white sticky top-0 z-10">
+    <nav className="w-full flex items-center justify-between px-4 py-3 border-b bg-white sticky top-0 z-50">
       <div className="flex items-center gap-2">
           {/* Hamburger/X Toggle */}
           <button className="p-2 focus:outline-none" onClick={() => setMenuOpen(!menuOpen)}>
@@ -366,7 +366,7 @@ export default function HomeNavbar() {
             </svg>
           </button>
           {dropdownOpen && (
-            <div className="absolute right-0 mt-2 w-56 bg-white border rounded shadow-lg z-20">
+            <div className="absolute right-0 mt-2 w-56 bg-white border rounded shadow-lg z-[100]">
               {flags.map(flag => (
                                   <button
                   key={flag.name || flag.country}
@@ -395,7 +395,6 @@ export default function HomeNavbar() {
           <div className="flex flex-col gap-6 px-10 py-4 text-gray-800 text-base font-medium">
             <a href={pathname.startsWith('/ng') ? '/ng' : pathname.startsWith('/gh') ? '/gh' : '/'} className="hover:underline">Home</a>
             <a href="/briefly" className="hover:underline">Blog</a>
-            <a href="#" className="hover:underline">Calculator</a>
             <a href="/about" className="hover:underline">About Us</a>
             <a href="/contact" className="hover:underline">Contact Us</a>
           </div>

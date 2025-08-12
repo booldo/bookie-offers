@@ -86,6 +86,12 @@ export default function OffersClient({
   const buildUrl = ({ bonusTypes, bookmakers, advanced }) => {
     if (!countrySlug) return '/';
     
+    // If no filters are selected, go to base country page
+    if (bonusTypes.length === 0 && bookmakers.length === 0 && advanced.length === 0) {
+      return `/${countrySlug}`;
+    }
+    
+    // Single filter cases (for clean URLs)
     if (bonusTypes.length === 1 && bookmakers.length === 0 && advanced.length === 0) {
       return `/${countrySlug}/${slugify(bonusTypes[0])}`;
     }
@@ -95,11 +101,13 @@ export default function OffersClient({
     if (advanced.length === 1 && bonusTypes.length === 0 && bookmakers.length === 0) {
       return `/${countrySlug}/${slugify(advanced[0])}`;
     }
+    
+    // Multiple filters or mixed filters - use query parameters
     let url = `/${countrySlug}/offers/?`;
     const params = [];
-    if (bonusTypes.length) params.push(`bonustypes=${bonusTypes.map(slugify).join(",")}`);
-    if (bookmakers.length) params.push(`bookmakers=${bookmakers.map(slugify).join(",")}`);
-    if (advanced.length) params.push(`advanced=${advanced.map(slugify).join(",")}`);
+    if (bonusTypes.length > 0) params.push(`bonustypes=${bonusTypes.map(slugify).join(",")}`);
+    if (bookmakers.length > 0) params.push(`bookmakers=${bookmakers.map(slugify).join(",")}`);
+    if (advanced.length > 0) params.push(`advanced=${advanced.map(slugify).join(",")}`);
     url += params.join("&");
     return url;
   };
@@ -126,30 +134,33 @@ export default function OffersClient({
   const handleFilterChange = ({ bonusTypes, bookmakers, advanced }) => {
     setFilterLoading(true);
     
-    // Simulate a small delay to show loading state
-    setTimeout(() => {
-      setFilterLoading(false);
-    }, 300);
-    
     const url = buildUrl({ bonusTypes, bookmakers, advanced });
     if (url !== pathname + (searchParams.toString() ? '?' + searchParams.toString() : '')) {
       router.push(url);
     }
+    
+    // Remove loading state after a short delay
+    setTimeout(() => {
+      setFilterLoading(false);
+    }, 200);
   };
 
   const setSelectedBonusTypesWrapped = (arr) => {
-    setSelectedBonusTypes(arr);
-    handleFilterChange({ bonusTypes: arr, bookmakers: selectedBookmakers, advanced: selectedAdvanced });
+    const newBonusTypes = arr;
+    setSelectedBonusTypes(newBonusTypes);
+    handleFilterChange({ bonusTypes: newBonusTypes, bookmakers: selectedBookmakers, advanced: selectedAdvanced });
   };
 
   const setSelectedBookmakersWrapped = (arr) => {
-    setSelectedBookmakers(arr);
-    handleFilterChange({ bonusTypes: selectedBonusTypes, bookmakers: arr, advanced: selectedAdvanced });
+    const newBookmakers = arr;
+    setSelectedBookmakers(newBookmakers);
+    handleFilterChange({ bonusTypes: selectedBonusTypes, bookmakers: newBookmakers, advanced: selectedAdvanced });
   };
 
   const setSelectedAdvancedWrapped = (arr) => {
-    setSelectedAdvanced(arr);
-    handleFilterChange({ bonusTypes: selectedBonusTypes, bookmakers: selectedBookmakers, advanced: arr });
+    const newAdvanced = arr;
+    setSelectedAdvanced(newAdvanced);
+    handleFilterChange({ bonusTypes: selectedBonusTypes, bookmakers: selectedBookmakers, advanced: newAdvanced });
   };
 
   const clearAllFilters = () => {
@@ -161,20 +172,46 @@ export default function OffersClient({
     }
   };
 
-  // Filter logic (case-insensitive, robust)
+  // Filter logic (case-insensitive, robust) - OR logic for multiple filters
   const filteredOffers = offers.filter((offer) => {
     const offerBookmaker = offer.bookmaker?.name ? offer.bookmaker.name.toLowerCase() : "";
     const offerBonusType = offer.bonusType?.name ? offer.bonusType.name.toLowerCase() : "";
     const offerPaymentMethods = Array.isArray(offer.bookmaker?.paymentMethods) ? offer.bookmaker.paymentMethods.map(pm => pm.toLowerCase()) : [];
+    const offerLicenses = Array.isArray(offer.bookmaker?.license) ? offer.bookmaker.license.map(lc => lc.toLowerCase()) : [];
 
-    if (selectedBookmakers.length > 0 && !selectedBookmakers.some(bm => bm.toLowerCase() === offerBookmaker)) return false;
-    if (selectedBonusTypes.length > 0 && !selectedBonusTypes.some(bt => bt.toLowerCase() === offerBonusType)) return false;
+    // If no filters are selected, show all offers
+    if (selectedBookmakers.length === 0 && selectedBonusTypes.length === 0 && selectedAdvanced.length === 0) {
+      return true;
+    }
+
+    // Check if offer matches ANY of the selected filters (OR logic)
+    let matches = false;
+
+    // Check bookmaker filter
+    if (selectedBookmakers.length > 0) {
+      if (selectedBookmakers.some(bm => bm.toLowerCase() === offerBookmaker)) {
+        matches = true;
+      }
+    }
+
+    // Check bonus type filter
+    if (selectedBonusTypes.length > 0) {
+      if (selectedBonusTypes.some(bt => bt.toLowerCase() === offerBonusType)) {
+        matches = true;
+      }
+    }
+
+    // Check advanced filters (payment methods and licenses)
     if (selectedAdvanced.length > 0) {
       const selectedAdvancedLower = selectedAdvanced.map(a => a.toLowerCase());
       const paymentMatch = offerPaymentMethods.some(pm => selectedAdvancedLower.includes(pm));
-      if (!paymentMatch) return false;
+      const licenseMatch = offerLicenses.some(lc => selectedAdvancedLower.includes(lc));
+      if (paymentMatch || licenseMatch) {
+        matches = true;
+      }
     }
-    return true;
+
+    return matches;
   });
 
   // Sorting logic
@@ -194,7 +231,7 @@ export default function OffersClient({
 
 
       {/* Best Offers Header */}
-      <div className="sticky top-16 z-10 bg-white sm:static sm:bg-transparent">
+      <div className="sticky top-16 z-40 bg-white sm:static sm:bg-transparent">
         <div className="flex items-center justify-between my-4">
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900 whitespace-nowrap font-['General_Sans']">
             Best Offers <span className="text-gray-400 font-normal text-base sm:text-xl">{offers.length}</span>
@@ -211,7 +248,7 @@ export default function OffersClient({
               </button>
 
               {/* Mobile slide-up panel */}
-              <div className={`sm:hidden fixed bottom-0 left-0 right-0 rounded-t-2xl p-4 bg-white shadow-2xl border-t z-20 transform transition-transform duration-300 ${sortByOpen ? 'translate-y-0' : 'translate-y-full'}`}>
+              <div className={`sm:hidden fixed bottom-0 left-0 right-0 rounded-t-2xl p-4 bg-white shadow-2xl border-t z-[60] transform transition-transform duration-300 ${sortByOpen ? 'translate-y-0' : 'translate-y-full'}`}>
                 <div className="flex justify-between items-center pb-2 mb-3">
                   <h3 className="font-semibold text-lg">Sort By</h3>
                   <button onClick={() => setSortByOpen(false)} className="p-1">
@@ -238,7 +275,7 @@ export default function OffersClient({
 
               {/* Desktop dropdown */}
               {sortByOpen && (
-                <div className="hidden sm:block absolute right-0 mt-2 w-48 bg-white border rounded shadow-lg z-20">
+                <div className="hidden sm:block absolute right-0 mt-2 w-48 bg-white border rounded shadow-lg z-[60]">
                   {sortOptions.map(option => (
                     <button
                       key={option}
@@ -321,18 +358,6 @@ export default function OffersClient({
 
       {/* Offer Cards */}
       <div className="flex flex-col gap-4 mb-6">
-        {/* Filter loading indicator */}
-        {filterLoading && (
-          <div className="text-center py-4">
-            <div className="inline-flex items-center px-3 py-1 text-sm text-blue-600 bg-blue-100 rounded-full">
-              <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Updating filters...
-            </div>
-          </div>
-        )}
         
         {sortedOffers.length === 0 && (
           <div className="text-center py-12">

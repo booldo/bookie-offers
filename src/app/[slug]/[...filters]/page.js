@@ -1,10 +1,10 @@
-import CountryPageShell, { generateStaticParams, generateMetadata } from '../CountryPageShell';
+import CountryPageShell, { generateStaticParams } from '../CountryPageShell';
 import DynamicOffers from '../DynamicOffers';
 import OfferDetailsInner from './OfferDetailsInner';
 import { Suspense } from "react";
 
 // Use the same static generation functions from CountryPageShell
-export { generateStaticParams, generateMetadata };
+export { generateStaticParams };
 
 export default async function CountryFiltersPage({ params }) {
   const awaitedParams = await params;

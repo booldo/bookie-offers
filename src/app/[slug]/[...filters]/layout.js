@@ -21,11 +21,12 @@ export async function generateMetadata({ params }) {
   }
   
   // Check if this is an individual offer page (has 2 or more parts)
+  // URL structure: /country/bonus-type/offer-slug (filters = [bonus-type, offer-slug])
   if (pathname && pathname.length >= 2 && countryData) {
-    const slug = pathname[pathname.length - 1];
+    const offerSlug = pathname[pathname.length - 1];
     
     try {
-      // Fetch the offer metadata from Sanity - now dynamic by country (country is a reference)
+      // First, try to find the offer by slug and country
       const offerQuery = `*[_type == "offers" && country->country == $countryName && slug.current == $slug][0]{
         title,
         bonusType->{name},
@@ -37,7 +38,7 @@ export async function generateMetadata({ params }) {
         canonicalUrl,
         sitemapInclude
       }`;
-      const offer = await client.fetch(offerQuery, { slug, countryName: countryData.country });
+      const offer = await client.fetch(offerQuery, { slug: offerSlug, countryName: countryData.country });
       
       if (offer) {
         const offerTitle = offer.metaTitle || `${offer.title} - ${offer.bookmaker?.name}`;
@@ -55,6 +56,37 @@ export async function generateMetadata({ params }) {
           },
         };
       }
+      
+      // If not found, try a broader search without country constraint
+      const fallbackQuery = `*[_type == "offers" && slug.current == $slug][0]{
+        title,
+        bonusType->{name},
+        bookmaker->{name},
+        metaTitle,
+        metaDescription,
+        noindex,
+        nofollow,
+        canonicalUrl,
+        sitemapInclude
+      }`;
+      const fallbackOffer = await client.fetch(fallbackQuery, { slug: offerSlug });
+      
+      if (fallbackOffer) {
+        const offerTitle = fallbackOffer.metaTitle || `${fallbackOffer.title} - ${fallbackOffer.bookmaker?.name}`;
+        const offerDescription = fallbackOffer.metaDescription || `View ${fallbackOffer.title} details and claim your bonus from ${fallbackOffer.bookmaker?.name}.`;
+        
+        return {
+          title: offerTitle,
+          description: offerDescription,
+          robots: [
+            fallbackOffer.noindex ? "noindex" : "index",
+            fallbackOffer.nofollow ? "nofollow" : "follow"
+          ].join(", "),
+          alternates: {
+            canonical: fallbackOffer.canonicalUrl || undefined,
+          },
+        };
+      }
     } catch (error) {
       console.error('Error fetching offer metadata:', error);
     }
@@ -63,8 +95,8 @@ export async function generateMetadata({ params }) {
   // Default metadata for filter pages - now dynamic
   const countryName = countryData?.country || "Unknown";
   return {
-    title: `Betting Offers | Booldo`,
-    description: `Discover the best betting offers and bonuses from top bookmakers in ${countryName}.`,
+    title: countryData?.metaTitle || `Betting Offers in ${countryName} | Booldo`,
+    description: countryData?.metaDescription || `Discover the best betting offers and bonuses from top bookmakers in ${countryName}.`,
   };
 }
 

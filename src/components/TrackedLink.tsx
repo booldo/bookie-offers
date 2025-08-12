@@ -14,6 +14,9 @@ interface TrackedLinkProps {
   onClick?: (e: React.MouseEvent) => void;
   isAffiliate?: boolean;
   offerSlug?: string;
+  countryCode?: string;
+  bookmaker?: string;
+  bonusType?: string;
 }
 
 export const TrackedLink: React.FC<TrackedLinkProps> = ({
@@ -28,13 +31,24 @@ export const TrackedLink: React.FC<TrackedLinkProps> = ({
   onClick,
   isAffiliate = false,
   offerSlug,
+  countryCode,
+  bookmaker,
+  bonusType,
 }) => {
   const { trackLinkClick } = useClickTracking();
 
   // Determine the display URL
-  const displayUrl = isAffiliate && offerSlug 
-    ? `/${offerSlug}` 
-    : href;
+  let displayUrl = href;
+  
+  if (isAffiliate) {
+    if (countryCode && bookmaker && bonusType) {
+      // Format: /countrycode/bookmaker/bonustype
+      displayUrl = `/${countryCode}/${bookmaker}/${bonusType}`;
+    } else if (offerSlug) {
+      // Fallback to existing offerSlug format
+      displayUrl = `/${offerSlug}`;
+    }
+  }
 
   const handleClick = async (e: React.MouseEvent) => {
     // Track the click with the original affiliate URL
