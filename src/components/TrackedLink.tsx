@@ -62,11 +62,12 @@ export const TrackedLink: React.FC<TrackedLinkProps> = ({
 
   return (
     <Link
-      href={displayUrl}
+      href={href}
       className={className}
       target={target}
       rel={rel}
       onClick={handleClick}
+      title={isAffiliate ? displayUrl : undefined}
     >
       {children}
     </Link>

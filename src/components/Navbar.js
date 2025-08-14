@@ -33,6 +33,7 @@ export default function Navbar() {
   const [searchError, setSearchError] = useState(null);
   const searchDebounceRef = useRef();
   const menuRef = useRef();
+  const [hamburgerMenu, setHamburgerMenu] = useState(null);
 
   // Load recent searches from localStorage on mount
   useEffect(() => {
@@ -80,6 +81,27 @@ export default function Navbar() {
       }
     };
     fetchCountries();
+  }, []);
+
+  // Load hamburger menu data from Sanity
+  useEffect(() => {
+    const fetchHamburgerMenu = async () => {
+      try {
+        const menuData = await client.fetch(`*[_type == "hamburgerMenu" && isActive == true][0]{
+          title,
+          content,
+          additionalMenuItems[]{
+            label,
+            content,
+            isActive
+          }
+        }`);
+        setHamburgerMenu(menuData);
+      } catch (e) {
+        console.error('Failed to fetch hamburger menu:', e);
+      }
+    };
+    fetchHamburgerMenu();
   }, []);
 
   // Update selected flag based on current path
@@ -433,11 +455,41 @@ export default function Navbar() {
       {menuOpen && (
         <div ref={menuRef} className="fixed left-0 right-0 top-[64px] w-full bg-white shadow-2xl z-50 rounded-b-xl animate-slide-down">
           <div className="flex flex-col gap-6 px-10 py-4 text-gray-800 text-base font-medium">
-            <a href={pathname.startsWith('/ng') ? '/ng' : pathname.startsWith('/gh') ? '/gh' : '/'} className="hover:underline">Home</a>           
+            {/* Default Menu Items */}
+            <Link 
+              href={pathname.startsWith('/ng') ? '/ng' : pathname.startsWith('/gh') ? '/gh' : '/'} 
+              className="hover:underline"
+            >
+              Home
+            </Link>
             <Link href="/briefly" className="hover:underline">Blog</Link>
             <Link href="/about" className="hover:underline">About Us</Link>
             <Link href="/contact" className="hover:underline">Contact Us</Link>
+            
+            {/* Additional Dynamic Menu Items */}
+            {hamburgerMenu?.additionalMenuItems?.map((item, index) => (
+              item.isActive && (
+                <Link
+                  key={index}
+                  href={`/hamburger-menu/${item.label.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`}
+                  className="hover:underline"
+                >
+                  {item.label}
+                </Link>
+              )
+            ))}
           </div>
+          {/* Hamburger Menu Title - Clickable to show content */}
+          {hamburgerMenu?.title && (
+            <div className="border-t border-gray-200 px-10 py-4">
+              <Link 
+                href="/hamburger-menu/main"
+                className="text-sm text-gray-500 font-medium hover:text-gray-700 hover:underline cursor-pointer"
+              >
+                {hamburgerMenu.title}
+              </Link>
+            </div>
+          )}
         </div>
       )}
       {/* Search Suggestion Panel + Results */}

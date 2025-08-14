@@ -349,21 +349,15 @@ export default function DynamicOffers({ countrySlug }) {
   };
 
   const setSelectedBonusTypesWrapped = (arr) => {
-    const newBonusTypes = arr;
-    setSelectedBonusTypes(newBonusTypes);
-    handleFilterChange({ bonusTypes: newBonusTypes, bookmakers: selectedBookmakers, advanced: selectedAdvanced });
+    handleFilterChange({ bonusTypes: arr, bookmakers: selectedBookmakers, advanced: selectedAdvanced });
   };
 
   const setSelectedBookmakersWrapped = (arr) => {
-    const newBookmakers = arr;
-    setSelectedBookmakers(newBookmakers);
-    handleFilterChange({ bonusTypes: selectedBonusTypes, bookmakers: newBookmakers, advanced: selectedAdvanced });
+    handleFilterChange({ bonusTypes: selectedBonusTypes, bookmakers: arr, advanced: selectedAdvanced });
   };
 
   const setSelectedAdvancedWrapped = (arr) => {
-    const newAdvanced = arr;
-    setSelectedAdvanced(newAdvanced);
-    handleFilterChange({ bonusTypes: selectedBonusTypes, bookmakers: selectedBookmakers, advanced: newAdvanced });
+    handleFilterChange({ bonusTypes: selectedBonusTypes, bookmakers: selectedBookmakers, advanced: arr });
   };
 
   const clearAllFilters = () => {

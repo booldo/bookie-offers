@@ -86,12 +86,6 @@ export default function OffersClient({
   const buildUrl = ({ bonusTypes, bookmakers, advanced }) => {
     if (!countrySlug) return '/';
     
-    // If no filters are selected, go to base country page
-    if (bonusTypes.length === 0 && bookmakers.length === 0 && advanced.length === 0) {
-      return `/${countrySlug}`;
-    }
-    
-    // Single filter cases (for clean URLs)
     if (bonusTypes.length === 1 && bookmakers.length === 0 && advanced.length === 0) {
       return `/${countrySlug}/${slugify(bonusTypes[0])}`;
     }
@@ -101,13 +95,11 @@ export default function OffersClient({
     if (advanced.length === 1 && bonusTypes.length === 0 && bookmakers.length === 0) {
       return `/${countrySlug}/${slugify(advanced[0])}`;
     }
-    
-    // Multiple filters or mixed filters - use query parameters
     let url = `/${countrySlug}/offers/?`;
     const params = [];
-    if (bonusTypes.length > 0) params.push(`bonustypes=${bonusTypes.map(slugify).join(",")}`);
-    if (bookmakers.length > 0) params.push(`bookmakers=${bookmakers.map(slugify).join(",")}`);
-    if (advanced.length > 0) params.push(`advanced=${advanced.map(slugify).join(",")}`);
+    if (bonusTypes.length) params.push(`bonustypes=${bonusTypes.map(slugify).join(",")}`);
+    if (bookmakers.length) params.push(`bookmakers=${bookmakers.map(slugify).join(",")}`);
+    if (advanced.length) params.push(`advanced=${advanced.map(slugify).join(",")}`);
     url += params.join("&");
     return url;
   };
@@ -132,35 +124,20 @@ export default function OffersClient({
   }, [sortByOpen]);
 
   const handleFilterChange = ({ bonusTypes, bookmakers, advanced }) => {
-    setFilterLoading(true);
-    
     const url = buildUrl({ bonusTypes, bookmakers, advanced });
-    if (url !== pathname + (searchParams.toString() ? '?' + searchParams.toString() : '')) {
       router.push(url);
-    }
-    
-    // Remove loading state after a short delay
-    setTimeout(() => {
-      setFilterLoading(false);
-    }, 200);
   };
 
   const setSelectedBonusTypesWrapped = (arr) => {
-    const newBonusTypes = arr;
-    setSelectedBonusTypes(newBonusTypes);
-    handleFilterChange({ bonusTypes: newBonusTypes, bookmakers: selectedBookmakers, advanced: selectedAdvanced });
+    handleFilterChange({ bonusTypes: arr, bookmakers: selectedBookmakers, advanced: selectedAdvanced });
   };
 
   const setSelectedBookmakersWrapped = (arr) => {
-    const newBookmakers = arr;
-    setSelectedBookmakers(newBookmakers);
-    handleFilterChange({ bonusTypes: selectedBonusTypes, bookmakers: newBookmakers, advanced: selectedAdvanced });
+    handleFilterChange({ bonusTypes: selectedBonusTypes, bookmakers: arr, advanced: selectedAdvanced });
   };
 
   const setSelectedAdvancedWrapped = (arr) => {
-    const newAdvanced = arr;
-    setSelectedAdvanced(newAdvanced);
-    handleFilterChange({ bonusTypes: selectedBonusTypes, bookmakers: selectedBookmakers, advanced: newAdvanced });
+    handleFilterChange({ bonusTypes: selectedBonusTypes, bookmakers: selectedBookmakers, advanced: arr });
   };
 
   const clearAllFilters = () => {
@@ -172,46 +149,22 @@ export default function OffersClient({
     }
   };
 
-  // Filter logic (case-insensitive, robust) - OR logic for multiple filters
+  // Filter logic (case-insensitive, robust)
   const filteredOffers = offers.filter((offer) => {
     const offerBookmaker = offer.bookmaker?.name ? offer.bookmaker.name.toLowerCase() : "";
     const offerBonusType = offer.bonusType?.name ? offer.bonusType.name.toLowerCase() : "";
     const offerPaymentMethods = Array.isArray(offer.bookmaker?.paymentMethods) ? offer.bookmaker.paymentMethods.map(pm => pm.toLowerCase()) : [];
     const offerLicenses = Array.isArray(offer.bookmaker?.license) ? offer.bookmaker.license.map(lc => lc.toLowerCase()) : [];
 
-    // If no filters are selected, show all offers
-    if (selectedBookmakers.length === 0 && selectedBonusTypes.length === 0 && selectedAdvanced.length === 0) {
-      return true;
-    }
-
-    // Check if offer matches ANY of the selected filters (OR logic)
-    let matches = false;
-
-    // Check bookmaker filter
-    if (selectedBookmakers.length > 0) {
-      if (selectedBookmakers.some(bm => bm.toLowerCase() === offerBookmaker)) {
-        matches = true;
-      }
-    }
-
-    // Check bonus type filter
-    if (selectedBonusTypes.length > 0) {
-      if (selectedBonusTypes.some(bt => bt.toLowerCase() === offerBonusType)) {
-        matches = true;
-      }
-    }
-
-    // Check advanced filters (payment methods and licenses)
+    if (selectedBookmakers.length > 0 && !selectedBookmakers.some(bm => bm.toLowerCase() === offerBookmaker)) return false;
+    if (selectedBonusTypes.length > 0 && !selectedBonusTypes.some(bt => bt.toLowerCase() === offerBonusType)) return false;
     if (selectedAdvanced.length > 0) {
       const selectedAdvancedLower = selectedAdvanced.map(a => a.toLowerCase());
       const paymentMatch = offerPaymentMethods.some(pm => selectedAdvancedLower.includes(pm));
       const licenseMatch = offerLicenses.some(lc => selectedAdvancedLower.includes(lc));
-      if (paymentMatch || licenseMatch) {
-        matches = true;
-      }
+      if (!paymentMatch && !licenseMatch) return false;
     }
-
-    return matches;
+    return true;
   });
 
   // Sorting logic

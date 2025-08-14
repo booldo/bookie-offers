@@ -138,6 +138,20 @@ export const structure: StructureResolver = (S) =>
                     .title('Click Tracking')
                     .filter('_type == "clickTracking"')
                 ),
+              S.listItem()
+                .title('Hamburger Menu')
+                .child(
+                  S.documentList()
+                    .title('Add Page')
+                    .filter('_type == "hamburgerMenu"')
+                ),
+              S.listItem()
+                .title('Footer')
+                .child(
+                  S.documentList()
+                    .title('Footer')
+                    .filter('_type == "footer"')
+                ),
             ])
         ),
 

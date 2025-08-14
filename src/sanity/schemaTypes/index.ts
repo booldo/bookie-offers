@@ -13,6 +13,8 @@ import about from "./about";
 import contact from "./contact";
 import countryPage from "./countryPage";
 import codeBlock from "./codeBlock";
+import hamburgerMenu from "./hamburgerMenu";
+import footer from "./footer";
 
 export const schemaTypes = [
   bookmaker,
@@ -29,6 +31,8 @@ export const schemaTypes = [
   contact,
   countryPage,
   codeBlock,
+  hamburgerMenu,
+  footer,
 ];
 
 export const schema: { types: SchemaTypeDefinition[] } = {
