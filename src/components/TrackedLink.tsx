@@ -17,6 +17,7 @@ interface TrackedLinkProps {
   countryCode?: string;
   bookmaker?: string;
   bonusType?: string;
+  prettyLink?: string | { current: string };
 }
 
 export const TrackedLink: React.FC<TrackedLinkProps> = ({
@@ -34,21 +35,27 @@ export const TrackedLink: React.FC<TrackedLinkProps> = ({
   countryCode,
   bookmaker,
   bonusType,
+  prettyLink,
 }) => {
   const { trackLinkClick } = useClickTracking();
 
-  // Determine the display URL
+  // Determine the display URL for hover tooltip
   let displayUrl = href;
   
-  if (isAffiliate) {
-    if (countryCode && bookmaker && bonusType) {
-      // Format: /countrycode/bookmaker/bonustype
-      displayUrl = `/${countryCode}/${bookmaker}/${bonusType}`;
-    } else if (offerSlug) {
-      // Fallback to existing offerSlug format
-      displayUrl = `/${offerSlug}`;
+  if (isAffiliate && prettyLink) {
+    // Use the pretty link if provided (format: bookmaker/bonustype)
+    const prettyLinkValue = typeof prettyLink === 'string' ? prettyLink : prettyLink?.current || '';
+    if (prettyLinkValue && prettyLinkValue.trim()) {
+      displayUrl = `/${prettyLinkValue}`;
     }
+  } else if (isAffiliate && offerSlug) {
+    // Fallback to existing offerSlug format
+    displayUrl = `/${offerSlug}`;
   }
+
+  // For affiliate links, always redirect to the actual affiliate URL (href)
+  // The prettyLink is just for display purposes in the hover tooltip
+  const linkHref = href;
 
   const handleClick = async (e: React.MouseEvent) => {
     // Track the click with the original affiliate URL
@@ -62,7 +69,7 @@ export const TrackedLink: React.FC<TrackedLinkProps> = ({
 
   return (
     <Link
-      href={href}
+      href={linkHref}
       className={className}
       target={target}
       rel={rel}

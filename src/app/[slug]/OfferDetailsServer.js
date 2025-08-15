@@ -37,7 +37,13 @@ async function getOfferDetailsData(slug, countryName) {
       description,
       expires,
       published,
-      affiliateLink,
+      affiliateLink->{
+        _id,
+        name,
+        affiliateUrl,
+        isActive,
+        prettyLink
+      },
       banner,
       bannerAlt,
       howItWorks,

@@ -14,7 +14,8 @@ export default function OffersClient({
   initialOffers, 
   bonusTypeOptions, 
   bookmakerOptions, 
-  advancedOptions 
+  advancedOptions,
+  initialFilter 
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -112,7 +113,7 @@ export default function OffersClient({
     setSelectedAdvanced(advanced);
   }, [pathname, searchParams, bonusTypeOptions, bookmakerOptions, advancedOptions]);
 
-  // Event handlers for sort dropdown
+  // sort dropdown
   useEffect(() => {
     function handleClick(e) {
       if (sortByRef.current && !sortByRef.current.contains(e.target)) {
@@ -149,12 +150,34 @@ export default function OffersClient({
     }
   };
 
-  // Filter logic (case-insensitive, robust)
+  // Filter logic (case-insensitive)
   const filteredOffers = offers.filter((offer) => {
     const offerBookmaker = offer.bookmaker?.name ? offer.bookmaker.name.toLowerCase() : "";
     const offerBonusType = offer.bonusType?.name ? offer.bonusType.name.toLowerCase() : "";
-    const offerPaymentMethods = Array.isArray(offer.bookmaker?.paymentMethods) ? offer.bookmaker.paymentMethods.map(pm => pm.toLowerCase()) : [];
-    const offerLicenses = Array.isArray(offer.bookmaker?.license) ? offer.bookmaker.license.map(lc => lc.toLowerCase()) : [];
+    
+    // Safely handle payment methods with null/undefined checks
+    const offerPaymentMethods = Array.isArray(offer.bookmaker?.paymentMethods) 
+      ? offer.bookmaker.paymentMethods
+          .filter(pm => pm != null) // Filter out null/undefined values
+          .map(pm => {
+            if (typeof pm === 'string') return pm.toLowerCase();
+            if (pm && typeof pm === 'object' && pm.name) return pm.name.toLowerCase();
+            return ""; // Return empty string for invalid items
+          })
+          .filter(pm => pm !== "") // Filter out empty strings
+      : [];
+    
+    // Safely handle licenses with null/undefined checks
+    const offerLicenses = Array.isArray(offer.bookmaker?.license)
+      ? offer.bookmaker.license
+          .filter(lc => lc != null) // Filter out null/undefined values
+          .map(lc => {
+            if (typeof lc === 'string') return lc.toLowerCase();
+            if (lc && typeof lc === 'object' && lc.name) return lc.name.toLowerCase();
+            return ""; // Return empty string for invalid items
+          })
+          .filter(lc => lc !== "") // Filter out empty strings
+      : [];
 
     if (selectedBookmakers.length > 0 && !selectedBookmakers.some(bm => bm.toLowerCase() === offerBookmaker)) return false;
     if (selectedBonusTypes.length > 0 && !selectedBonusTypes.some(bt => bt.toLowerCase() === offerBonusType)) return false;

@@ -12,13 +12,191 @@ export async function generateStaticParams() {
   try {
     const countries = await client.fetch(`
       *[_type == "countryPage" && isActive == true]{
-        slug
+        slug,
+        country,
+        "bonusTypes": *[_type == "bonusType" && country._ref == ^._id]{
+          name
+        },
+        "bookmakers": *[_type == "bookmaker" && country._ref == ^._id]{
+          name
+        },
+        "paymentMethods": *[_type == "offers" && country._ref == ^._id]{
+          bookmaker->{
+            paymentMethods[]->{
+              name
+            }
+          }
+        }
       }
     `);
     
-    return countries.map((country) => ({
-      slug: country.slug.current,
-    }));
+    const params = [];
+    
+    for (const country of countries) {
+      const countrySlug = country.slug.current;
+      
+      // Add base country page
+      params.push({ slug: countrySlug });
+      
+      // Add bonus type filter pages
+      country.bonusTypes?.forEach(bonusType => {
+        if (bonusType.name) {
+          params.push({ 
+            slug: countrySlug,
+            filters: [bonusType.name.toLowerCase().replace(/\s+/g, '-')]
+          });
+        }
+      });
+      
+      // Add bookmaker filter pages
+      country.bookmakers?.forEach(bookmaker => {
+        if (bookmaker.name) {
+          params.push({ 
+            slug: countrySlug,
+            filters: [bookmaker.name.toLowerCase().replace(/\s+/g, '-')]
+          });
+        }
+      });
+      
+      // Add payment method filter pages (unique payment methods)
+      const uniquePaymentMethods = new Set();
+      country.paymentMethods?.forEach(offer => {
+        offer.bookmaker?.paymentMethods?.forEach(pm => {
+          if (pm?.name) {
+            uniquePaymentMethods.add(pm.name);
+          }
+        });
+      });
+      
+      uniquePaymentMethods.forEach(pmName => {
+        params.push({ 
+          slug: countrySlug,
+          filters: [pmName.toLowerCase().replace(/\s+/g, '-')]
+        });
+      });
+
+      // Generate combination filter pages
+      // Bonus Type + Bookmaker combinations
+      country.bonusTypes?.forEach(bonusType => {
+        country.bookmakers?.forEach(bookmaker => {
+          if (bonusType.name && bookmaker.name) {
+            params.push({ 
+              slug: countrySlug,
+              filters: [`${bonusType.name.toLowerCase().replace(/\s+/g, '-')}-${bookmaker.name.toLowerCase().replace(/\s+/g, '-')}`]
+            });
+          }
+        });
+      });
+
+      // Bonus Type + Payment Method combinations
+      country.bonusTypes?.forEach(bonusType => {
+        uniquePaymentMethods.forEach(pmName => {
+          if (bonusType.name && pmName) {
+            params.push({ 
+              slug: countrySlug,
+              filters: [`${bonusType.name.toLowerCase().replace(/\s+/g, '-')}-${pmName.toLowerCase().replace(/\s+/g, '-')}`]
+            });
+          }
+        });
+      });
+
+      // Bookmaker + Payment Method combinations
+      country.bookmakers?.forEach(bookmaker => {
+        uniquePaymentMethods.forEach(pmName => {
+          if (bookmaker.name && pmName) {
+            params.push({ 
+              slug: countrySlug,
+              filters: [`${bookmaker.name.toLowerCase().replace(/\s+/g, '-')}-${pmName.toLowerCase().replace(/\s+/g, '-')}`]
+            });
+          }
+        });
+      });
+
+      // Generate 3-way combination filter pages
+      country.bonusTypes?.forEach(bonusType => {
+        country.bookmakers?.forEach(bookmaker => {
+          uniquePaymentMethods.forEach(pmName => {
+            if (bonusType.name && bookmaker.name && pmName) {
+              params.push({ 
+                slug: countrySlug,
+                filters: [`${bonusType.name.toLowerCase().replace(/\s+/g, '-')}-${bookmaker.name.toLowerCase().replace(/\s+/g, '-')}-${pmName.toLowerCase().replace(/\s+/g, '-')}`]
+              });
+            }
+          });
+        });
+      });
+
+      // Generate 4-way combination filter pages (Bonus Type + Bookmaker + Payment Method + License)
+      // First, get unique licenses for this country
+      const uniqueLicenses = new Set();
+      country.bookmakers?.forEach(bookmaker => {
+        if (Array.isArray(bookmaker.license)) {
+          bookmaker.license.forEach(license => {
+            if (license && typeof license === 'string') {
+              uniqueLicenses.add(license);
+            }
+          });
+        }
+      });
+
+      // 4-way combinations: Bonus Type + Bookmaker + Payment Method + License
+      country.bonusTypes?.forEach(bonusType => {
+        country.bookmakers?.forEach(bookmaker => {
+          uniquePaymentMethods.forEach(pmName => {
+            uniqueLicenses.forEach(licenseName => {
+              if (bonusType.name && bookmaker.name && pmName && licenseName) {
+                params.push({ 
+                  slug: countrySlug,
+                  filters: [`${bonusType.name.toLowerCase().replace(/\s+/g, '-')}-${bookmaker.name.toLowerCase().replace(/\s+/g, '-')}-${pmName.toLowerCase().replace(/\s+/g, '-')}-${licenseName.toLowerCase().replace(/\s+/g, '-')}`]
+                });
+              }
+            });
+          });
+        });
+      });
+
+      // Generate 5-way combination filter pages (Bonus Type + Bookmaker + Payment Method + License + Country-specific features)
+      const countryFeatures = ['mobile-optimized', 'live-betting', 'instant-withdrawal', '24-7-support'];
+      
+      country.bonusTypes?.forEach(bonusType => {
+        country.bookmakers?.forEach(bookmaker => {
+          uniquePaymentMethods.forEach(pmName => {
+            uniqueLicenses.forEach(licenseName => {
+              countryFeatures.forEach(feature => {
+                if (bonusType.name && bookmaker.name && pmName && licenseName) {
+                  params.push({ 
+                    slug: countrySlug,
+                    filters: [`${bonusType.name.toLowerCase().replace(/\s+/g, '-')}-${bookmaker.name.toLowerCase().replace(/\s+/g, '-')}-${pmName.toLowerCase().replace(/\s+/g, '-')}-${licenseName.toLowerCase().replace(/\s+/g, '-')}-${feature}`]
+                  });
+                }
+              });
+            });
+          });
+        });
+      });
+
+      // Generate pretty link pages for affiliate links
+      try {
+        const affiliateLinks = await client.fetch(`
+          *[_type == "affiliate" && isActive == true && prettyLink.current != null && bookmaker->country._ref == ^._id]{
+            prettyLink
+          }
+        `, { _id: country._id });
+
+        affiliateLinks.forEach(link => {
+          if (link.prettyLink?.current) {
+            params.push({
+              slug: countrySlug,
+              filters: [link.prettyLink.current]
+            });
+          }
+        });
+      } catch (error) {
+        console.error('Error generating pretty link params:', error);
+      }
+    }
+    
+    return params;
   } catch (error) {
     console.error('Error generating static params:', error);
     return [];

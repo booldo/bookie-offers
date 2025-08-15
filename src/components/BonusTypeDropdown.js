@@ -1,5 +1,29 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo, memo } from "react";
+
+// Memoized checkbox item component to prevent unnecessary re-renders
+const CheckboxItem = memo(({ item, selected, onToggle, showCount, loading = false }) => (
+  <label className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-50 transition ${loading ? 'opacity-75' : ''}`}>
+    <input
+      type="checkbox"
+      checked={selected.includes(item.name)}
+      onChange={() => onToggle(item.name)}
+      className="accent-green-600 w-4 h-4 rounded"
+      disabled={loading}
+    />
+    <span className="flex-1 text-gray-800 text-sm">{item.name}</span>
+    {showCount && item.count !== undefined && (
+      <span className="text-gray-400 text-xs font-semibold">{item.count}</span>
+    )}
+    {loading && (
+      <div className="w-3 h-3 ml-1">
+        <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    )}
+  </label>
+));
+
+CheckboxItem.displayName = 'CheckboxItem';
 
 export default function MultiSelectDropdown({ label, options, selected, setSelected, showCount = false, nested = false, loading = false }) {
   const [open, setOpen] = useState(false);
@@ -18,123 +42,121 @@ export default function MultiSelectDropdown({ label, options, selected, setSelec
     return () => document.removeEventListener("mousedown", handleClick);
   }, [open]);
 
-  // Filtered options
-  const filtered = search
-    ? options.filter((b) => b.name.toLowerCase().includes(search.toLowerCase()))
-    : options;
+  // Memoized filtered options
+  const filtered = useMemo(() => {
+    return search
+      ? options.filter((b) => b.name && b.name.toLowerCase().includes(search.toLowerCase()))
+      : options;
+  }, [options, search]);
 
   // Toggle selection
-  function toggle(name) {
-    if (selected.includes(name)) {
-      setSelected(selected.filter((n) => n !== name));
-    } else {
-      setSelected([...selected, name]);
-    }
-  }
+  const toggle = useMemo(() => (name) => {
+    // Add a small delay to prevent dropdown from closing immediately
+    setTimeout(() => {
+      if (selected.includes(name)) {
+        setSelected(selected.filter((n) => n !== name));
+      } else {
+        setSelected([...selected, name]);
+      }
+    }, 50);
+  }, [selected, setSelected]);
 
   // Toggle category expansion
-  function toggleCategory(categoryName) {
+  const toggleCategory = useMemo(() => (categoryName) => {
     setExpandedCategories(prev => ({
       ...prev,
       [categoryName]: !prev[categoryName]
     }));
-  }
+  }, []);
 
-  const dropdownContent = (
+  // Memoized dropdown content
+  const dropdownContent = useMemo(() => (
     <div className="overflow-y-auto max-h-[calc(80vh-6rem)] sm:max-h-full">
-          {!nested && (
-            <div className="px-3 pb-2 pt-1 sticky top-0 bg-[#F5F5F7] z-10">
-              <input
-                type="text"
-                className="w-full rounded-md border border-gray-200 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
-                placeholder="Search..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                autoFocus
-              />
+      {!nested && (
+        <div className="px-3 pb-2 pt-1 sticky top-0 bg-[#F5F5F7] z-10">
+          <input
+            type="text"
+            className="w-full rounded-md border border-gray-200 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
+            placeholder="Search..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            autoFocus
+          />
+        </div>
+      )}
+      <div className="flex flex-col gap-1 px-1">
+        {loading && (
+          <div className="flex justify-center items-center py-4">
+            <div className="flex space-x-1">
+              <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+              <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+              <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
             </div>
-          )}
-          <div className="flex flex-col gap-1 px-1">
-                         {loading && (
-               <div className="flex justify-center items-center py-4">
-                 <div className="flex space-x-1">
-                   <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                   <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                   <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                 </div>
-               </div>
-             )}
-            {!loading && !nested && filtered.length === 0 && (
-              <div className="text-gray-400 text-sm px-3 py-2">No results</div>
-            )}
-                         {loading ? (
-               <div className="flex justify-center items-center py-4">
-                 <div className="flex space-x-1">
-                   <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                   <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                   <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                 </div>
-               </div>
-             ) : nested ? (
-              // Nested structure with collapsible categories
-              options.map((category) => (
-                <div key={category.name} className="border-b border-gray-100 last:border-b-0">
-                  <button
-                    type="button"
-                    className="w-full px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide flex items-center justify-between hover:bg-gray-50 transition"
-                    onClick={() => toggleCategory(category.name)}
-                  >
-                    {category.name}
-                    <svg 
-                      className={`w-3 h-3 transition-transform ${expandedCategories[category.name] ? "rotate-180" : ""}`} 
-                      fill="none" 
-                      stroke="currentColor" 
-                      strokeWidth="2" 
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
-                  {expandedCategories[category.name] && (
-                    <div className="pl-2">
-                      {category.subcategories?.map((sub) => (
-                        <label key={sub.name} className="flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-50 transition">
-                          <input
-                            type="checkbox"
-                            checked={selected.includes(sub.name)}
-                            onChange={() => toggle(sub.name)}
-                            className="accent-green-600 w-4 h-4 rounded"
-                          />
-                          <span className="flex-1 text-gray-800 text-sm">{sub.name}</span>
-                          {showCount && sub.count !== undefined && (
-                            <span className="text-gray-400 text-xs font-semibold">{sub.count}</span>
-                          )}
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))
-            ) : !loading ? (
-              // Regular flat structure
-              filtered.map((b) => (
-                <label key={b.name} className="flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-50 transition">
-                  <input
-                    type="checkbox"
-                    checked={selected.includes(b.name)}
-                    onChange={() => toggle(b.name)}
-                    className="accent-green-600 w-4 h-4 rounded"
-                  />
-                  <span className="flex-1 text-gray-800 text-sm">{b.name}</span>
-                  {showCount && b.count !== undefined && (
-                    <span className="text-gray-400 text-xs font-semibold">{b.count}</span>
-                  )}
-                </label>
-              ))
-            ) : null}
           </div>
+        )}
+        {!loading && !nested && filtered.length === 0 && (
+          <div className="text-gray-400 text-sm px-3 py-2">No results</div>
+        )}
+        {loading ? (
+          <div className="flex justify-center items-center py-4">
+            <div className="flex space-x-1">
+              <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+              <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+              <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+            </div>
+          </div>
+        ) : nested ? (
+          // Nested structure with collapsible categories
+          options.map((category) => (
+            <div key={category.name} className="border-b border-gray-100 last:border-b-0">
+              <button
+                type="button"
+                className="w-full px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide flex items-center justify-between hover:bg-gray-50 transition"
+                onClick={() => toggleCategory(category.name)}
+              >
+                {category.name}
+                <svg 
+                  className={`w-3 h-3 transition-transform ${expandedCategories[category.name] ? "rotate-180" : ""}`} 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="2" 
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {expandedCategories[category.name] && (
+                <div className="pl-2">
+                                     {category.subcategories?.map((sub) => (
+                     <CheckboxItem
+                       key={sub.name}
+                       item={sub}
+                       selected={selected}
+                       onToggle={toggle}
+                       showCount={showCount}
+                       loading={loading}
+                     />
+                   ))}
+                </div>
+              )}
+            </div>
+          ))
+        ) : !loading ? (
+          // Regular flat structure
+          filtered.map((b) => (
+            <CheckboxItem
+              key={b.name}
+              item={b}
+              selected={selected}
+              onToggle={toggle}
+              showCount={showCount}
+              loading={loading}
+            />
+          ))
+        ) : null}
+      </div>
     </div>
-  );
+  ), [nested, search, loading, filtered, options, expandedCategories, selected, toggle, toggleCategory, showCount]);
 
   return (
     <div className="relative w-full" ref={ref}>
@@ -147,13 +169,13 @@ export default function MultiSelectDropdown({ label, options, selected, setSelec
         <span className="truncate text-gray-700">
           {selected.length === 0 ? label : selected.join(", ")}
         </span>
-                 {loading ? (
-           <div className="flex space-x-1 ml-1 sm:ml-2">
-             <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-             <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-             <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-           </div>
-         ) : (
+        {loading ? (
+          <div className="flex space-x-1 ml-1 sm:ml-2">
+            <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+            <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+            <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+          </div>
+        ) : (
           <svg className={`ml-1 sm:ml-2 w-4 h-4 transition-transform ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" /></svg>
         )}
       </button>

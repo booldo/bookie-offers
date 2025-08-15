@@ -30,6 +30,7 @@ export default {
         return true
       })
   }),
+  // Add draft preview functionality
   preview: {
     select: {
       title: 'title',
@@ -39,10 +40,14 @@ export default {
       expires: 'expires',
       published: 'published',
       maxBonus: 'maxBonus',
-      minDeposit: 'minDeposit'
+      minDeposit: 'minDeposit',
+      isDraft: '_id'
     },
     prepare(selection) {
-      const {title, bookmakerName, country, bonusType, expires, published, maxBonus, minDeposit} = selection
+      const {title, bookmakerName, country, bonusType, expires, published, maxBonus, minDeposit, isDraft} = selection
+      
+      // Check if this is a draft
+      const isDraftVersion = isDraft && isDraft.startsWith('drafts.');
       
       // Format dates
       const formatDate = (date) => {
@@ -54,8 +59,9 @@ export default {
         });
       };
       
-      // Build subtitle with key info
+      // Build subtitle with key info and draft status
       const subtitleParts = [];
+      if (isDraftVersion) subtitleParts.push('🔄 DRAFT');
       if (bookmakerName) subtitleParts.push(bookmakerName);
       if (bonusType) subtitleParts.push(bonusType);
       if (country) subtitleParts.push(country);
@@ -74,8 +80,64 @@ export default {
       return {
         title: title || 'Untitled Offer',
         subtitle: subtitle || 'No details available',
-        description: description || ''
+        description: description || '',
+        media: isDraftVersion ? '🔄' : undefined
       }
+    }
+  },
+  // Add custom actions for draft preview
+  document: {
+    newDocumentOptions: (prev, context) => {
+      return prev.filter((option) => option.template !== 'offers')
+    },
+    // Add preview action
+    actions: (prev, context) => {
+      const { draft, published } = context;
+      const doc = draft || published;
+      
+      if (!doc) return prev;
+      
+      // Add preview action for drafts
+      if (draft && !published) {
+        return [
+          ...prev,
+          {
+            label: 'Preview Draft',
+            onHandle: async (props) => {
+              const { draft } = props;
+              if (draft) {
+                // Generate preview URL
+                const previewUrl = await generatePreviewUrl(draft);
+                // Open in new tab
+                window.open(previewUrl, '_blank');
+              }
+            },
+            icon: () => '👁️'
+          }
+        ];
+      }
+      
+      // Add preview action for published documents
+      if (published) {
+        return [
+          ...prev,
+          {
+            label: 'View Live',
+            onHandle: async (props) => {
+              const { published } = props;
+              if (published) {
+                // Generate live URL
+                const liveUrl = await generateLiveUrl(published);
+                // Open in new tab
+                window.open(liveUrl, '_blank');
+              }
+            },
+            icon: () => '🌐'
+          }
+        ];
+      }
+      
+      return prev;
     }
   },
   fields: [
@@ -278,6 +340,72 @@ export default {
         }
       ]
     },
+    // Draft preview configuration
+    {
+      name: "draftPreview",
+      title: "Draft Preview Settings",
+      type: "object",
+      description: "Configure how this offer appears in draft preview mode",
+      fields: [
+        {
+          name: "previewMode",
+          title: "Preview Mode",
+          type: "string",
+          options: {
+            list: [
+              { title: "Full Preview", value: "full" },
+              { title: "Minimal Preview", value: "minimal" },
+              { title: "Mobile Preview", value: "mobile" },
+              { title: "Desktop Preview", value: "desktop" }
+            ],
+            layout: "radio"
+          },
+          initialValue: "full"
+        },
+        {
+          name: "previewNotes",
+          title: "Preview Notes",
+          type: "text",
+          description: "Internal notes for content creators about this draft"
+        },
+        {
+          name: "previewExpiry",
+          title: "Preview Expiry",
+          type: "datetime",
+          description: "When this draft preview should expire (optional)"
+        }
+      ]
+    },
+    // Publishing workflow
+    {
+      name: "publishingStatus",
+      title: "Publishing Status",
+      type: "string",
+      options: {
+        list: [
+          { title: "Draft", value: "draft" },
+          { title: "Ready for Review", value: "review" },
+          { title: "Approved", value: "approved" },
+          { title: "Published", value: "published" },
+          { title: "Archived", value: "archived" }
+        ],
+        layout: "dropdown"
+      },
+      initialValue: "draft",
+      description: "Current status of this offer in the publishing workflow"
+    },
+    {
+      name: "reviewerNotes",
+      title: "Reviewer Notes",
+      type: "text",
+      description: "Notes from content reviewers"
+    },
+    {
+      name: "scheduledPublish",
+      title: "Scheduled Publish Date",
+      type: "datetime",
+      description: "When this offer should be automatically published"
+    },
     {
       name: "metaTitle",
       title: "Meta Title",
@@ -317,3 +445,34 @@ export default {
     }
   ]
 }; 
+
+// Helper functions for draft preview
+async function generatePreviewUrl(draft) {
+  try {
+    // Get the country slug for the draft
+    const countrySlug = draft.country?.slug?.current || 'ng';
+    
+    // Generate preview URL with draft ID
+    const previewUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/preview?secret=${process.env.SANITY_PREVIEW_SECRET}&slug=${draft.slug?.current}&country=${countrySlug}&draftId=${draft._id}`;
+    
+    return previewUrl;
+  } catch (error) {
+    console.error('Error generating preview URL:', error);
+    return '#';
+  }
+}
+
+async function generateLiveUrl(published) {
+  try {
+    // Get the country slug for the published document
+    const countrySlug = published.country?.slug?.current || 'ng';
+    
+    // Generate live URL
+    const liveUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/${countrySlug}/offers/${published.slug?.current}`;
+    
+    return liveUrl;
+  } catch (error) {
+    console.error('Error generating live URL:', error);
+    return '#';
+  }
+} 

@@ -1,3 +1,97 @@
+import React, { useEffect, useState } from 'react'
+import { useClient } from 'sanity'
+
+// Custom input component for bonus type selection
+function BonusTypeInput(props) {
+  const { value, onChange, document } = props
+  const client = useClient()
+  const [bonusTypes, setBonusTypes] = useState([])
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    const fetchBonusTypes = async () => {
+      if (!document?.bookmaker?._ref) {
+        setBonusTypes([])
+        return
+      }
+
+      setLoading(true)
+      try {
+        // First get the bookmaker's country
+        const bookmakerQuery = `*[_type == "bookmaker" && _id == $bookmakerId][0]{
+          country->{
+            _id
+          }
+        }`
+        
+        const bookmaker = await client.fetch(bookmakerQuery, {
+          bookmakerId: document.bookmaker._ref
+        })
+
+        if (bookmaker?.country?._id) {
+          // Then get bonus types for that country
+          const bonusTypesQuery = `*[_type == "bonusType" && country._ref == $countryId && isActive == true] | order(name asc) {
+            _id,
+            name,
+            description
+          }`
+          
+          const result = await client.fetch(bonusTypesQuery, {
+            countryId: bookmaker.country._id
+          })
+          
+          setBonusTypes(result)
+        } else {
+          setBonusTypes([])
+        }
+      } catch (error) {
+        console.error('Error fetching bonus types:', error)
+        setBonusTypes([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchBonusTypes()
+  }, [document?.bookmaker?._ref, client])
+
+  const handleChange = (e) => {
+    const selectedId = e.target.value
+    onChange(selectedId ? { _ref: selectedId, _type: 'bonusType' } : null)
+  }
+
+  return (
+    <div>
+      <select 
+        value={value?._ref || ''} 
+        onChange={handleChange}
+        disabled={loading}
+        style={{ 
+          width: '100%', 
+          padding: '8px', 
+          border: '1px solid #ccc', 
+          borderRadius: '4px',
+          backgroundColor: loading ? '#f5f5f5' : 'white'
+        }}
+      >
+        <option value="">
+          {loading ? 'Loading bonus types...' : 'Select a bonus type'}
+        </option>
+        {bonusTypes.map((bonusType) => (
+          <option key={bonusType._id} value={bonusType._id}>
+            {bonusType.name}
+          </option>
+        ))}
+      </select>
+      {bonusTypes.length === 0 && !loading && document?.bookmaker?._ref && (
+        <div style={{ marginTop: '8px', fontSize: '12px', color: '#666' }}>
+          No bonus types found for this bookmaker's country. Please create bonus types for this country first.
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default {
   name: "affiliate",
   title: "Affiliate Links",
@@ -5,15 +99,22 @@ export default {
   preview: {
     select: {
       bookmakerName: 'bookmaker.name',
-      url: 'affiliateUrl'
+      url: 'affiliateUrl',
+      prettyLink: 'prettyLink.current'
     },
     prepare(selection) {
-      const {bookmakerName, url} = selection
+      const {bookmakerName, url, prettyLink} = selection
       return {
         title: bookmakerName || 'Untitled Affiliate Link',
-        subtitle: url ? `${url.substring(0, 50)}...` : 'No URL',
+        subtitle: prettyLink ? `/${prettyLink}` : (url ? `${url.substring(0, 50)}...` : 'No URL'),
         media: bookmakerName ? undefined : undefined
       }
+    }
+  },
+  // Add custom actions for generating pretty link
+  document: {
+    newDocumentOptions: (prev, context) => {
+      return prev.filter((option) => option.template !== 'affiliate')
     }
   },
   fields: [
@@ -25,12 +126,78 @@ export default {
       validation: Rule => Rule.required()
     },
     {
+      name: "bonusType",
+      title: "Bonus Type",
+      type: "reference",
+      to: [{ type: "bonusType" }],
+      validation: Rule => Rule.required(),
+      description: "The type of bonus this affiliate link is for (filtered by bookmaker's country)",
+      inputComponent: BonusTypeInput
+    },
+    {
       name: "affiliateUrl",
       title: "Affiliate Link URL",
       type: "url",
       validation: Rule => Rule.required(),
       description: "The actual affiliate/tracking link"
     },
+    {
+      name: "prettyLink",
+      title: "Pretty Link",
+      type: "slug",
+      description: "Pretty link in format: bookmaker/bonustype (e.g., betika/free-bet). Click the Generate button to create automatically.",
+      options: {
+        source: async (doc, context) => {
+          const { getClient } = context;
+          const client = getClient({ apiVersion: '2023-05-03' });
+          
+          // If no bookmaker or bonus type selected, return empty
+          if (!doc.bookmaker?._ref || !doc.bonusType?._ref) {
+            return "Please select bookmaker and bonus type first";
+          }
+          
+          try {
+            // Fetch bookmaker and bonus type data
+            const query = `{
+              "bookmaker": *[_type == "bookmaker" && _id == $bookmakerId][0]{
+                name
+              },
+              "bonusType": *[_type == "bonusType" && _id == $bonusTypeId][0]{
+                name
+              }
+            }`;
+
+            const result = await client.fetch(query, {
+              bookmakerId: doc.bookmaker._ref,
+              bonusTypeId: doc.bonusType._ref
+            });
+
+            if (result.bookmaker && result.bonusType) {
+              const bookmakerName = result.bookmaker.name?.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+              const bonusTypeName = result.bonusType.name?.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+
+              if (bookmakerName && bonusTypeName) {
+                return `${bookmakerName}/${bonusTypeName}`;
+              }
+            }
+            
+            return "Could not generate link";
+          } catch (error) {
+            console.error('Error generating pretty link:', error);
+            return "Error generating link";
+          }
+        },
+        maxLength: 96,
+        slugify: input =>
+          input
+            .toLowerCase()
+            .replace(/\s+/g, '-')
+            .replace(/[^ 0-\u007F\w\-/]+/g, '')
+            .slice(0, 96)
+      },
+      validation: Rule => Rule.required()
+    },
+
     {
       name: "isActive",
       title: "Active",

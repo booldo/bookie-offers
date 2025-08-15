@@ -43,7 +43,13 @@ async function getOffersData(countryName) {
     description,
     expires,
     published,
-    affiliateLink,
+    affiliateLink->{
+      _id,
+      name,
+      affiliateUrl,
+      isActive,
+      prettyLink
+    },
     banner,
     bannerAlt,
     howItWorks,
@@ -81,7 +87,11 @@ async function getOffersData(countryName) {
     offers.forEach(offer => {
       if (Array.isArray(offer.bookmaker?.paymentMethods)) {
         offer.bookmaker.paymentMethods.forEach(pm => {
-          paymentMethodCount[pm] = (paymentMethodCount[pm] || 0) + 1;
+          // Handle both old string format and new reference format
+          const pmName = typeof pm === 'string' ? pm : pm.name;
+          if (pmName) {
+            paymentMethodCount[pmName] = (paymentMethodCount[pmName] || 0) + 1;
+          }
         });
       }
     });
@@ -116,7 +126,7 @@ async function getOffersData(countryName) {
   }
 }
 
-export default async function OffersServer({ countrySlug }) {
+export default async function OffersServer({ countrySlug, initialFilter }) {
   // First fetch country data to get the country name
   const countryData = await client.fetch(`
     *[_type == "countryPage" && slug.current == $slug && isActive == true][0]{
@@ -154,6 +164,7 @@ export default async function OffersServer({ countrySlug }) {
       bonusTypeOptions={bonusTypeOptions}
       bookmakerOptions={bookmakerOptions}
       advancedOptions={advancedOptions}
+      initialFilter={initialFilter}
     />
   );
 }

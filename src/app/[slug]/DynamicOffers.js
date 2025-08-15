@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import { client } from "../../sanity/lib/client";
 import { urlFor } from "../../sanity/lib/image";
@@ -61,7 +61,13 @@ const fetchOffers = async (countryData) => {
     description,
     expires,
     published,
-    affiliateLink,
+    affiliateLink->{
+      _id,
+      name,
+      affiliateUrl,
+      isActive,
+      prettyLink
+    },
     banner,
     bannerAlt,
     howItWorks,
@@ -80,7 +86,7 @@ const fetchOffers = async (countryData) => {
   }
 };
 
-export default function DynamicOffers({ countrySlug }) {
+export default function DynamicOffers({ countrySlug, initialFilter = null, filterInfo = null }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -100,6 +106,7 @@ export default function DynamicOffers({ countrySlug }) {
   const [loadingStage, setLoadingStage] = useState('initial');
   const [currentPage, setCurrentPage] = useState(1);
   const [offersPerPage] = useState(10);
+  const [filterLoading, setFilterLoading] = useState(false);
   const sortByRef = useRef();
 
   // Helper functions for URL/Filter sync
@@ -115,6 +122,33 @@ export default function DynamicOffers({ countrySlug }) {
     if (!options) return slug;
     const found = options.find(opt => slugify(opt.name) === slug);
     return found ? found.name : slug;
+  };
+
+  // Apply initial filter if provided
+  const applyInitialFilter = (filterSlug) => {
+    if (!filterSlug || !bonusTypeOptions.length || !bookmakerOptions.length || !advancedOptions.length) return;
+    
+    // Try to match with bonus types first
+    const bonusTypeMatch = bonusTypeOptions.find(bt => slugify(bt.name) === filterSlug);
+    if (bonusTypeMatch) {
+      setSelectedBonusTypes([bonusTypeMatch.name]);
+      return;
+    }
+    
+    // Try to match with bookmakers
+    const bookmakerMatch = bookmakerOptions.find(bm => slugify(bm.name) === filterSlug);
+    if (bookmakerMatch) {
+      setSelectedBookmakers([bookmakerMatch.name]);
+      return;
+    }
+    
+    // Try to match with advanced options (payment methods, licenses)
+    const advancedFlat = advancedOptions.flatMap(cat => cat.subcategories || []);
+    const advancedMatch = advancedFlat.find(adv => slugify(adv.name) === filterSlug);
+    if (advancedMatch) {
+      setSelectedAdvanced([advancedMatch.name]);
+      return;
+    }
   };
   
   const getFiltersFromUrl = () => {
@@ -184,6 +218,13 @@ export default function DynamicOffers({ countrySlug }) {
     url += params.join("&");
     return url;
   };
+
+  // Apply initial filter when options are loaded
+  useEffect(() => {
+    if (initialFilter && bonusTypeOptions.length > 0 && bookmakerOptions.length > 0 && advancedOptions.length > 0) {
+      applyInitialFilter(initialFilter);
+    }
+  }, [initialFilter, bonusTypeOptions, bookmakerOptions, advancedOptions]);
 
   // Event handlers
   useEffect(() => {
@@ -277,15 +318,19 @@ export default function DynamicOffers({ countrySlug }) {
         const bmOptions = Object.entries(bookmakerCount).map(([name, count]) => ({ name, count }));
         setBookmakerOptions(bmOptions);
         
-        // Compute payment method counts from actual data
-        const paymentMethodCount = {};
-        offersData.forEach(offer => {
-          if (Array.isArray(offer.bookmaker?.paymentMethods)) {
-            offer.bookmaker.paymentMethods.forEach(pm => {
-              paymentMethodCount[pm] = (paymentMethodCount[pm] || 0) + 1;
-            });
+            // Compute payment method counts from actual data
+    const paymentMethodCount = {};
+    offersData.forEach(offer => {
+      if (Array.isArray(offer.bookmaker?.paymentMethods)) {
+        offer.bookmaker.paymentMethods.forEach(pm => {
+          // Handle both old string format and new reference format
+          const pmName = typeof pm === 'string' ? pm : pm.name;
+          if (pmName) {
+            paymentMethodCount[pmName] = (paymentMethodCount[pmName] || 0) + 1;
           }
         });
+      }
+    });
         const paymentSubcategories = Object.entries(paymentMethodCount).map(([name, count]) => ({ name, count }));
         
         // Dynamic license options based on country
@@ -334,47 +379,235 @@ export default function DynamicOffers({ countrySlug }) {
     setSelectedAdvanced(advanced);
   }, [pathname, searchParams, bonusTypeOptions, bookmakerOptions, advancedOptions]);
 
+  // Apply initial filter when component loads
+  useEffect(() => {
+    if (bonusTypeOptions.length > 0 && bookmakerOptions.length > 0 && advancedOptions.length > 0) {
+      if (filterInfo?.type === 'combination') {
+        // Handle combination filters
+        const { parts, combinationType, partCount } = filterInfo;
+        let bonusTypes = [];
+        let bookmakers = [];
+        let advanced = [];
+        
+                  // Enhanced parsing for higher-order combinations
+          if (combinationType === '2-way') {
+            // 2-way combinations: try to match each part intelligently
+            parts.forEach(part => {
+              const partLower = part.toLowerCase();
+              matchFilterPart(partLower, bonusTypeOptions, bookmakerOptions, advancedOptions, 
+                bonusTypes, bookmakers, advanced);
+            });
+          } else if (combinationType === '3-way') {
+            // 3-way combinations: typically Bonus Type + Bookmaker + Payment Method
+            if (parts.length === 3) {
+              // Try to match in order: bonus type, bookmaker, payment method
+              const [part1, part2, part3] = parts;
+              
+              // First part: likely bonus type
+              matchFilterPart(part1.toLowerCase(), bonusTypeOptions, [], [], 
+                bonusTypes, [], []);
+              
+              // Second part: likely bookmaker
+              matchFilterPart(part2.toLowerCase(), [], bookmakerOptions, [], 
+                [], bookmakers, []);
+              
+              // Third part: likely payment method or license
+              matchFilterPart(part3.toLowerCase(), [], [], advancedOptions, 
+                [], [], advanced);
+            }
+          } else if (combinationType === '4-way') {
+            // 4-way combinations: Bonus Type + Bookmaker + Payment Method + License
+            if (parts.length === 4) {
+              const [part1, part2, part3, part4] = parts;
+              
+              // Structured matching for 4-way combinations
+              matchFilterPart(part1.toLowerCase(), bonusTypeOptions, [], [], 
+                bonusTypes, [], []);
+              matchFilterPart(part2.toLowerCase(), [], bookmakerOptions, [], 
+                [], bookmakers, []);
+              matchFilterPart(part3.toLowerCase(), [], [], advancedOptions, 
+                [], [], advanced);
+              matchFilterPart(part4.toLowerCase(), [], [], advancedOptions, 
+                [], [], advanced);
+            }
+          } else if (combinationType === '5-way+') {
+            // 5-way+ combinations: Bonus Type + Bookmaker + Payment Method + License + Features
+            if (parts.length >= 5) {
+              const [part1, part2, part3, part4, ...remainingParts] = parts;
+              
+              // First 4 parts follow the same pattern as 4-way
+              matchFilterPart(part1.toLowerCase(), bonusTypeOptions, [], [], 
+                bonusTypes, [], []);
+              matchFilterPart(part2.toLowerCase(), [], bookmakerOptions, [], 
+                [], bookmakers, []);
+              matchFilterPart(part3.toLowerCase(), [], [], advancedOptions, 
+                [], [], advanced);
+              matchFilterPart(part4.toLowerCase(), [], [], advancedOptions, 
+                [], [], advanced);
+              
+              // Remaining parts are likely features or additional criteria
+              remainingParts.forEach(part => {
+                matchFilterPart(part.toLowerCase(), [], [], advancedOptions, 
+                  [], [], advanced);
+              });
+            }
+          }
+        
+        if (bonusTypes.length > 0 || bookmakers.length > 0 || advanced.length > 0) {
+          setSelectedBonusTypes(bonusTypes);
+          setSelectedBookmakers(bookmakers);
+          setSelectedAdvanced(advanced);
+          return;
+        }
+      } else if (initialFilter) {
+        // Handle single filters (backward compatibility)
+        const filterLower = initialFilter.toLowerCase();
+        
+        // Check bonus types
+        const matchingBonusType = bonusTypeOptions.find(bt => 
+          bt.name.toLowerCase().replace(/\s+/g, '-') === filterLower
+        );
+        if (matchingBonusType) {
+          setSelectedBonusTypes([matchingBonusType.name]);
+          return;
+        }
+        
+        // Check bookmakers
+        const matchingBookmaker = bookmakerOptions.find(bm => 
+          bm.name.toLowerCase().replace(/\s+/g, '-') === filterLower
+        );
+        if (matchingBookmaker) {
+          setSelectedBookmakers([matchingBookmaker.name]);
+          return;
+        }
+        
+        // Check advanced options (payment methods and licenses)
+        const allAdvancedOptions = advancedOptions.flatMap(cat => cat.subcategories || []);
+        const matchingAdvanced = allAdvancedOptions.find(adv => 
+          adv.name.toLowerCase().replace(/\s+/g, '-') === filterLower
+        );
+        if (matchingAdvanced) {
+          setSelectedAdvanced([matchingAdvanced.name]);
+          return;
+        }
+      }
+    }
+  }, [initialFilter, filterInfo, bonusTypeOptions, bookmakerOptions, advancedOptions]);
+
+  // Helper function to match filter parts intelligently
+  const matchFilterPart = (partLower, bonusTypeOptions, bookmakerOptions, advancedOptions, 
+    bonusTypes, bookmakers, advanced) => {
+    
+    // Check bonus types
+    const matchingBonusType = bonusTypeOptions.find(bt => 
+      bt.name.toLowerCase().replace(/\s+/g, '-') === partLower
+    );
+    if (matchingBonusType) {
+      bonusTypes.push(matchingBonusType.name);
+      return;
+    }
+    
+    // Check bookmakers
+    const matchingBookmaker = bookmakerOptions.find(bm => 
+      bm.name.toLowerCase().replace(/\s+/g, '-') === partLower
+    );
+    if (matchingBookmaker) {
+      bookmakers.push(matchingBookmaker.name);
+      return;
+    }
+    
+    // Check advanced options (payment methods and licenses)
+    const allAdvancedOptions = advancedOptions.flatMap(cat => cat.subcategories || []);
+    const matchingAdvanced = allAdvancedOptions.find(adv => 
+      adv.name.toLowerCase().replace(/\s+/g, '-') === partLower
+    );
+    if (matchingAdvanced) {
+      advanced.push(matchingAdvanced.name);
+      return;
+    }
+  };
+
   const handleFilterChange = ({ bonusTypes, bookmakers, advanced }) => {
     setFilterLoading(true);
     
-    const url = buildUrl({ bonusTypes, bookmakers, advanced });
-    if (url !== pathname + (searchParams.toString() ? '?' + searchParams.toString() : '')) {
-      router.push(url);
-    }
+    // Update local state immediately for better UX
+    setSelectedBonusTypes(bonusTypes);
+    setSelectedBookmakers(bookmakers);
+    setSelectedAdvanced(advanced);
     
-    // Remove loading state after a short delay
-    setTimeout(() => {
+    // Debounce URL updates to prevent rapid changes
+    const timeoutId = setTimeout(() => {
+      // Build and update URL
+      const url = buildUrl({ bonusTypes, bookmakers, advanced });
+      const currentUrl = pathname + (searchParams.toString() ? '?' + searchParams.toString() : '');
+      
+      if (url !== currentUrl) {
+        // Use replace instead of push for better performance
+        router.replace(url, { scroll: false });
+      }
+      
+      // Remove loading state
       setFilterLoading(false);
-    }, 200);
+    }, 300); // 300ms debounce
+    
+    // Cleanup timeout if component unmounts or filter changes again
+    return () => clearTimeout(timeoutId);
   };
 
-  const setSelectedBonusTypesWrapped = (arr) => {
+  const setSelectedBonusTypesWrapped = useCallback((arr) => {
     handleFilterChange({ bonusTypes: arr, bookmakers: selectedBookmakers, advanced: selectedAdvanced });
-  };
+  }, [selectedBookmakers, selectedAdvanced]);
 
-  const setSelectedBookmakersWrapped = (arr) => {
+  const setSelectedBookmakersWrapped = useCallback((arr) => {
     handleFilterChange({ bonusTypes: selectedBonusTypes, bookmakers: arr, advanced: selectedAdvanced });
-  };
+  }, [selectedBonusTypes, selectedAdvanced]);
 
-  const setSelectedAdvancedWrapped = (arr) => {
+  const setSelectedAdvancedWrapped = useCallback((arr) => {
     handleFilterChange({ bonusTypes: selectedBonusTypes, bookmakers: selectedBookmakers, advanced: arr });
-  };
+  }, [selectedBonusTypes, selectedBookmakers]);
 
-  const clearAllFilters = () => {
+  const clearAllFilters = useCallback(() => {
     setSelectedBonusTypes([]);
     setSelectedBookmakers([]);
     setSelectedAdvanced([]);
     if (countrySlug) {
-      router.push(`/${countrySlug}`);
+      router.replace(`/${countrySlug}`, { scroll: false });
     }
-  };
+  }, [countrySlug]);
 
-  // Filter logic (case-insensitive, robust) - OR logic for multiple filters
-  const filteredOffers = offers.filter((offer) => {
+  // Memoized filter logic for better performance
+  const filteredOffers = useMemo(() => {
+    if (selectedBookmakers.length === 0 && selectedBonusTypes.length === 0 && selectedAdvanced.length === 0) {
+      return offers;
+    }
+    
+    return offers.filter((offer) => {
     const offerBookmaker = offer.bookmaker?.name ? offer.bookmaker.name.toLowerCase() : "";
     const offerBonusType = offer.bonusType?.name ? offer.bonusType.name.toLowerCase() : "";
-    const offerPaymentMethods = Array.isArray(offer.bookmaker?.paymentMethods) ? offer.bookmaker.paymentMethods.map(pm => pm.toLowerCase()) : [];
-    const offerLicenses = Array.isArray(offer.bookmaker?.license) ? offer.bookmaker.license.map(lc => lc.toLowerCase()) : [];
+    
+    // Safely handle payment methods with null/undefined checks
+    const offerPaymentMethods = Array.isArray(offer.bookmaker?.paymentMethods) 
+      ? offer.bookmaker.paymentMethods
+          .filter(pm => pm != null) // Filter out null/undefined values
+          .map(pm => {
+            if (typeof pm === 'string') return pm.toLowerCase();
+            if (pm && typeof pm === 'object' && pm.name) return pm.name.toLowerCase();
+            return ""; // Return empty string for invalid items
+          })
+          .filter(pm => pm !== "") // Filter out empty strings
+      : [];
+    
+    // Safely handle licenses with null/undefined checks
+    const offerLicenses = Array.isArray(offer.bookmaker?.license)
+      ? offer.bookmaker.license
+          .filter(lc => lc != null) // Filter out null/undefined values
+          .map(lc => {
+            if (typeof lc === 'string') return lc.toLowerCase();
+            if (lc && typeof lc === 'object' && lc.name) return lc.name.toLowerCase();
+            return ""; // Return empty string for invalid items
+          })
+          .filter(lc => lc !== "") // Filter out empty strings
+      : [];
 
     // If no filters are selected, show all offers
     if (selectedBookmakers.length === 0 && selectedBonusTypes.length === 0 && selectedAdvanced.length === 0) {
@@ -410,24 +643,30 @@ export default function DynamicOffers({ countrySlug }) {
 
     return matches;
   });
+  }, [offers, selectedBookmakers, selectedBonusTypes, selectedAdvanced]);
 
-  // Sorting logic
-  let sortedOffers = [...filteredOffers];
-  if (sortBy === "Latest") {
-    sortedOffers.sort((a, b) => new Date(a.published) - new Date(b.published));
-  } else if (sortBy === "A-Z") {
-    sortedOffers.sort((a, b) => {
-      const aName = a.bookmaker?.name || "";
-      const bName = b.bookmaker?.name || "";
-      return aName.localeCompare(bName);
-    });
-  }
+  // Memoized sorting logic for better performance
+  const sortedOffers = useMemo(() => {
+    if (sortBy === "Latest") {
+      return [...filteredOffers].sort((a, b) => new Date(a.published) - new Date(b.published));
+    } else if (sortBy === "A-Z") {
+      return [...filteredOffers].sort((a, b) => {
+        const aName = a.bookmaker?.name || "";
+        const bName = b.bookmaker?.name || "";
+        return aName.localeCompare(bName);
+      });
+    }
+    return filteredOffers;
+  }, [filteredOffers, sortBy]);
 
-  // Pagination logic
-  const totalPages = Math.ceil(sortedOffers.length / offersPerPage);
-  const startIndex = (currentPage - 1) * offersPerPage;
-  const endIndex = startIndex + offersPerPage;
-  const currentOffers = sortedOffers.slice(startIndex, endIndex);
+  // Memoized pagination logic for better performance
+  const { totalPages, currentOffers } = useMemo(() => {
+    const totalPages = Math.ceil(sortedOffers.length / offersPerPage);
+    const startIndex = (currentPage - 1) * offersPerPage;
+    const endIndex = startIndex + offersPerPage;
+    const currentOffers = sortedOffers.slice(startIndex, endIndex);
+    return { totalPages, currentOffers };
+  }, [sortedOffers, currentPage, offersPerPage]);
 
   // Reset to first page when filters change
   useEffect(() => {
@@ -551,12 +790,22 @@ export default function DynamicOffers({ countrySlug }) {
         </div>
 
         {/* Filters */}
-        <div className="sm:max-w-md">
+        <div className={`sm:max-w-md transition-all duration-200 ${filterLoading ? 'opacity-75' : 'opacity-100'}`}>
           <div className="grid grid-cols-3 gap-2 mb-6">
-            <MultiSelectDropdown label="Bonus Type" options={bonusTypeOptions} selected={selectedBonusTypes} setSelected={setSelectedBonusTypesWrapped} showCount={true} />
-            <MultiSelectDropdown label="Bookmaker" options={bookmakerOptions} selected={selectedBookmakers} setSelected={setSelectedBookmakersWrapped} showCount={true} />
-            <MultiSelectDropdown label="Advanced" options={advancedOptions} selected={selectedAdvanced} setSelected={setSelectedAdvancedWrapped} showCount={true} nested={true} />
+            <MultiSelectDropdown label="Bonus Type" options={bonusTypeOptions} selected={selectedBonusTypes} setSelected={setSelectedBonusTypesWrapped} showCount={true} loading={filterLoading} />
+            <MultiSelectDropdown label="Bookmaker" options={bookmakerOptions} selected={selectedBookmakers} setSelected={setSelectedBookmakersWrapped} showCount={true} loading={filterLoading} />
+            <MultiSelectDropdown label="Advanced" options={advancedOptions} selected={selectedAdvanced} setSelected={setSelectedAdvancedWrapped} showCount={true} nested={true} loading={filterLoading} />
           </div>
+          {filterLoading && (
+            <div className="flex items-center justify-center py-2">
+              <div className="flex space-x-1">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+              </div>
+              <span className="ml-2 text-sm text-gray-500">Updating filters...</span>
+            </div>
+          )}
         </div>
       </div>
 

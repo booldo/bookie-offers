@@ -9,11 +9,18 @@ export default {
     const { getClient } = context
     const client = getClient({ apiVersion: '2023-05-03' })
     
-    // Use a more reliable way to exclude the current document
+    // Exclude both draft and published versions of the current document
     const currentId = doc._id || 'draft'
-    const query = `count(*[_type == "bookmaker" && name == $name && country._ref == $countryId && _id != $currentId])`
+    const draftId = currentId.startsWith('drafts.') ? currentId : `drafts.${currentId}`
+    const publishedId = currentId.replace(/^drafts\./, '')
+    const query = `count(*[_type == "bookmaker" && name == $name && country._ref == $countryId && !(_id in [$draftId, $publishedId])])`
     
-    return client.fetch(query, { name: doc.name, countryId: doc.country._ref, currentId })
+    return client.fetch(query, { 
+      name: doc.name, 
+      countryId: doc.country._ref, 
+      draftId, 
+      publishedId 
+    })
       .then(count => {
         if (count > 0) {
           return `A bookmaker with name "${doc.name}" already exists in this country`
@@ -64,33 +71,20 @@ export default {
       name: "license",
       title: "License",
       type: "array",
-      of: [{ type: "string" }],
+      of: [{ type: "reference", to: [{ type: "licenses" }] }],
+      description: "Select the licenses this bookmaker holds",
       options: {
-        list: [
-          { title: "Lagos State Lotteries and Gaming Authority (LSLGA) - State level", value: "Lagos State Lotteries and Gaming Authority (LSLGA) - State level" },
-          { title: "National Lottery Regulatory Commission (NLRC) - Federal", value: "National Lottery Regulatory Commission (NLRC) - Federal" },
-          { title: "Ghana Gaming Commission (GCG) Licenses", value: "Ghana Gaming Commission (GCG) Licenses" }
-        ]
+        filter: 'isActive == true'
       }
     },
     {
       name: "paymentMethods",
       title: "Payment Methods",
       type: "array",
-      of: [{ type: "string" }],
+      of: [{ type: "reference", to: [{ type: "paymentOptions" }] }],
+      description: "Select the payment methods this bookmaker accepts",
       options: {
-        list: [
-          { title: "Mobile Money", value: "Mobile Money" },
-          { title: "Credit Card", value: "Credit Card" },
-          { title: "Debit Card", value: "Debit Card" },
-          { title: "Bitcoin (BTC)", value: "Bitcoin (BTC)" },
-          { title: "Ethereum (ETH)", value: "Ethereum (ETH)" },
-          { title: "Litecoin (LTC)", value: "Litecoin (LTC)" },
-          { title: "Dogecoin (DOGE)", value: "Dogecoin (DOGE)" },
-          { title: "Bank Transfer", value: "Bank Transfer" },
-          { title: "Internet Banking", value: "Internet Banking" },
-          { title: "EWallets", value: "EWallets" }
-        ]
+        filter: 'isActive == true'
       }
     },
     {

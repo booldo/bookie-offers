@@ -422,7 +422,7 @@ export default function HomeNavbar() {
             >
               Home
             </Link>
-            <Link href="/briefly" className="hover:underline">Blog</Link>
+            <Link href="/briefly" className="hover:underline">Briefly</Link>
             <Link href="/about" className="hover:underline">About Us</Link>
             <Link href="/contact" className="hover:underline">Contact Us</Link>
             

@@ -9,11 +9,18 @@ export default {
     const { getClient } = context
     const client = getClient({ apiVersion: '2023-05-03' })
     
-    // Use a more reliable way to exclude the current document
+    // Exclude both draft and published versions of the current document
     const currentId = doc._id || 'draft'
-    const query = `count(*[_type == "bonusType" && name == $name && country._ref == $countryId && _id != $currentId])`
+    const draftId = currentId.startsWith('drafts.') ? currentId : `drafts.${currentId}`
+    const publishedId = currentId.replace(/^drafts\./, '')
+    const query = `count(*[_type == "bonusType" && name == $name && country._ref == $countryId && !(_id in [$draftId, $publishedId])])`
     
-    return client.fetch(query, { name: doc.name, countryId: doc.country._ref, currentId })
+    return client.fetch(query, { 
+      name: doc.name, 
+      countryId: doc.country._ref, 
+      draftId, 
+      publishedId 
+    })
       .then(count => {
         if (count > 0) {
           return `A bonus type with name "${doc.name}" already exists in this country`

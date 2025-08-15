@@ -26,6 +26,7 @@ const nextConfig = {
         destination: '/ng/offers/:slug',
         permanent: true,
       },
+
     ];
   },
 };

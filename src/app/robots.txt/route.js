@@ -2,12 +2,35 @@ import { NextResponse } from "next/server";
 import { getSeoSettings } from "../../sanity/lib/seo";
 
 export async function GET() {
-  const seo = await getSeoSettings();
-  const robots = seo?.robotsTxt || `User-agent: *\nAllow: /\nSitemap: https://yourdomain.com/sitemap.xml`;
-  return new NextResponse(robots, {
-    status: 200,
-    headers: {
-      "Content-Type": "text/plain",
-    },
-  });
+  try {
+    const seo = await getSeoSettings();
+    const robotsContent = seo?.robotsTxt || `User-agent: *
+Allow: /
+
+# Sitemaps
+Sitemap: https://yourdomain.com/sitemap.xml
+Sitemap: https://yourdomain.com/sitemap-index.xml`;
+
+    return new NextResponse(robotsContent, {
+      status: 200,
+      headers: {
+        "Content-Type": "text/plain",
+      },
+    });
+  } catch (error) {
+    // Fallback robots.txt content
+    const fallbackContent = `User-agent: *
+Allow: /
+
+# Sitemaps
+Sitemap: https://yourdomain.com/sitemap.xml
+Sitemap: https://yourdomain.com/sitemap-index.xml`;
+
+    return new NextResponse(fallbackContent, {
+      status: 200,
+      headers: {
+        "Content-Type": "text/plain",
+      },
+    });
+  }
 } 

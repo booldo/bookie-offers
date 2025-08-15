@@ -2,22 +2,40 @@ import { NextResponse } from "next/server";
 import { getAllSitemapEntries, getSeoSettings } from "../../sanity/lib/seo";
 
 export async function GET() {
-  const baseUrl = "https://yourdomain.com"; // TODO: Replace with your real domain
+  const baseUrl = "https://www.booldo.com"; // TODO: Replace with your real domain
   const entries = await getAllSitemapEntries();
   const seo = await getSeoSettings();
   const extraUrls = seo?.sitemapExtraUrls || [];
 
   let urls = entries.map((entry) => {
     let path = "/";
-    if (entry._type === "offer") path = `/gh/offers/${entry.slug?.current}`;
-    else if (entry._type === "article") path = `/briefly/${entry.slug?.current}`;
-    else if (entry._type === "banner") path = `/banner/${entry.slug?.current}`;
-    else if (entry._type === "faq") path = `/faq/${entry.slug?.current}`;
+    
+    if (entry._type === "offers") {
+      // For offers, use the country from the offer data
+      const countrySlug = entry.country?.slug?.current || 'ng'; // Default to Nigeria if no country
+      path = `/${countrySlug}/offers/${entry.slug?.current}`;
+    } else if (entry._type === "article") {
+      path = `/briefly/${entry.slug?.current}`;
+    } else if (entry._type === "banner") {
+      path = `/banner/${entry.slug?.current}`;
+    } else if (entry._type === "faq") {
+      path = `/faq/${entry.slug?.current}`;
+    } else if (entry._type === "affiliate") {
+      // For affiliate links, use the pretty link with country
+      const countrySlug = entry.countrySlug || 'ng'; // Default to Nigeria if no country
+      path = `/${countrySlug}/${entry.slug?.current}`;
+    } else if (entry._type === "filter") {
+      // For filter pages, use the filter slug with country
+      const countrySlug = entry.countrySlug || 'ng'; // Default to Nigeria if no country
+      path = `/${countrySlug}/${entry.slug?.current}`;
+    }
+    
     return {
       loc: `${baseUrl}${path}`,
       lastmod: entry._updatedAt ? new Date(entry._updatedAt).toISOString() : undefined,
     };
   });
+  
   // Add extra URLs
   urls = urls.concat((extraUrls || []).map((url) => ({ loc: url })));
 

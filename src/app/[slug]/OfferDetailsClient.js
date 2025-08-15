@@ -146,14 +146,12 @@ export default function OfferDetailsClient({ offer, moreOffers, totalOffers, cou
         {/* CTA Button */}
         <div className="text-center pt-6 border-t border-gray-200">
           <TrackedLink
-            href={offer.affiliateLink || '#'}
+            href={offer.affiliateLink?.affiliateUrl || '#'}
             linkId={`bonus-${offer._id}`}
             linkType="offer"
             linkTitle={offer.title}
             isAffiliate={true}
-            countryCode={countryName.toLowerCase().replace(/\s+/g, '-')}
-            bookmaker={offer.bookmaker?.name?.toLowerCase().replace(/\s+/g, '-')}
-            bonusType={offer.bonusType?.name?.toLowerCase().replace(/\s+/g, '-')}
+            prettyLink={offer.affiliateLink?.prettyLink}
             className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-lg text-lg font-semibold transition-colors inline-block"
           >
             Claim Bonus Now

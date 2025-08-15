@@ -119,7 +119,8 @@ function OfferDetailsInner({ slug }) {
             _id,
             name,
             affiliateUrl,
-            isActive
+            isActive,
+            prettyLink
           },
           banner,
           bannerAlt,
@@ -374,9 +375,7 @@ function OfferDetailsInner({ slug }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 isAffiliate={true}
-                countryCode={getCountrySlug()}
-                bookmaker={offer.bookmaker?.name?.toLowerCase().replace(/\s+/g, '-')}
-                bonusType={offer.bonusType?.name?.toLowerCase().replace(/\s+/g, '-')}
+                prettyLink={offer.affiliateLink.prettyLink}
                 className="hidden sm:flex sm:w-fit sm:px-6 bg-[#018651] hover:bg-[#017a4a] text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 items-center justify-center gap-2 mb-6"
               >
                 Get Bonus
@@ -402,7 +401,7 @@ function OfferDetailsInner({ slug }) {
                 <div className="font-semibold text-gray-900 mb-3">Payment Methods</div>
                 <div className="flex flex-wrap gap-2 text-gray-700 text-sm">
                   {offer.bookmaker.paymentMethods.map((pm, i) => (
-                    <span key={i} className="border border-gray-200 rounded px-2 py-1 bg-gray-50">{pm}</span>
+                      <span key={i} className="border border-gray-200 rounded px-2 py-1 bg-gray-50">{typeof pm === 'string' ? pm : pm.name}</span>
                   ))}
                 </div>
               </div>
@@ -414,7 +413,7 @@ function OfferDetailsInner({ slug }) {
                 <div className="font-semibold text-gray-900 mb-3">License</div>
                 <ul className="list-disc list-inside text-gray-700 text-sm space-y-1 pl-4">
                   {offer.bookmaker.license.map((license, i) => (
-                    <li key={i}>{license}</li>
+                      <li key={i}>{typeof license === 'string' ? license : license.name}</li>
                   ))}
                 </ul>
               </div>
@@ -430,9 +429,7 @@ function OfferDetailsInner({ slug }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 isAffiliate={true}
-                countryCode={getCountrySlug()}
-                bookmaker={offer.bookmaker?.name?.toLowerCase().replace(/\s+/g, '-')}
-                bonusType={offer.bonusType?.name?.toLowerCase().replace(/\s+/g, '-')}
+                prettyLink={offer.affiliateLink.prettyLink}
                 className="sm:hidden w-full bg-[#018651] hover:bg-[#017a4a] text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 mb-6"
               >
                 Get Bonus

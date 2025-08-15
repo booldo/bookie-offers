@@ -125,6 +125,20 @@ export const structure: StructureResolver = (S) =>
                     .filter('_type == "faq"')
                 ),
               S.listItem()
+                .title('Licenses')
+                .child(
+                  S.documentList()
+                    .title('Licenses')
+                    .filter('_type == "licenses"')
+                ),
+              S.listItem()
+                .title('Payment Options')
+                .child(
+                  S.documentList()
+                    .title('Payment Options')
+                    .filter('_type == "paymentOptions"')
+                ),
+              S.listItem()
                 .title('SEO Settings')
                 .child(
                   S.documentList()

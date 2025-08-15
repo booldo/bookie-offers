@@ -2,9 +2,68 @@ import CountryPageShell, { generateStaticParams } from '../CountryPageShell';
 import DynamicOffers from '../DynamicOffers';
 import OfferDetailsInner from './OfferDetailsInner';
 import { Suspense } from "react";
+import { redirect } from 'next/navigation';
+import { client } from '../../../sanity/lib/client';
+import { urlFor } from '../../../sanity/lib/image';
 
 // Use the same static generation functions from CountryPageShell
 export { generateStaticParams };
+
+// Generate metadata for filter pages and pretty links
+export async function generateMetadata({ params }) {
+  const awaitedParams = await params;
+  
+  // Check if this is a pretty link (single segment)
+  if (awaitedParams.filters && awaitedParams.filters.length === 1) {
+    const singleFilter = awaitedParams.filters[0];
+    
+    try {
+      // Check if this is a pretty link for an affiliate
+      const affiliateLink = await client.fetch(`
+        *[_type == "affiliate" && prettyLink.current == $prettyLink && isActive == true][0]{
+          bookmaker->{
+            name,
+            logo,
+            logoAlt,
+            description,
+            country->{
+              country,
+              slug
+            }
+          },
+          bonusType->{
+            name,
+            description
+          }
+        }
+      `, { prettyLink: singleFilter });
+
+      if (affiliateLink) {
+        const { bookmaker, bonusType } = affiliateLink;
+        const title = `${bonusType?.name} - ${bookmaker?.name} | Booldo`;
+        const description = `Get ${bonusType?.name} from ${bookmaker?.name}. ${bonusType?.description || ''}`;
+
+        return {
+          title,
+          description,
+          openGraph: {
+            title,
+            description,
+            images: bookmaker?.logo ? [urlFor(bookmaker.logo).url()] : [],
+          },
+        };
+      }
+    } catch (error) {
+      console.error('Error generating metadata for pretty link:', error);
+    }
+  }
+  
+  // Default metadata for filter pages
+  return {
+    title: 'Offers | Booldo',
+    description: 'Find the best bonuses and offers.',
+  };
+}
 
 export default async function CountryFiltersPage({ params }) {
   const awaitedParams = await params;
@@ -32,6 +91,82 @@ export default async function CountryFiltersPage({ params }) {
     );
   }
   
+  // Check if this is a single filter page (country/filter)
+  const isSingleFilterPage = awaitedParams.filters && awaitedParams.filters.length === 1;
+  const singleFilter = isSingleFilterPage ? awaitedParams.filters[0] : null;
+  
+  // Check if this might be a pretty link (single segment that could be an affiliate link)
+  if (isSingleFilterPage && singleFilter) {
+    try {
+      // Check if this is a pretty link for an affiliate
+      const affiliateLink = await client.fetch(`
+        *[_type == "affiliate" && prettyLink.current == $prettyLink && isActive == true][0]{
+          _id,
+          affiliateUrl,
+          bookmaker->{
+            _id,
+            name,
+            logo,
+            logoAlt,
+            description,
+            country->{
+              country,
+              slug
+            }
+          },
+          bonusType->{
+            name,
+            description
+          }
+        }
+      `, { prettyLink: singleFilter });
+
+      if (affiliateLink && affiliateLink.affiliateUrl) {
+        // Redirect to the affiliate URL
+        redirect(affiliateLink.affiliateUrl);
+      }
+    } catch (error) {
+      console.error('Error checking for pretty link:', error);
+      // Continue with normal filter processing if there's an error
+    }
+  }
+  
+  // Check if this is a combination filter page (country/filter1-filter2)
+  const isCombinationFilterPage = isSingleFilterPage && singleFilter && singleFilter.includes('-');
+  let filterInfo = null;
+  
+  if (isCombinationFilterPage) {
+    // Parse combination filter (e.g., "free-bet-1bet" -> ["free-bet", "1bet"])
+    const filterParts = singleFilter.split('-');
+    
+    if (filterParts.length >= 2) {
+      // Determine the type of combination based on the number of parts
+      let combinationType = 'unknown';
+      if (filterParts.length === 2) {
+        combinationType = '2-way';
+      } else if (filterParts.length === 3) {
+        combinationType = '3-way';
+      } else if (filterParts.length === 4) {
+        combinationType = '4-way';
+      } else if (filterParts.length >= 5) {
+        combinationType = '5-way+';
+      }
+      
+      filterInfo = {
+        type: 'combination',
+        parts: filterParts,
+        original: singleFilter,
+        combinationType: combinationType,
+        partCount: filterParts.length
+      };
+    }
+  } else if (isSingleFilterPage) {
+    filterInfo = {
+      type: 'single',
+      value: singleFilter
+    };
+  }
+  
   return (
     <CountryPageShell params={awaitedParams}>
       <Suspense fallback={
@@ -43,7 +178,7 @@ export default async function CountryFiltersPage({ params }) {
               <div className="h-6 bg-gray-200 rounded w-20 animate-pulse"></div>
             </div>
             <div className="sm:max-w-md">
-              <div className="grid grid-cols-3 gap-2 mb-6">
+                              <div className="grid grid-cols-3 gap-2 mb-6">
                 {[1, 2, 3].map(i => (
                   <div key={i} className="h-10 bg-gray-200 rounded animate-pulse"></div>
                 ))}
@@ -70,7 +205,11 @@ export default async function CountryFiltersPage({ params }) {
           </div>
         </div>
       }>
-        <DynamicOffers countrySlug={awaitedParams.slug} />
+        <DynamicOffers 
+          countrySlug={awaitedParams.slug} 
+          initialFilter={singleFilter}
+          filterInfo={filterInfo}
+        />
       </Suspense>
     </CountryPageShell>
   );

@@ -48,7 +48,7 @@ export default async function CountryPage({ params }) {
           </div>
         </div>
       }>
-        <OffersServer countrySlug={awaitedParams.slug} />
+        <OffersServer countrySlug={awaitedParams.slug} initialFilter={null} />
       </Suspense>
     </CountryPageShell>
   );
