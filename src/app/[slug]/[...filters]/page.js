@@ -13,12 +13,59 @@ export { generateStaticParams };
 export async function generateMetadata({ params }) {
   const awaitedParams = await params;
   
-  // Check if this is a pretty link (single segment)
+  // Check if this is an offer details page (has 3 segments: country/bonus-type/offer-slug)
+  const isOfferDetailsPage = awaitedParams.filters && awaitedParams.filters.length >= 2;
+  
+  if (isOfferDetailsPage) {
+    try {
+      const countrySlug = awaitedParams.slug;
+      const offerSlug = awaitedParams.filters[awaitedParams.filters.length - 1];
+      
+      // Fetch offer metadata
+      const offerData = await client.fetch(`
+        *[_type == "offers" && slug.current == $offerSlug][0]{
+          title,
+          metaTitle,
+          metaDescription,
+          bookmaker->{
+            name,
+            logo,
+            logoAlt
+          },
+          bonusType->{
+            name
+          },
+          country->{
+            country
+          }
+        }
+      `, { offerSlug });
+      
+      if (offerData) {
+        const title = offerData.metaTitle || `${offerData.title} - ${offerData.bookmaker?.name} | Booldo`;
+        const description = offerData.metaDescription || `Get ${offerData.bonusType?.name || 'exclusive'} bonus from ${offerData.bookmaker?.name}. ${offerData.title}`;
+        
+        return {
+          title,
+          description,
+          openGraph: {
+            title,
+            description,
+            images: offerData.bookmaker?.logo ? [urlFor(offerData.bookmaker.logo).url()] : [],
+          },
+        };
+      }
+    } catch (error) {
+      console.error('Error generating metadata for offer details:', error);
+    }
+  }
+  
+  // Check if this is a pretty link (single segment) or a single filter page
   if (awaitedParams.filters && awaitedParams.filters.length === 1) {
     const singleFilter = awaitedParams.filters[0];
     
     try {
-      // Check if this is a pretty link for an affiliate
+      // Pretty link handling
       const affiliateLink = await client.fetch(`
         *[_type == "affiliate" && prettyLink.current == $prettyLink && isActive == true][0]{
           bookmaker->{
@@ -53,12 +100,54 @@ export async function generateMetadata({ params }) {
           },
         };
       }
+
+      // Resolve country name
+      const countryDoc = await client.fetch(`*[_type == "countryPage" && slug.current == $slug][0]{country, metaTitle, metaDescription}`, { slug: awaitedParams.slug });
+      const countryName = countryDoc?.country;
+      
+      if (countryName) {
+        // Try bookmaker metadata by name within this country
+        const bookmaker = await client.fetch(`*[_type == "bookmaker" && country->country == $country && name match $name][0]{
+          metaTitle, metaDescription, logo
+        }`, { country: countryName, name: singleFilter.replace(/-/g, ' ') });
+        if (bookmaker) {
+          const title = bookmaker.metaTitle || `${singleFilter.replace(/-/g, ' ')} | Booldo`;
+          const description = bookmaker.metaDescription || `Explore offers and information for ${singleFilter.replace(/-/g, ' ')} in ${countryName}.`;
+          return {
+            title,
+            description,
+            openGraph: {
+              title,
+              description,
+              images: bookmaker.logo ? [urlFor(bookmaker.logo).url()] : [],
+            },
+          };
+        }
+
+        // Try bonus type metadata by name within this country
+        const bonusType = await client.fetch(`*[_type == "bonusType" && country->country == $country && name match $name][0]{
+          metaTitle, metaDescription
+        }`, { country: countryName, name: singleFilter.replace(/-/g, ' ') });
+        if (bonusType) {
+          const title = bonusType.metaTitle || `${singleFilter.replace(/-/g, ' ')} | Booldo`;
+          const description = bonusType.metaDescription || `Discover ${singleFilter.replace(/-/g, ' ')} offers in ${countryName}.`;
+          return { title, description };
+        }
+
+        // Combination filter (contains '-') or fallback: use country page metadata
+        if (singleFilter.includes('-') || countryDoc) {
+          return {
+            title: countryDoc.metaTitle || `${countryName} Offers | Booldo`,
+            description: countryDoc.metaDescription || `Find the best offers and bookmakers in ${countryName}.`,
+          };
+        }
+      }
     } catch (error) {
-      console.error('Error generating metadata for pretty link:', error);
+      console.error('Error generating metadata for single filter:', error);
     }
   }
-  
-  // Default metadata for filter pages
+
+  // Default metadata for filter pages (fallback)
   return {
     title: 'Offers | Booldo',
     description: 'Find the best bonuses and offers.',
@@ -167,8 +256,40 @@ export default async function CountryFiltersPage({ params }) {
     };
   }
   
+  // For single filter pages, try to load comparison/faq for bookmaker or bonus type
+  let filterComparison = null;
+  let filterFaqs = null;
+  if (isSingleFilterPage && singleFilter) {
+    const country = await client.fetch(`*[_type == "countryPage" && slug.current == $slug][0]{country}`, { slug: awaitedParams.slug });
+    if (country?.country) {
+      // Try bookmaker first
+      const bookmaker = await client.fetch(`*[_type == "bookmaker" && country->country == $country && name match $name][0]{
+        comparison,
+        faqs,
+        metaTitle,
+        metaDescription
+      }`, { country: country.country, name: singleFilter.replace(/-/g, ' ') });
+      if (bookmaker) {
+        filterComparison = bookmaker.comparison || null;
+        filterFaqs = bookmaker.faqs || null;
+      } else {
+        // Try bonus type
+        const bonusType = await client.fetch(`*[_type == "bonusType" && country->country == $country && name match $name][0]{
+          comparison,
+          faqs,
+          metaTitle,
+          metaDescription
+        }`, { country: country.country, name: singleFilter.replace(/-/g, ' ') });
+        if (bonusType) {
+          filterComparison = bonusType.comparison || null;
+          filterFaqs = bonusType.faqs || null;
+        }
+      }
+    }
+  }
+
   return (
-    <CountryPageShell params={awaitedParams}>
+    <CountryPageShell params={awaitedParams} filterComparison={filterComparison} filterFaqs={filterFaqs}>
       <Suspense fallback={
         <div className="space-y-4">
           {/* Filter skeleton */}

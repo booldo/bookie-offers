@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { getAllSitemapEntries, getSeoSettings } from "../../sanity/lib/seo";
+import { getAllSitemapEntries, getLandingPageSettings } from "../../sanity/lib/seo";
 
 export async function GET() {
   const baseUrl = "https://www.booldo.com"; // TODO: Replace with your real domain
   const entries = await getAllSitemapEntries();
-  const seo = await getSeoSettings();
-  const extraUrls = seo?.sitemapExtraUrls || [];
+  const landingPage = await getLandingPageSettings();
+  const extraUrls = landingPage?.sitemapExtraUrls || [];
 
   let urls = entries.map((entry) => {
     let path = "/";

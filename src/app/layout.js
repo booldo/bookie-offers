@@ -1,15 +1,15 @@
 import "./globals.css";
-import { getSeoSettings } from "../sanity/lib/seo";
+import { getLandingPageSettings } from "../sanity/lib/seo";
 
 export async function generateMetadata() {
-  const seo = await getSeoSettings();
+  const landingPage = await getLandingPageSettings();
   return {
-    title: seo?.defaultMetaTitle || "Booldo",
-    description: seo?.defaultMetaDescription || "Your amazing website",
-  icons: {
-    icon: "/assets/favicon.ico",
-  },
-};
+    title: landingPage?.defaultMetaTitle || "Booldo",
+    description: landingPage?.defaultMetaDescription || "Your amazing website",
+    icons: {
+      icon: "/assets/favicon.ico",
+    },
+  };
 }
 
 export default function RootLayout({ children }) {

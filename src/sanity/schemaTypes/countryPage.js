@@ -135,6 +135,36 @@ export default {
       initialValue: true
     },
     {
+      name: "comparison",
+      title: "Comparison Section",
+      type: "array",
+      of: [{ type: 'block' }],
+      description: "Portable text comparison content for this country homepage"
+    },
+    {
+      name: "faqs",
+      title: "FAQs",
+      type: "array",
+      of: [{
+        type: "object",
+        fields: [
+          {
+            name: "question",
+            title: "Question",
+            type: "string",
+            validation: Rule => Rule.required()
+          },
+          {
+            name: "answer",
+            title: "Answer",
+            type: "text",
+            validation: Rule => Rule.required()
+          }
+        ]
+      }],
+      description: "Frequently asked questions shown under the comparison section"
+    },
+    {
       name: "isActive",
       title: "Is Active",
       type: "boolean",

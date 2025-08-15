@@ -106,7 +106,7 @@ export default function DynamicOffers({ countrySlug, initialFilter = null, filte
   const [loadingStage, setLoadingStage] = useState('initial');
   const [currentPage, setCurrentPage] = useState(1);
   const [offersPerPage] = useState(10);
-  const [filterLoading, setFilterLoading] = useState(false);
+
   const sortByRef = useRef();
 
   // Helper functions for URL/Filter sync
@@ -527,44 +527,52 @@ export default function DynamicOffers({ countrySlug, initialFilter = null, filte
     }
   };
 
-  const handleFilterChange = ({ bonusTypes, bookmakers, advanced }) => {
-    setFilterLoading(true);
+
+
+  const setSelectedBonusTypesWrapped = useCallback((arr) => {
+    // Update state immediately for instant UI response
+    setSelectedBonusTypes(arr);
     
-    // Update local state immediately for better UX
-    setSelectedBonusTypes(bonusTypes);
-    setSelectedBookmakers(bookmakers);
-    setSelectedAdvanced(advanced);
-    
-    // Debounce URL updates to prevent rapid changes
-    const timeoutId = setTimeout(() => {
-      // Build and update URL
-      const url = buildUrl({ bonusTypes, bookmakers, advanced });
+    // Defer URL update
+    setTimeout(() => {
+      const url = buildUrl({ bonusTypes: arr, bookmakers: selectedBookmakers, advanced: selectedAdvanced });
       const currentUrl = pathname + (searchParams.toString() ? '?' + searchParams.toString() : '');
       
       if (url !== currentUrl) {
-        // Use replace instead of push for better performance
         router.replace(url, { scroll: false });
       }
-      
-      // Remove loading state
-      setFilterLoading(false);
-    }, 300); // 300ms debounce
-    
-    // Cleanup timeout if component unmounts or filter changes again
-    return () => clearTimeout(timeoutId);
-  };
-
-  const setSelectedBonusTypesWrapped = useCallback((arr) => {
-    handleFilterChange({ bonusTypes: arr, bookmakers: selectedBookmakers, advanced: selectedAdvanced });
-  }, [selectedBookmakers, selectedAdvanced]);
+    }, 0);
+  }, [selectedBookmakers, selectedAdvanced, pathname, searchParams]);
 
   const setSelectedBookmakersWrapped = useCallback((arr) => {
-    handleFilterChange({ bonusTypes: selectedBonusTypes, bookmakers: arr, advanced: selectedAdvanced });
-  }, [selectedBonusTypes, selectedAdvanced]);
+    // Update state immediately for instant UI response
+    setSelectedBookmakers(arr);
+    
+    // Defer URL update
+    setTimeout(() => {
+      const url = buildUrl({ bonusTypes: selectedBonusTypes, bookmakers: arr, advanced: selectedAdvanced });
+      const currentUrl = pathname + (searchParams.toString() ? '?' + searchParams.toString() : '');
+      
+      if (url !== currentUrl) {
+        router.replace(url, { scroll: false });
+      }
+    }, 0);
+  }, [selectedBonusTypes, selectedAdvanced, pathname, searchParams]);
 
   const setSelectedAdvancedWrapped = useCallback((arr) => {
-    handleFilterChange({ bonusTypes: selectedBonusTypes, bookmakers: selectedBookmakers, advanced: arr });
-  }, [selectedBonusTypes, selectedBookmakers]);
+    // Update state immediately for instant UI response
+    setSelectedAdvanced(arr);
+    
+    // Defer URL update
+    setTimeout(() => {
+      const url = buildUrl({ bonusTypes: selectedBonusTypes, bookmakers: selectedBookmakers, advanced: arr });
+      const currentUrl = pathname + (searchParams.toString() ? '?' + searchParams.toString() : '');
+      
+      if (url !== currentUrl) {
+        router.replace(url, { scroll: false });
+      }
+    }, 0);
+  }, [selectedBonusTypes, selectedBookmakers, pathname, searchParams]);
 
   const clearAllFilters = useCallback(() => {
     setSelectedBonusTypes([]);
@@ -790,22 +798,12 @@ export default function DynamicOffers({ countrySlug, initialFilter = null, filte
         </div>
 
         {/* Filters */}
-        <div className={`sm:max-w-md transition-all duration-200 ${filterLoading ? 'opacity-75' : 'opacity-100'}`}>
+        <div className="sm:max-w-md">
           <div className="grid grid-cols-3 gap-2 mb-6">
-            <MultiSelectDropdown label="Bonus Type" options={bonusTypeOptions} selected={selectedBonusTypes} setSelected={setSelectedBonusTypesWrapped} showCount={true} loading={filterLoading} />
-            <MultiSelectDropdown label="Bookmaker" options={bookmakerOptions} selected={selectedBookmakers} setSelected={setSelectedBookmakersWrapped} showCount={true} loading={filterLoading} />
-            <MultiSelectDropdown label="Advanced" options={advancedOptions} selected={selectedAdvanced} setSelected={setSelectedAdvancedWrapped} showCount={true} nested={true} loading={filterLoading} />
+            <MultiSelectDropdown label="Bonus Type" options={bonusTypeOptions} selected={selectedBonusTypes} setSelected={setSelectedBonusTypesWrapped} showCount={true} />
+            <MultiSelectDropdown label="Bookmaker" options={bookmakerOptions} selected={selectedBookmakers} setSelected={setSelectedBookmakersWrapped} showCount={true} />
+            <MultiSelectDropdown label="Advanced" options={advancedOptions} selected={selectedAdvanced} setSelected={setSelectedAdvancedWrapped} showCount={true} nested={true} />
           </div>
-          {filterLoading && (
-            <div className="flex items-center justify-center py-2">
-              <div className="flex space-x-1">
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-              </div>
-              <span className="ml-2 text-sm text-gray-500">Updating filters...</span>
-            </div>
-          )}
         </div>
       </div>
 

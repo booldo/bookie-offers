@@ -218,7 +218,9 @@ async function getCountryPageData(slug) {
       noindex,
       nofollow,
       canonicalUrl,
-      sitemapInclude
+      sitemapInclude,
+      comparison,
+      faqs
     }`;
     
     const countryData = await client.fetch(countryQuery, { slug });
@@ -237,29 +239,8 @@ async function getCountryPageData(slug) {
       order
     }`;
 
-    // Get comparison content for this country
-    const comparisonQuery = `*[_type == "comparison" && country->country == $country && isActive == true] | order(order asc)[0] {
-      _id,
-      title,
-      content,
-      order
-    }`;
-
-    // Get SEO settings for this country
-    const seoSettingsQuery = `*[_type == "seoSettings" && country->country == $country][0] {
-      defaultMetaTitle,
-      defaultMetaDescription,
-      defaultNoindex,
-      defaultNofollow,
-      defaultCanonicalUrl
-    }`;
-
-    const [banners, comparison, seoSettings] = await Promise.all([
+    const [banners] = await Promise.all([
       client.fetch(bannersQuery, { country: countryData.country }),
-      
-      client.fetch(comparisonQuery, { country: countryData.country }),
-      
-      client.fetch(seoSettingsQuery, { country: countryData.country })
     ]);
 
     return { 
@@ -268,9 +249,7 @@ async function getCountryPageData(slug) {
         ...b,
         imageUrl: b.image ? urlFor(b.image).width(1200).height(200).url() : undefined,
         imageAlt: b.imageAlt || b.title
-      })),
-      comparison,
-      seoSettings
+      }))
     };
   } catch (error) {
     console.error('Error fetching country page data:', error);
@@ -290,23 +269,23 @@ export async function generateMetadata({ params }) {
     };
   }
 
-  const { countryData, seoSettings } = data;
+  const { countryData } = data;
   
   return {
-    title: countryData.metaTitle || seoSettings?.defaultMetaTitle || `Best Betting Sites ${countryData.country} | Booldo`,
-    description: countryData.metaDescription || seoSettings?.defaultMetaDescription || `Discover the best betting sites in ${countryData.country} with exclusive bonuses and offers.`,
+    title: countryData.metaTitle || `Best Betting Sites ${countryData.country} | Booldo`,
+    description: countryData.metaDescription || `Discover the best betting sites in ${countryData.country} with exclusive bonuses and offers.`,
     robots: [
-      (countryData.noindex || seoSettings?.defaultNoindex) ? "noindex" : "index",
-      (countryData.nofollow || seoSettings?.defaultNofollow) ? "nofollow" : "follow"
+      countryData.noindex ? "noindex" : "index",
+      countryData.nofollow ? "nofollow" : "follow"
     ].join(", "),
     alternates: {
-      canonical: countryData.canonicalUrl || seoSettings?.defaultCanonicalUrl || undefined,
+      canonical: countryData.canonicalUrl || undefined,
     },
   };
 }
 
 // Main country page shell component
-export default async function CountryPageShell({ params, children, isOfferDetailsPage = false }) {
+export default async function CountryPageShell({ params, children, isOfferDetailsPage = false, filterComparison = null, filterFaqs = null }) {
   const awaitedParams = await params;
   const data = await getCountryPageData(awaitedParams.slug);
   
@@ -330,7 +309,7 @@ export default async function CountryPageShell({ params, children, isOfferDetail
     );
   }
 
-  const { countryData, banners, comparison } = data;
+  const { countryData, banners } = data;
 
   return (
     <div className="min-h-screen bg-[#fafbfc] flex flex-col">
@@ -362,13 +341,30 @@ export default async function CountryPageShell({ params, children, isOfferDetail
           {children}
         </div>
         
-        {/* Static comparison section - prerendered */}
-        {comparison && (
+        {/* Static comparison + FAQ section - prerendered */}
+        {((filterComparison) || (filterFaqs && filterFaqs.length > 0) || countryData.comparison || (countryData.faqs && countryData.faqs.length > 0)) && (
           <section className="bg-white rounded-xl p-4 sm:p-6 mb-10 shadow-sm border border-gray-100">
-            <h2 className="text-xl sm:text-2xl font-semibold mb-3">{comparison.title}</h2>
-            <div className="text-gray-600 text-sm">
-              <PortableText value={comparison.content} />
-            </div>
+            {(filterComparison || countryData.comparison) && (
+              <div className="mb-6">
+                <h2 className="text-xl sm:text-2xl font-semibold mb-3">Comparison</h2>
+                <div className="text-gray-600 text-sm">
+                  <PortableText value={filterComparison || countryData.comparison} />
+                </div>
+              </div>
+            )}
+            {((filterFaqs && filterFaqs.length > 0) || (countryData.faqs && countryData.faqs.length > 0)) && (
+              <div>
+                <h2 className="text-xl sm:text-2xl font-semibold mb-3">FAQs</h2>
+                <div className="space-y-3">
+                  {(filterFaqs || countryData.faqs).map((faq, idx) => (
+                    <div key={idx} className="border border-gray-200 rounded-lg p-3">
+                      <div className="font-medium text-gray-900 mb-1">{faq.question}</div>
+                      <div className="text-gray-700 text-sm whitespace-pre-line">{faq.answer}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </section>
         )}
       </main>

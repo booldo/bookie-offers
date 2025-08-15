@@ -1,7 +1,7 @@
 import { client } from './client';
 
-export async function getSeoSettings() {
-  const query = `*[_type == "seoSettings"][0]{
+export async function getLandingPageSettings() {
+  const query = `*[_type == "landingPage"][0]{
     robotsTxt,
     sitemapExtraUrls,
     defaultMetaTitle,

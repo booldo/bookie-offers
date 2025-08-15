@@ -104,12 +104,7 @@ function ExpiredOfferPage({ offer, embedded = false, countrySlug = "", isCountry
                   <Image src="/assets/back-arrow.png" alt="Back" width={20} height={20} />
                   View Active Offers
                 </Link>
-                <Link 
-                  href={`/${countrySlug || 'ng'}/offers`} 
-                  className="border border-gray-300 bg-white text-gray-700 font-semibold rounded-lg px-6 py-3 hover:bg-gray-50 transition"
-                >
-                  Browse All Offers
-                </Link>
+
               </>
             )}
           </div>

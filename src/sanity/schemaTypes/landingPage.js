@@ -1,25 +1,19 @@
 export default {
-  name: "seoSettings",
-  title: "HomePages Metadata",
+  name: "landingPage",
+  title: "Landing Page Metadata",
   type: "document",
   preview: {
     select: {
-      title: 'defaultMetaTitle',
-      subtitle: 'country'
+      title: "defaultMetaTitle"
+    },
+    prepare({ title }) {
+      return {
+        title: title || "Untitled",
+        subtitle: "Landing page SEO settings"
+      };
     }
   },
   fields: [
-    {
-      name: "country",
-      title: "Country",
-      type: "reference",
-      to: [{ type: "countryPage" }],
-      validation: Rule => Rule.required(),
-      description: "Country these SEO settings are for",
-      options: {
-        filter: 'isActive == true'
-      }
-    },
     {
       name: "defaultMetaTitle",
       title: "Default Page Title",
@@ -65,4 +59,4 @@ export default {
       description: "Content for robots.txt"
     }
   ]
-}; 
+};

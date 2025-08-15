@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { getSeoSettings } from "../../sanity/lib/seo";
+import { getLandingPageSettings } from "../../sanity/lib/seo";
 
 export async function GET() {
   try {
-    const seo = await getSeoSettings();
-    const robotsContent = seo?.robotsTxt || `User-agent: *
+    const landingPage = await getLandingPageSettings();
+    const robotsContent = landingPage?.robotsTxt || `User-agent: *
 Allow: /
 
 # Sitemaps

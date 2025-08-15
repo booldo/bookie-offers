@@ -5,7 +5,7 @@ import offers from './offers'
 import article from "./article";
 import banner from "./banner";
 import faq from "./faq";
-import seoSettings from "./seoSettings";
+import landingPage from "./landingPage";
 import clickTracking from "./clickTracking";
 import comparison from "./comparison";
 import affiliate from "./affiliate";
@@ -25,7 +25,7 @@ export const schemaTypes = [
   article,
   banner,
   faq,
-  seoSettings,
+  landingPage,
   clickTracking,
   comparison,
   affiliate,

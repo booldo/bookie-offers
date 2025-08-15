@@ -22,8 +22,10 @@ async function getCountries() {
   }
 }
 
-// Static country cards component
-function CountryCards({ countries }) {
+// Async country cards component
+async function CountryCards() {
+  const countries = await getCountries();
+  
   return (
     <div className="flex flex-col gap-4 w-full">
       {countries.map((country) => (
@@ -84,9 +86,7 @@ function CountryCardsLoading() {
 }
 
 // Main page component with PPR structure
-export default async function Home() {
-  const countries = await getCountries();
-
+export default function Home() {
   return (
     <div className="min-h-screen bg-[#fafbfc] flex flex-col">
       <HomeNavbar />
@@ -105,7 +105,7 @@ export default async function Home() {
         
         {/* Dynamic country cards - uses PPR */}
         <Suspense fallback={<CountryCardsLoading />}>
-          <CountryCards countries={countries} />
+          <CountryCards />
         </Suspense>
       </main>
       <Footer />

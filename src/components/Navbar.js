@@ -31,6 +31,7 @@ export default function Navbar() {
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState(null);
+  const [countriesLoading, setCountriesLoading] = useState(true);
   const searchDebounceRef = useRef();
   const menuRef = useRef();
   const [hamburgerMenu, setHamburgerMenu] = useState(null);
@@ -63,6 +64,7 @@ export default function Navbar() {
   useEffect(() => {
     const fetchCountries = async () => {
       try {
+        setCountriesLoading(true);
         const countries = await client.fetch(`*[_type == "countryPage" && isActive == true]{
           country,
           slug,
@@ -78,6 +80,8 @@ export default function Navbar() {
         setFlags([WORLD_WIDE_FLAG, ...dynamicFlags]);
       } catch (e) {
         // ignore
+      } finally {
+        setCountriesLoading(false);
       }
     };
     fetchCountries();
@@ -429,23 +433,35 @@ export default function Navbar() {
           </button>
           {dropdownOpen && (
             <div className="absolute right-0 mt-2 w-56 bg-white border rounded shadow-lg z-[100]">
-              {flags.map(flag => (
-                <button
-                  key={flag.name}
-                  className="flex items-center justify-between w-full px-4 py-2 hover:bg-gray-100"
-                  onClick={() => handleFlagSelect(flag)}
-                >
-                  <div className="flex items-center gap-2">
-                    <img src={flag.src} alt={flag.name} className="w-5 h-5" />
-                    <span>{flag.name}</span>
+              {countriesLoading ? (
+                // Skeleton loading for countries
+                Array.from({ length: 6 }).map((_, index) => (
+                  <div key={index} className="flex items-center justify-between w-full px-4 py-2 animate-pulse">
+                    <div className="flex items-center gap-2">
+                      <div className="w-5 h-5 bg-gray-200 rounded"></div>
+                      <div className="h-4 bg-gray-200 rounded w-20"></div>
+                    </div>
                   </div>
-                  {selectedFlag.name === flag.name && (
-                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="green" strokeWidth="3">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </button>
-              ))}
+                ))
+              ) : (
+                flags.map(flag => (
+                  <button
+                    key={flag.name}
+                    className="flex items-center justify-between w-full px-4 py-2 hover:bg-gray-100"
+                    onClick={() => handleFlagSelect(flag)}
+                  >
+                    <div className="flex items-center gap-2">
+                      <img src={flag.src} alt={flag.name} className="w-5 h-5" />
+                      <span>{flag.name}</span>
+                    </div>
+                    {selectedFlag.name === flag.name && (
+                      <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="green" strokeWidth="3">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </button>
+                ))
+              )}
             </div>
           )}
         </div>

@@ -1,31 +1,25 @@
 "use client";
-import { useState, useRef, useEffect, useMemo, memo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback, memo } from "react";
 
 // Memoized checkbox item component to prevent unnecessary re-renders
-const CheckboxItem = memo(({ item, selected, onToggle, showCount, loading = false }) => (
-  <label className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-50 transition ${loading ? 'opacity-75' : ''}`}>
+const CheckboxItem = memo(({ item, selected, onToggle, showCount }) => (
+  <label className="flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-50 transition">
     <input
       type="checkbox"
       checked={selected.includes(item.name)}
       onChange={() => onToggle(item.name)}
       className="accent-green-600 w-4 h-4 rounded"
-      disabled={loading}
     />
     <span className="flex-1 text-gray-800 text-sm">{item.name}</span>
     {showCount && item.count !== undefined && (
       <span className="text-gray-400 text-xs font-semibold">{item.count}</span>
-    )}
-    {loading && (
-      <div className="w-3 h-3 ml-1">
-        <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-      </div>
     )}
   </label>
 ));
 
 CheckboxItem.displayName = 'CheckboxItem';
 
-export default function MultiSelectDropdown({ label, options, selected, setSelected, showCount = false, nested = false, loading = false }) {
+export default function MultiSelectDropdown({ label, options, selected, setSelected, showCount = false, nested = false }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [expandedCategories, setExpandedCategories] = useState({});
@@ -50,15 +44,12 @@ export default function MultiSelectDropdown({ label, options, selected, setSelec
   }, [options, search]);
 
   // Toggle selection
-  const toggle = useMemo(() => (name) => {
-    // Add a small delay to prevent dropdown from closing immediately
-    setTimeout(() => {
-      if (selected.includes(name)) {
-        setSelected(selected.filter((n) => n !== name));
-      } else {
-        setSelected([...selected, name]);
-      }
-    }, 50);
+  const toggle = useCallback((name) => {
+    if (selected.includes(name)) {
+      setSelected(selected.filter((n) => n !== name));
+    } else {
+      setSelected([...selected, name]);
+    }
   }, [selected, setSelected]);
 
   // Toggle category expansion
@@ -85,27 +76,10 @@ export default function MultiSelectDropdown({ label, options, selected, setSelec
         </div>
       )}
       <div className="flex flex-col gap-1 px-1">
-        {loading && (
-          <div className="flex justify-center items-center py-4">
-            <div className="flex space-x-1">
-              <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-              <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-              <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-            </div>
-          </div>
-        )}
-        {!loading && !nested && filtered.length === 0 && (
+        {!nested && filtered.length === 0 && (
           <div className="text-gray-400 text-sm px-3 py-2">No results</div>
         )}
-        {loading ? (
-          <div className="flex justify-center items-center py-4">
-            <div className="flex space-x-1">
-              <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-              <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-              <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-            </div>
-          </div>
-        ) : nested ? (
+        {nested ? (
           // Nested structure with collapsible categories
           options.map((category) => (
             <div key={category.name} className="border-b border-gray-100 last:border-b-0">
@@ -127,21 +101,20 @@ export default function MultiSelectDropdown({ label, options, selected, setSelec
               </button>
               {expandedCategories[category.name] && (
                 <div className="pl-2">
-                                     {category.subcategories?.map((sub) => (
-                     <CheckboxItem
-                       key={sub.name}
-                       item={sub}
-                       selected={selected}
-                       onToggle={toggle}
-                       showCount={showCount}
-                       loading={loading}
-                     />
-                   ))}
+                  {category.subcategories?.map((sub) => (
+                    <CheckboxItem
+                      key={sub.name}
+                      item={sub}
+                      selected={selected}
+                      onToggle={toggle}
+                      showCount={showCount}
+                    />
+                  ))}
                 </div>
               )}
             </div>
           ))
-        ) : !loading ? (
+        ) : (
           // Regular flat structure
           filtered.map((b) => (
             <CheckboxItem
@@ -150,13 +123,12 @@ export default function MultiSelectDropdown({ label, options, selected, setSelec
               selected={selected}
               onToggle={toggle}
               showCount={showCount}
-              loading={loading}
             />
           ))
-        ) : null}
+        )}
       </div>
     </div>
-  ), [nested, search, loading, filtered, options, expandedCategories, selected, toggle, toggleCategory, showCount]);
+  ), [nested, search, filtered, options, expandedCategories, selected, toggle, toggleCategory, showCount]);
 
   return (
     <div className="relative w-full" ref={ref}>
@@ -164,20 +136,11 @@ export default function MultiSelectDropdown({ label, options, selected, setSelec
         type="button"
         className="w-full bg-[#F5F5F7] border border-gray-200 rounded-2xl px-2 sm:px-3 py-2 text-left text-xs sm:text-sm flex items-center justify-between shadow-sm hover:border-gray-300 focus:outline-none"
         onClick={() => setOpen((v) => !v)}
-        disabled={loading}
       >
         <span className="truncate text-gray-700">
           {selected.length === 0 ? label : selected.join(", ")}
         </span>
-        {loading ? (
-          <div className="flex space-x-1 ml-1 sm:ml-2">
-            <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-            <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-            <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-          </div>
-        ) : (
-          <svg className={`ml-1 sm:ml-2 w-4 h-4 transition-transform ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" /></svg>
-        )}
+        <svg className={`ml-1 sm:ml-2 w-4 h-4 transition-transform ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" /></svg>
       </button>
 
       {/* Mobile slide-up panel */}

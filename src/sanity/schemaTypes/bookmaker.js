@@ -88,6 +88,36 @@ export default {
       }
     },
     {
+      name: "comparison",
+      title: "Comparison Section",
+      type: "array",
+      of: [{ type: 'block' }],
+      description: "Portable text comparison content for this bookmaker"
+    },
+    {
+      name: "faqs",
+      title: "FAQs",
+      type: "array",
+      of: [{
+        type: "object",
+        fields: [
+          {
+            name: "question",
+            title: "Question",
+            type: "string",
+            validation: Rule => Rule.required()
+          },
+          {
+            name: "answer",
+            title: "Answer",
+            type: "text",
+            validation: Rule => Rule.required()
+          }
+        ]
+      }],
+      description: "Frequently asked questions related to this bookmaker"
+    },
+    {
       name: "metaTitle",
       title: "Meta Title",
       type: "string",
