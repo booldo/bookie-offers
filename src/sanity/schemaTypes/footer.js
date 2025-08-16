@@ -305,11 +305,13 @@ export default {
                   options: {
                     source: 'label',
                     maxLength: 96,
-                    isUnique: () => true,
-                    slugify: input => input
-                      .toLowerCase()
-                      .replace(/[^a-z0-9]+/g, '-')
-                      .replace(/(^-|-$)+/g, '')
+                    slugify: input =>
+                      input
+                        .toLowerCase()
+                        .replace(/\s+/g, '-')
+                        .replace(/[^ 0-\u007F\w\-]+/g, '')
+                        .replace(/(^-|-$)+/g, '')
+                        .slice(0, 96)
                   },
                   description: 'Slug used to generate the internal page URL when content is provided. Click "Generate" after typing a label.'
                 },
