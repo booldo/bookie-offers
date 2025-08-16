@@ -76,12 +76,12 @@ export const structure: StructureResolver = (S) =>
                         .params({countryId})
                 ),
                   
-                  // Affiliate Links
+                  // Pretty Links
               S.listItem()
-                .title('Affiliate Links')
+                .title('Pretty Links')
                 .child(
                   S.documentList()
-                        .title('Affiliate Links')
+                        .title('Pretty Links')
                         .filter('_type == "affiliate" && bookmaker->country._ref == $countryId')
                         .params({countryId})
                 ),

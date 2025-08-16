@@ -94,7 +94,7 @@ function BonusTypeInput(props) {
 
 export default {
   name: "affiliate",
-  title: "Affiliate Links",
+  title: "Pretty Links",
   type: "document",
   preview: {
     select: {
@@ -105,7 +105,7 @@ export default {
     prepare(selection) {
       const {bookmakerName, url, prettyLink} = selection
       return {
-        title: bookmakerName || 'Untitled Affiliate Link',
+        title: bookmakerName || 'Untitled Pretty Link',
         subtitle: prettyLink ? `/${prettyLink}` : (url ? `${url.substring(0, 50)}...` : 'No URL'),
         media: bookmakerName ? undefined : undefined
       }
@@ -131,7 +131,7 @@ export default {
       type: "reference",
       to: [{ type: "bonusType" }],
       validation: Rule => Rule.required(),
-      description: "The type of bonus this affiliate link is for (filtered by bookmaker's country)",
+      description: "The type of bonus this pretty link is for (filtered by bookmaker's country)",
       inputComponent: BonusTypeInput
     },
     {
