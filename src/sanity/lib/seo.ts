@@ -59,14 +59,14 @@ export async function getAllSitemapEntries() {
 
     // Fetch basic filter options (bonus types and bookmakers) with proper country reference
     const basicFiltersQuery = `{
-    "bonusTypes": *[_type == "bonusType" && isActive == true]{
+    "bonusTypes": *[_type == "bonusType" && defined(country) && country->slug.current]{
       name,
       country->{
         slug
       },
       _updatedAt
     },
-    "bookmakers": *[_type == "bookmaker" && isActive == true]{
+    "bookmakers": *[_type == "bookmaker" && defined(country) && country->slug.current]{
       name,
       country->{
         slug

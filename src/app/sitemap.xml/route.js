@@ -21,6 +21,14 @@ export async function GET() {
       {
         loc: `${baseUrl}/briefly/calculators`,
         lastmod: new Date().toISOString(),
+      },
+      {
+        loc: `${baseUrl}/about`,
+        lastmod: new Date().toISOString(),
+      },
+      {
+        loc: `${baseUrl}/contact`,
+        lastmod: new Date().toISOString(),
       }
     ];
 
