@@ -57,7 +57,7 @@ export async function getAllSitemapEntries() {
       _updatedAt
     }`;
 
-    // Fetch basic filter options (bonus types and bookmakers)
+    // Fetch basic filter options (bonus types and bookmakers) with proper country reference
     const basicFiltersQuery = `{
     "bonusTypes": *[_type == "bonusType" && isActive == true]{
       name,
@@ -104,7 +104,7 @@ export async function getAllSitemapEntries() {
         }
       });
 
-    // Add bonus type filter pages
+    // Add bonus type filter pages - only if country slug exists
     basicFilters.bonusTypes?.forEach(bonusType => {
       if (bonusType.name && bonusType.country?.slug?.current) {
           filterEntries.push({
@@ -116,7 +116,7 @@ export async function getAllSitemapEntries() {
         }
       });
 
-    // Add bookmaker filter pages
+    // Add bookmaker filter pages - only if country slug exists
     basicFilters.bookmakers?.forEach(bookmaker => {
       if (bookmaker.name && bookmaker.country?.slug?.current) {
         filterEntries.push({
@@ -128,7 +128,14 @@ export async function getAllSitemapEntries() {
       }
     });
     
-    return [...entries, ...transformedAffiliateLinks, ...filterEntries];
+    // Filter out any entries with undefined or invalid slugs before returning
+    const allEntries = [...entries, ...transformedAffiliateLinks, ...filterEntries];
+    const validEntries = allEntries.filter(entry => 
+      entry.slug && 
+      (typeof entry.slug === 'string' ? entry.slug !== 'undefined' : entry.slug.current !== 'undefined')
+    );
+    
+    return validEntries;
   } catch (error) {
     console.error('Error fetching sitemap entries:', error);
     // Fallback to basic query if complex one fails

@@ -8,7 +8,27 @@ export async function GET() {
     const landingPage = await getLandingPageSettings();
     const extraUrls = landingPage?.sitemapExtraUrls || [];
 
-    let urls = entries.map((entry) => {
+    // Start with important static pages
+    let urls = [
+      {
+        loc: `${baseUrl}/`,
+        lastmod: new Date().toISOString(),
+      },
+      {
+        loc: `${baseUrl}/briefly`,
+        lastmod: new Date().toISOString(),
+      },
+      {
+        loc: `${baseUrl}/briefly/calculators`,
+        lastmod: new Date().toISOString(),
+      }
+    ];
+
+    // Process dynamic entries
+    console.log('Processing sitemap entries:', entries.length);
+    console.log('Sample entries:', entries.slice(0, 3));
+    
+    const dynamicUrls = entries.map((entry) => {
       let path = "/";
       
       if (entry._type === "offers") {
@@ -35,21 +55,51 @@ export async function GET() {
         path = `/${entry.slug?.current}`;
       }
       
+      // Debug logging for malformed URLs
+      if (path.includes('undefined') || path.includes('//')) {
+        console.warn('Malformed URL detected:', {
+          type: entry._type,
+          slug: entry.slug,
+          path: path,
+          entry: entry
+        });
+      }
+      
       return {
         loc: `${baseUrl}${path}`,
         lastmod: entry._updatedAt ? new Date(entry._updatedAt).toISOString() : undefined,
       };
     });
+
+    // Filter out any invalid URLs (undefined, empty, or malformed)
+    const validDynamicUrls = dynamicUrls.filter(url => {
+      const isValid = url.loc && 
+        url.loc !== `${baseUrl}/` && 
+        !url.loc.includes('undefined') &&
+        !url.loc.includes('//') &&
+        url.loc.length > baseUrl.length + 1;
+      
+      if (!isValid) {
+        console.warn('Filtered out invalid URL:', url.loc);
+      }
+      
+      return isValid;
+    });
+
+    // Add valid dynamic URLs
+    urls = urls.concat(validDynamicUrls);
     
     // Add extra URLs
     urls = urls.concat((extraUrls || []).map((url) => ({ loc: url })));
 
-    // Filter out any invalid URLs
-    urls = urls.filter(url => url.loc && url.loc !== `${baseUrl}/`);
+    // Remove duplicates based on loc
+    const uniqueUrls = urls.filter((url, index, self) => 
+      index === self.findIndex(u => u.loc === url.loc)
+    );
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${urls
+${uniqueUrls
     .map(
       (u) =>
         `<url><loc>${u.loc}</loc>${u.lastmod ? `<lastmod>${u.lastmod}</lastmod>` : ""}</url>`
