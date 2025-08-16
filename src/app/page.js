@@ -32,24 +32,24 @@ async function CountryCards() {
         <a
           key={country.slug.current}
           href={`/${country.slug.current}`}
-          className="flex items-center justify-between bg-[#F5F5F7] rounded-xl p-4 shadow-sm border border-gray-100 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:border-gray-200 cursor-pointer block"
+          className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-[#F5F5F7] rounded-xl p-4 shadow-sm border border-gray-100 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:border-gray-200 cursor-pointer block"
         >
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 mb-3 sm:mb-0">
             {country.pageFlag ? (
               <img
                 src={urlFor(country.pageFlag).width(36).height(36).url()}
                 alt={`${country.country} flag`}
-                className="w-9 h-9 object-cover"
+                className="w-9 h-9 object-cover rounded"
               />
             ) : (
-              <div className="w-9 h-9 bg-gray-300 flex items-center justify-center">
+              <div className="w-9 h-9 bg-gray-300 flex items-center justify-center rounded">
                 <span className="text-xs font-bold text-gray-600">
                   {country.countryCode?.toUpperCase() || country.country?.charAt(0) || '?'}
                 </span>
               </div>
             )}
             <div>
-              <div className="font-semibold text-gray-900">{country.country}</div>
+              <div className="font-semibold text-gray-900 text-lg sm:text-base">{country.country}</div>
               <div className="text-sm text-gray-500">Discover local offers and bookies</div>
             </div>
           </div>
@@ -70,15 +70,15 @@ function CountryCardsLoading() {
   return (
     <div className="flex flex-col gap-4 w-full">
       {[1, 2, 3, 4, 5, 6].map((i) => (
-        <div key={i} className="flex items-center justify-between bg-[#F5F5F7] rounded-xl p-4 shadow-sm border border-gray-100 animate-pulse">
-          <div className="flex items-center gap-4">
+        <div key={i} className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-[#F5F5F7] rounded-xl p-4 shadow-sm border border-gray-100 animate-pulse">
+          <div className="flex items-center gap-4 mb-3 sm:mb-0">
             <div className="w-9 h-9 bg-gray-300 rounded"></div>
             <div>
-              <div className="h-4 bg-gray-300 rounded w-20 mb-1"></div>
+              <div className="h-5 sm:h-4 bg-gray-300 rounded w-24 mb-1"></div>
               <div className="h-3 bg-gray-300 rounded w-32"></div>
             </div>
           </div>
-          <div className="h-4 bg-gray-300 rounded w-16"></div>
+          <div className="h-4 bg-gray-300 rounded w-20"></div>
         </div>
       ))}
     </div>

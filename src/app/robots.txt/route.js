@@ -8,8 +8,7 @@ export async function GET() {
 Allow: /
 
 # Sitemaps
-Sitemap: https://yourdomain.com/sitemap.xml
-Sitemap: https://yourdomain.com/sitemap-index.xml`;
+Sitemap: http://localhost:3000/sitemap.xml`;
 
     return new NextResponse(robotsContent, {
       status: 200,
@@ -23,8 +22,7 @@ Sitemap: https://yourdomain.com/sitemap-index.xml`;
 Allow: /
 
 # Sitemaps
-Sitemap: https://yourdomain.com/sitemap.xml
-Sitemap: https://yourdomain.com/sitemap-index.xml`;
+Sitemap: http://localhost:3000/sitemap.xml`;
 
     return new NextResponse(fallbackContent, {
       status: 200,

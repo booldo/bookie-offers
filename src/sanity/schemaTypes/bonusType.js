@@ -3,8 +3,7 @@ export default {
   title: "Bonus Types",
   type: "document",
   validation: Rule => Rule.custom((doc, context) => {
-    if (!doc?.name || !doc?.country?._ref) return true // Skip validation if required fields are missing
-    
+    if (!doc?.name || !doc?.country?._ref) return true 
     // Check if another bonus type with same name and country exists
     const { getClient } = context
     const client = getClient({ apiVersion: '2023-05-03' })

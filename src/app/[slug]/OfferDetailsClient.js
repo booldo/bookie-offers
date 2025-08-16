@@ -236,9 +236,9 @@ export default function OfferDetailsClient({ offer, moreOffers, totalOffers, cou
               <button
                 onClick={handleLoadMore}
                 disabled={isLoadingMore}
-                className="border-2 border-gray-300 hover:border-gray-400 disabled:border-gray-200 disabled:text-gray-400 text-gray-700 hover:text-gray-800 px-8 py-3 rounded-lg font-semibold transition-all duration-200 text-lg bg-white hover:bg-gray-50"
+                className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-6 py-3 rounded-full font-medium transition-all duration-200 border border-gray-200 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoadingMore ? 'Loading...' : 'Load More Offers'}
+                {isLoadingMore ? 'Loading...' : 'Load More'}
               </button>
             </div>
           )}

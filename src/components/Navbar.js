@@ -32,6 +32,7 @@ export default function Navbar() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState(null);
   const [countriesLoading, setCountriesLoading] = useState(true);
+  const [brieflyOpen, setBrieflyOpen] = useState(false);
   const searchDebounceRef = useRef();
   const menuRef = useRef();
   const [hamburgerMenu, setHamburgerMenu] = useState(null);
@@ -153,7 +154,10 @@ export default function Navbar() {
             _id,
             name,
             logo,
-            paymentMethods
+            paymentMethods[]->{
+              _id,
+              name
+            }
           },
         country->{country, slug},
         maxBonus,
@@ -478,7 +482,27 @@ export default function Navbar() {
             >
               Home
             </Link>
-            <Link href="/briefly" className="hover:underline">Briefly</Link>
+            <div className="relative">
+              <button 
+                onClick={() => setBrieflyOpen(!brieflyOpen)}
+                className="hover:underline flex items-center gap-1 w-full text-left"
+              >
+                Briefly
+                <svg className={`w-4 h-4 transition-transform duration-200 ${brieflyOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {brieflyOpen && (
+                <div className="mt-2 space-y-2">
+                  <Link href="/briefly" className="block pl-6 hover:underline text-gray-800 text-base font-medium">
+                    Blog
+                  </Link>
+                  <Link href="/briefly/calculators" className="block pl-6 hover:underline text-gray-800 text-base font-medium">
+                    Calculators
+                  </Link>
+                </div>
+              )}
+            </div>
             <Link href="/about" className="hover:underline">About Us</Link>
             <Link href="/contact" className="hover:underline">Contact Us</Link>
             

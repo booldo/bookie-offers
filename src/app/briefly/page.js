@@ -19,17 +19,22 @@ export default function BrieflyPage() {
   const router = useRouter();
 
   useEffect(() => {
-    async function fetchArticles() {
-      const data = await client.fetch(`*[_type == "article"]|order(_createdAt desc){
-        _id,
-        title,
-        "slug": slug.current,
-        mainImage
-      }`);
-      setArticles(data);
-      setLoading(false);
+    async function fetchData() {
+      try {
+        const articlesData = await client.fetch(`*[_type == "article"]|order(_createdAt desc){
+            _id,
+            title,
+            "slug": slug.current,
+            mainImage
+        }`);
+        setArticles(articlesData);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
     }
-    fetchArticles();
+    fetchData();
   }, []);
 
   return (
@@ -45,41 +50,48 @@ export default function BrieflyPage() {
             <Image src="/assets/back-arrow.png" alt="Back" width={28} height={28} />
           </button>
           <span className="text-green-700 text-2xl">●</span>
-          <h2 className="text-2xl font-bold">Latest</h2>
+          <h2 className="text-2xl font-bold">Blog</h2>
         </div>
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="flex gap-3 items-start bg-white rounded-lg shadow-sm p-2">
-                <div className="w-24 h-24 bg-gray-200 rounded animate-pulse" />
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse" />
-                  <div className="h-4 bg-gray-200 rounded w-1/2 animate-pulse" />
-                </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="flex flex-col items-center bg-white rounded-lg shadow-sm p-4 animate-pulse">
+                <div className="w-32 h-32 bg-gray-200 rounded mb-3" />
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
+                <div className="h-3 bg-gray-200 rounded w-1/2" />
               </div>
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-            {articles.map((article) => (
-              <Link
-                key={article._id}
-                href={`/briefly/${article.slug}`}
-                className="flex gap-3 items-start bg-white rounded-lg shadow-sm p-2 transition hover:shadow-lg hover:scale-[1.03] cursor-pointer"
-              >
-                <div className="w-24 h-24 flex-shrink-0 rounded overflow-hidden bg-gray-100">
-                  {article.mainImage ? (
-                    <img src={urlFor(article.mainImage)} alt={article.title} className="object-cover w-full h-full" />
-                  ) : (
-                    <div className="w-full h-full bg-gray-200" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                {articles.map((article) => (
+                  <Link
+                    key={article._id}
+                    href={`/briefly/${article.slug}`}
+                className="flex flex-col items-center bg-white rounded-lg shadow-sm p-4 transition hover:shadow-lg hover:scale-[1.03] cursor-pointer"
+                  >
+                <div className="w-32 h-32 rounded overflow-hidden bg-gray-100 mb-3">
+                      {article.mainImage ? (
+                    <img 
+                      src={urlFor(article.mainImage)} 
+                      alt={article.title} 
+                          className="object-cover w-full h-full" 
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                          <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                          </svg>
+                    </div>
                   )}
-                </div>
-                <div className="text-base font-semibold text-gray-900 leading-tight mt-2">
+                      </div>
+                <div className="text-base font-semibold text-gray-900 leading-tight text-center">
                   {article.title}
-                </div>
-              </Link>
-            ))}
-          </div>
+                    </div>
+                <span className="mt-2 px-3 py-1 bg-green-700 text-white text-xs rounded">Briefly</span>
+                  </Link>
+                ))}
+              </div>
         )}
       </main>
       <Footer />

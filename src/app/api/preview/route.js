@@ -41,8 +41,14 @@ export async function GET(request) {
           logo,
           logoAlt,
           description,
-          paymentMethods,
-          license
+          paymentMethods[]->{
+            _id,
+            name
+          },
+          license[]->{
+            _id,
+            name
+          }
         },
         maxBonus,
         minDeposit,

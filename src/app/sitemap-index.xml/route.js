@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 export async function GET() {
-  const baseUrl = "https://yourdomain.com"; // TODO: Replace with your real domain
+  const baseUrl = "http://localhost:3000"; // Local development domain
   const currentDate = new Date().toISOString();
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>

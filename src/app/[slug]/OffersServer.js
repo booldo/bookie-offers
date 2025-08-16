@@ -31,8 +31,14 @@ async function getOffersData(countryName) {
       name,
       logo,
       logoAlt,
-      paymentMethods,
-      license,
+      paymentMethods[]->{
+        _id,
+        name
+      },
+      license[]->{
+        _id,
+        name
+      },
       country->{
         _id,
         country
@@ -97,16 +103,20 @@ async function getOffersData(countryName) {
     });
     const paymentSubcategories = Object.entries(paymentMethodCount).map(([name, count]) => ({ name, count }));
     
-    // Dynamic license options based on country
-    let licenseOptions = [];
-    if (countryName === "Ghana") {
-      licenseOptions = [{ name: "Ghana Gaming Commission (GCG) Licenses" }];
-    } else if (countryName === "Nigeria") {
-      licenseOptions = [
-        { name: "Lagos State Lotteries and Gaming Authority (LSLGA) - State level" },
-        { name: "National Lottery Regulatory Commission (NLRC) - Federal" }
-      ];
-    }
+    // Compute license counts from actual offers data
+    const licenseCount = {};
+    offers.forEach(offer => {
+      if (Array.isArray(offer.bookmaker?.license)) {
+        offer.bookmaker.license.forEach(license => {
+          // Handle both old string format and new reference format
+          const licenseName = typeof license === 'string' ? license : license.name;
+          if (licenseName) {
+            licenseCount[licenseName] = (licenseCount[licenseName] || 0) + 1;
+          }
+        });
+      }
+    });
+    const licenseOptions = Object.entries(licenseCount).map(([name, count]) => ({ name, count }));
     
     const advancedOptions = [
       {

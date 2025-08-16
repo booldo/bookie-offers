@@ -139,6 +139,13 @@ export const structure: StructureResolver = (S) =>
                     .filter('_type == "paymentOptions"')
                 ),
               S.listItem()
+                .title('Calculators')
+                .child(
+                  S.documentList()
+                    .title('Calculators')
+                    .filter('_type == "calculator"')
+                ),
+              S.listItem()
                 .title('Landing Page')
                 .child(
                   S.documentList()

@@ -28,8 +28,9 @@ export async function getPageSeo(type, slug) {
 }
 
 export async function getAllSitemapEntries() {
+  try {
   // Fetch all docs with sitemapInclude != false, including country info for offers
-  const query = `*[_type in ["offers","article","banner","faq"] && (sitemapInclude == true || !defined(sitemapInclude))]{
+    const query = `*[_type in ["offers","article","banner","faq","calculator"] && (sitemapInclude == true || !defined(sitemapInclude))]{
     _type,
     slug,
     _updatedAt,
@@ -50,8 +51,14 @@ export async function getAllSitemapEntries() {
     _updatedAt
   }`;
 
-  // Fetch filter options for sitemap generation
-  const filterQuery = `{
+    // Fetch country pages for basic filter URLs
+    const countryQuery = `*[_type == "countryPage" && isActive == true]{
+      slug,
+      _updatedAt
+    }`;
+
+    // Fetch basic filter options (bonus types and bookmakers)
+    const basicFiltersQuery = `{
     "bonusTypes": *[_type == "bonusType" && isActive == true]{
       name,
       country->{
@@ -65,22 +72,14 @@ export async function getAllSitemapEntries() {
         slug
       },
       _updatedAt
-    },
-    "advancedFilters": *[_type == "bookmaker" && isActive == true]{
-      paymentMethods,
-      license,
-      country->{
-        slug
-      },
-      _updatedAt
-    }
-  }`;
-  
-  try {
-    const [entries, affiliateLinks, filterData] = await Promise.all([
+      }
+    }`;
+    
+    const [entries, affiliateLinks, countries, basicFilters] = await Promise.all([
       client.fetch(query),
       client.fetch(affiliateQuery),
-      client.fetch(filterQuery)
+      client.fetch(countryQuery),
+      client.fetch(basicFiltersQuery)
     ]);
     
     // Transform affiliate links to match the expected format
@@ -91,212 +90,53 @@ export async function getAllSitemapEntries() {
       _updatedAt: link._updatedAt
     }));
 
-    // Generate filter combination entries
+    // Generate basic filter entries (only the most important ones)
     const filterEntries = [];
-    filterData.forEach(country => {
-      const countrySlug = country.slug?.current;
-      if (!countrySlug) return;
-
-      // Add bonus type filter pages
-      country.bonusTypes?.forEach(bonusType => {
-        if (bonusType.name) {
+    
+    // Add country pages
+    countries.forEach(country => {
+      if (country.slug?.current) {
           filterEntries.push({
-            _type: 'filter',
-            slug: `${countrySlug}/${bonusType.name.toLowerCase().replace(/\s+/g, '-')}`,
-            countrySlug,
-            filterType: 'bonusType',
-            filterValue: bonusType.name,
-            _updatedAt: bonusType._updatedAt || country._updatedAt
+          _type: 'country',
+          slug: country.slug.current,
+          _updatedAt: country._updatedAt
           });
         }
       });
 
-      // Add bookmaker filter pages
-      country.bookmakers?.forEach(bookmaker => {
-        if (bookmaker.name) {
+    // Add bonus type filter pages
+    basicFilters.bonusTypes?.forEach(bonusType => {
+      if (bonusType.name && bonusType.country?.slug?.current) {
           filterEntries.push({
             _type: 'filter',
-            slug: `${countrySlug}/${bookmaker.name.toLowerCase().replace(/\s+/g, '-')}`,
-            countrySlug,
-            filterType: 'bookmaker',
-            filterValue: bookmaker.name,
-            _updatedAt: bookmaker._updatedAt || country._updatedAt
+          slug: `${bonusType.country.slug.current}/${bonusType.name.toLowerCase().replace(/\s+/g, '-')}`,
+          countrySlug: bonusType.country.slug.current,
+          _updatedAt: bonusType._updatedAt
           });
         }
       });
 
-      // Add payment method filter pages (unique payment methods)
-      const uniquePaymentMethods = new Set<string>();
-      country.paymentMethods?.forEach(offer => {
-        offer.bookmaker?.paymentMethods?.forEach(pm => {
-          if (pm?.name && typeof pm.name === 'string') {
-            uniquePaymentMethods.add(pm.name);
-          }
-        });
-      });
-
-      uniquePaymentMethods.forEach(pmName => {
+    // Add bookmaker filter pages
+    basicFilters.bookmakers?.forEach(bookmaker => {
+      if (bookmaker.name && bookmaker.country?.slug?.current) {
         filterEntries.push({
           _type: 'filter',
-          slug: `${countrySlug}/${pmName.toLowerCase().replace(/\s+/g, '-')}`,
-          countrySlug,
-          filterType: 'paymentMethod',
-          filterValue: pmName,
-          _updatedAt: country._updatedAt
+          slug: `${bookmaker.country.slug.current}/${bookmaker.name.toLowerCase().replace(/\s+/g, '-')}`,
+          countrySlug: bookmaker.country.slug.current,
+          _updatedAt: bookmaker._updatedAt
         });
-      });
-
-      // Generate 2-way combination filter pages
-      // Bonus Type + Bookmaker combinations
-      country.bonusTypes?.forEach(bonusType => {
-        country.bookmakers?.forEach(bookmaker => {
-          if (bonusType.name && bookmaker.name) {
-            filterEntries.push({
-              _type: 'filter',
-              slug: `${countrySlug}/${bonusType.name.toLowerCase().replace(/\s+/g, '-')}-${bookmaker.name.toLowerCase().replace(/\s+/g, '-')}`,
-              countrySlug,
-              filterType: 'bonusType-bookmaker',
-              filterValue: `${bonusType.name}-${bookmaker.name}`,
-              _updatedAt: Math.max(
-                bonusType._updatedAt || 0,
-                bookmaker._updatedAt || 0,
-                country._updatedAt || 0
-              )
-            });
-          }
-        });
-      });
-
-      // Bonus Type + Payment Method combinations
-      country.bonusTypes?.forEach(bonusType => {
-        uniquePaymentMethods.forEach(pmName => {
-          if (bonusType.name && pmName) {
-            filterEntries.push({
-              _type: 'filter',
-              slug: `${countrySlug}/${bonusType.name.toLowerCase().replace(/\s+/g, '-')}-${pmName.toLowerCase().replace(/\s+/g, '-')}`,
-              countrySlug,
-              filterType: 'bonusType-paymentMethod',
-              filterValue: `${bonusType.name}-${pmName}`,
-              _updatedAt: Math.max(
-                bonusType._updatedAt || 0,
-                country._updatedAt || 0
-              )
-            });
-          }
-        });
-      });
-
-      // Bookmaker + Payment Method combinations
-      country.bookmakers?.forEach(bookmaker => {
-        uniquePaymentMethods.forEach(pmName => {
-          if (bookmaker.name && pmName) {
-            filterEntries.push({
-              _type: 'filter',
-              slug: `${countrySlug}/${bookmaker.name.toLowerCase().replace(/\s+/g, '-')}-${pmName.toLowerCase().replace(/\s+/g, '-')}`,
-              countrySlug,
-              filterType: 'bookmaker-paymentMethod',
-              filterValue: `${bookmaker.name}-${pmName}`,
-              _updatedAt: Math.max(
-                bookmaker._updatedAt || 0,
-                country._updatedAt || 0
-              )
-            });
-          }
-        });
-      });
-
-      // Generate 3-way combination filter pages
-      country.bonusTypes?.forEach(bonusType => {
-        country.bookmakers?.forEach(bookmaker => {
-          uniquePaymentMethods.forEach(pmName => {
-            if (bonusType.name && bookmaker.name && pmName) {
-              filterEntries.push({
-                _type: 'filter',
-                slug: `${countrySlug}/${bonusType.name.toLowerCase().replace(/\s+/g, '-')}-${bookmaker.name.toLowerCase().replace(/\s+/g, '-')}-${pmName.toLowerCase().replace(/\s+/g, '-')}`,
-                countrySlug,
-                filterType: 'bonusType-bookmaker-paymentMethod',
-                filterValue: `${bonusType.name}-${bookmaker.name}-${pmName}`,
-                _updatedAt: Math.max(
-                  bonusType._updatedAt || 0,
-                  bookmaker._updatedAt || 0,
-                  country._updatedAt || 0
-                )
-              });
-            }
-          });
-        });
-      });
-
-      // Generate 4-way combination filter pages (Bonus Type + Bookmaker + Payment Method + License)
-      // First, get unique licenses for this country
-      const uniqueLicenses = new Set<string>();
-      country.bookmakers?.forEach(bookmaker => {
-        if (Array.isArray(bookmaker.license)) {
-          bookmaker.license.forEach(license => {
-            if (license && typeof license === 'string') {
-              uniqueLicenses.add(license);
-            }
-          });
-        }
-      });
-
-      // 4-way combinations: Bonus Type + Bookmaker + Payment Method + License
-      country.bonusTypes?.forEach(bonusType => {
-        country.bookmakers?.forEach(bookmaker => {
-          uniquePaymentMethods.forEach(pmName => {
-            uniqueLicenses.forEach(licenseName => {
-              if (bonusType.name && bookmaker.name && pmName && licenseName) {
-                filterEntries.push({
-                  _type: 'filter',
-                  slug: `${countrySlug}/${bonusType.name.toLowerCase().replace(/\s+/g, '-')}-${bookmaker.name.toLowerCase().replace(/\s+/g, '-')}-${pmName.toLowerCase().replace(/\s+/g, '-')}-${licenseName.toLowerCase().replace(/\s+/g, '-')}`,
-                  countrySlug,
-                  filterType: 'bonusType-bookmaker-paymentMethod-license',
-                  filterValue: `${bonusType.name}-${bookmaker.name}-${pmName}-${licenseName}`,
-                  _updatedAt: Math.max(
-                    bonusType._updatedAt || 0,
-                    bookmaker._updatedAt || 0,
-                    country._updatedAt || 0
-                  )
-                });
-              }
-            });
-          });
-        });
-      });
-
-      // Generate 5-way combination filter pages (Bonus Type + Bookmaker + Payment Method + License + Country-specific features)
-      // Add country-specific features like "mobile-optimized", "live-betting", etc.
-      const countryFeatures = ['mobile-optimized', 'live-betting', 'instant-withdrawal', '24-7-support'];
-      
-      country.bonusTypes?.forEach(bonusType => {
-        country.bookmakers?.forEach(bookmaker => {
-          uniquePaymentMethods.forEach(pmName => {
-            uniqueLicenses.forEach(licenseName => {
-              countryFeatures.forEach(feature => {
-                if (bonusType.name && bookmaker.name && pmName && licenseName) {
-                  filterEntries.push({
-                    _type: 'filter',
-                    slug: `${countrySlug}/${bonusType.name.toLowerCase().replace(/\s+/g, '-')}-${bookmaker.name.toLowerCase().replace(/\s+/g, '-')}-${pmName.toLowerCase().replace(/\s+/g, '-')}-${licenseName.toLowerCase().replace(/\s+/g, '-')}-${feature}`,
-                    countrySlug,
-                    filterType: 'bonusType-bookmaker-paymentMethod-license-feature',
-                    filterValue: `${bonusType.name}-${bookmaker.name}-${pmName}-${licenseName}-${feature}`,
-                    _updatedAt: Math.max(
-                      bonusType._updatedAt || 0,
-                      bookmaker._updatedAt || 0,
-                      country._updatedAt || 0
-                    )
-                  });
-                }
-              });
-            });
-          });
-        });
-      });
+      }
     });
     
     return [...entries, ...transformedAffiliateLinks, ...filterEntries];
   } catch (error) {
     console.error('Error fetching sitemap entries:', error);
-    return client.fetch(query);
+    // Fallback to basic query if complex one fails
+    const fallbackQuery = `*[_type in ["offers","article","banner","faq","calculator"] && (sitemapInclude == true || !defined(sitemapInclude))]{
+      _type,
+      slug,
+      _updatedAt
+    }`;
+    return client.fetch(fallbackQuery);
   }
 } 

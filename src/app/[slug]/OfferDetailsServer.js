@@ -23,8 +23,14 @@ async function getOfferDetailsData(slug, countryName) {
         name,
         logo,
         logoAlt,
-        paymentMethods,
-        license,
+        paymentMethods[]->{
+          _id,
+          name
+        },
+        license[]->{
+          _id,
+          name
+        },
         country->{
           _id,
           country
