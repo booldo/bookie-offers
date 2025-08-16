@@ -7,6 +7,47 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 
+// Generate metadata for calculator pages
+export async function generateMetadata({ params }) {
+  const { slug } = await params;
+  
+  try {
+    const calculator = await client.fetch(`*[_type == "calculator" && slug.current == $slug && isActive == true][0]{
+      title,
+      briefDescription,
+      metaTitle,
+      metaDescription,
+      calculatorImage
+    }`, { slug });
+
+    if (!calculator) {
+      return {
+        title: 'Calculator Not Found | Booldo',
+        description: 'The requested calculator could not be found.'
+      };
+    }
+
+    const title = calculator.metaTitle || `${calculator.title} Calculator | Booldo`;
+    const description = calculator.metaDescription || calculator.briefDescription || `Use our ${calculator.title} calculator to make informed decisions.`;
+
+    return {
+      title,
+      description,
+      openGraph: {
+        title,
+        description,
+        images: calculator.calculatorImage ? [urlFor(calculator.calculatorImage).url()] : [],
+      },
+    };
+  } catch (error) {
+    console.error('Error generating metadata for calculator:', error);
+    return {
+      title: 'Calculator | Booldo',
+      description: 'Use our calculator tools to make informed decisions.'
+    };
+  }
+}
+
 // Custom components for PortableText rendering
 const portableTextComponents = {
   block: {
