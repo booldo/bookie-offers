@@ -38,49 +38,95 @@ export async function GET() {
     
     const dynamicUrls = entries.map((entry) => {
       let path = "/";
+      let isValid = true;
       
       if (entry._type === "offers") {
         // For offers, use the country from the offer data
         const countrySlug = entry.country?.slug?.current || 'ng'; // Default to Nigeria if no country
-        path = `/${countrySlug}/offers/${entry.slug?.current}`;
+        const offerSlug = entry.slug?.current;
+        if (!offerSlug) {
+          console.warn('Offer missing slug:', entry);
+          isValid = false;
+        } else {
+          path = `/${countrySlug}/offers/${offerSlug}`;
+        }
       } else if (entry._type === "article") {
-        path = `/briefly/${entry.slug?.current}`;
+        const articleSlug = entry.slug?.current;
+        if (!articleSlug) {
+          console.warn('Article missing slug:', entry);
+          isValid = false;
+        } else {
+          path = `/briefly/${articleSlug}`;
+        }
       } else if (entry._type === "banner") {
-        path = `/banner/${entry.slug?.current}`;
+        const bannerSlug = entry.slug?.current;
+        if (!bannerSlug) {
+          console.warn('Banner missing slug:', entry);
+          isValid = false;
+        } else {
+          path = `/banner/${bannerSlug}`;
+        }
       } else if (entry._type === "faq") {
-        path = `/faq/${entry.slug?.current}`;
+        const faqSlug = entry.slug?.current;
+        if (!faqSlug) {
+          console.warn('FAQ missing slug:', entry);
+          isValid = false;
+        } else {
+          path = `/faq/${faqSlug}`;
+        }
       } else if (entry._type === "calculator") {
-        path = `/briefly/calculator/${entry.slug?.current}`;
+        const calcSlug = entry.slug?.current;
+        if (!calcSlug) {
+          console.warn('Calculator missing slug:', entry);
+          isValid = false;
+        } else {
+          path = `/briefly/calculator/${calcSlug}`;
+        }
       } else if (entry._type === "affiliate") {
         // For affiliate links, use the pretty link with country
         const countrySlug = entry.countrySlug || 'ng'; // Default to Nigeria if no country
-        path = `/${countrySlug}/${entry.slug?.current}`;
+        const affiliateSlug = entry.slug?.current;
+        if (!affiliateSlug) {
+          console.warn('Affiliate missing slug:', entry);
+          isValid = false;
+        } else {
+          path = `/${countrySlug}/${affiliateSlug}`;
+        }
       } else if (entry._type === "filter") {
         // For filter pages, use the filter slug
-        path = `/${entry.slug?.current}`;
+        const filterSlug = entry.slug?.current;
+        if (!filterSlug) {
+          console.warn('Filter missing slug:', entry);
+          isValid = false;
+        } else {
+          path = `/${filterSlug}`;
+        }
       } else if (entry._type === "country") {
         // For country pages
-        path = `/${entry.slug?.current}`;
-      }
-      
-      // Debug logging for malformed URLs
-      if (path.includes('undefined') || path.includes('//')) {
-        console.warn('Malformed URL detected:', {
-          type: entry._type,
-          slug: entry.slug,
-          path: path,
-          entry: entry
-        });
+        const countrySlug = entry.slug?.current;
+        if (!countrySlug) {
+          console.warn('Country missing slug:', entry);
+          isValid = false;
+        } else {
+          path = `/${countrySlug}`;
+        }
       }
       
       return {
         loc: `${baseUrl}${path}`,
         lastmod: entry._updatedAt ? new Date(entry._updatedAt).toISOString() : undefined,
+        isValid: isValid
       };
     });
 
-    // Filter out any invalid URLs (undefined, empty, or malformed)
+    // Filter out any invalid URLs
     const validDynamicUrls = dynamicUrls.filter(url => {
+      if (!url.isValid) {
+        console.warn('Filtered out invalid URL (missing slug):', url.loc);
+        return false;
+      }
+      
+      // Additional validation for malformed URLs
       const isValid = url.loc && 
         url.loc !== `${baseUrl}/` && 
         !url.loc.includes('undefined') &&
@@ -88,7 +134,7 @@ export async function GET() {
         url.loc.length > baseUrl.length + 1;
       
       if (!isValid) {
-        console.warn('Filtered out invalid URL:', url.loc);
+        console.warn('Filtered out malformed URL:', url.loc);
       }
       
       return isValid;
