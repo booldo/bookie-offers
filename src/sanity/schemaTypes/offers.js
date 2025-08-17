@@ -387,12 +387,21 @@ export default {
           { title: "Ready for Review", value: "review" },
           { title: "Approved", value: "approved" },
           { title: "Published", value: "published" },
+          { title: "Hidden", value: "hidden" },
+          { title: "Expired", value: "expired" },
           { title: "Archived", value: "archived" }
         ],
         layout: "dropdown"
       },
       initialValue: "draft",
       description: "Current status of this offer in the publishing workflow"
+    },
+    {
+      name: "isVisible",
+      title: "Is Visible",
+      type: "boolean",
+      initialValue: true,
+      description: "Whether this offer is visible in offer cards (hidden offers show 410 errors)"
     },
     {
       name: "reviewerNotes",

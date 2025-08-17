@@ -30,7 +30,7 @@ export async function getPageSeo(type, slug) {
 export async function getAllSitemapEntries() {
   try {
   // Fetch all docs with sitemapInclude != false, including country info for offers
-    const query = `*[_type in ["offers","article","banner","faq","calculator"] && (sitemapInclude == true || !defined(sitemapInclude))]{
+    const query = `*[_type in ["offers","article","banner","faq","calculator"] && (sitemapInclude == true || !defined(sitemapInclude)) && !(_type == "offers" && publishingStatus == "hidden")]{
     _type,
     slug,
     _updatedAt,

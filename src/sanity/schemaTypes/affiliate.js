@@ -98,14 +98,15 @@ export default {
   type: "document",
   preview: {
     select: {
+      label: 'label',
       bookmakerName: 'bookmaker.name',
       url: 'affiliateUrl',
       prettyLink: 'prettyLink.current'
     },
     prepare(selection) {
-      const {bookmakerName, url, prettyLink} = selection
+      const {label, bookmakerName, url, prettyLink} = selection
       return {
-        title: bookmakerName || 'Untitled Pretty Link',
+        title: label || bookmakerName || 'Untitled Pretty Link',
         subtitle: prettyLink ? `/${prettyLink}` : (url ? `${url.substring(0, 50)}...` : 'No URL'),
         media: bookmakerName ? undefined : undefined
       }
@@ -118,6 +119,13 @@ export default {
     }
   },
   fields: [
+    {
+      name: "label",
+      title: "Label",
+      type: "string",
+      description: "A descriptive label for this affiliate link",
+      validation: Rule => Rule.required().min(3).max(100)
+    },
     {
       name: "bookmaker",
       title: "Bookmaker",

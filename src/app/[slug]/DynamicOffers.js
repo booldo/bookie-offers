@@ -32,7 +32,7 @@ const fetchOffers = async (countryData) => {
   }
   
   // Query offers by country reference name
-  const query = `*[_type == "offers" && country->country == $countryName] | order(_createdAt desc) {
+  const query = `*[_type == "offers" && country->country == $countryName && publishingStatus != "hidden"] | order(_createdAt desc) {
     _id,
     slug,
     country->{

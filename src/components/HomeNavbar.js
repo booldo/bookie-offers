@@ -135,7 +135,7 @@ export default function HomeNavbar() {
       let results = [];
       
       // Search offers (worldwide - both countries)
-      const offersQuery = `*[_type == "offers" && (
+      const offersQuery = `*[_type == "offers" && publishingStatus != "hidden" && (
         bonusType->name match $term ||
         bookmaker->name match $term ||
         pt::text(description) match $term

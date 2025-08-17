@@ -96,7 +96,7 @@ function OfferDetailsInner({ slug }) {
     const fetchData = async () => {
       try {
         
-        const mainOfferQuery = `*[_type == "offers" && country->country == $countryName && slug.current == $slug][0]{
+        const mainOfferQuery = `*[_type == "offers" && country->country == $countryName && slug.current == $slug && publishingStatus != "hidden"][0]{
           _id,
           title,
           bonusType->{name},
@@ -144,7 +144,7 @@ function OfferDetailsInner({ slug }) {
         setOffer(mainOffer);
 
         // Fetch more offers (excluding the current one) - now dynamic
-        const moreOffersQuery = `*[_type == "offers" && country->country == $countryName && slug.current != $slug] | order(_createdAt desc) [0...$count] {
+        const moreOffersQuery = `*[_type == "offers" && country->country == $countryName && slug.current != $slug && publishingStatus != "hidden"] | order(_createdAt desc) [0...$count] {
           _id,
           bonusType->{name},
           slug,
@@ -163,7 +163,7 @@ function OfferDetailsInner({ slug }) {
         setMoreOffers(moreOffersData);
 
         // Get total count for pagination - now dynamic
-        const totalQuery = `count(*[_type == "offers" && country->country == $countryName && slug.current != $slug])`;
+        const totalQuery = `count(*[_type == "offers" && country->country == $countryName && slug.current != $slug && publishingStatus != "hidden"])`;
         const total = await client.fetch(totalQuery, { slug, countryName });
         setTotalOffers(total);
 
@@ -205,7 +205,7 @@ function OfferDetailsInner({ slug }) {
 
     setIsLoadingMore(true);
     try {
-      const moreOffersQuery = `*[_type == "offers" && country == $countryName && slug.current != $slug] | order(_createdAt desc) [0...$count] {
+      const moreOffersQuery = `*[_type == "offers" && country == $countryName && slug.current != $slug && publishingStatus != "hidden"] | order(_createdAt desc) [0...$count] {
         _id,
         bonusType->{name},
         slug,
