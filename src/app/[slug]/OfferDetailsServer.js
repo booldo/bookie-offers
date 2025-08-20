@@ -6,7 +6,7 @@ import OfferDetailsClient from "./OfferDetailsClient";
 async function getOfferDetailsData(slug, countryName) {
   try {
     // Fetch the main offer
-    const mainOfferQuery = `*[_type == "offers" && country->country == $countryName && slug.current == $slug && publishingStatus != "hidden"][0]{
+    const mainOfferQuery = `*[_type == "offers" && country->country == $countryName && slug.current == $slug && publishingStatus != "hidden" && publishingStatus != "draft"][0]{
       _id,
       slug,
       country->{
@@ -71,7 +71,7 @@ async function getOfferDetailsData(slug, countryName) {
     }
     
     // Fetch more offers from the same bookmaker (excluding current offer)
-    const moreOffersQuery = `*[_type == "offers" && country->country == $countryName && bookmaker._ref == $bookmakerId && slug.current != $currentSlug && publishingStatus != "hidden"] | order(_createdAt desc)[0...4] {
+    const moreOffersQuery = `*[_type == "offers" && country->country == $countryName && bookmaker._ref == $bookmakerId && slug.current != $currentSlug && publishingStatus != "hidden" && publishingStatus != "draft"] | order(_createdAt desc)[0...4] {
       _id,
       slug,
       country->{
@@ -104,7 +104,7 @@ async function getOfferDetailsData(slug, countryName) {
     });
     
     // Get total count of offers from this bookmaker
-    const totalOffersQuery = `count(*[_type == "offers" && country->country == $countryName && bookmaker._ref == $bookmakerId])`;
+    const totalOffersQuery = `count(*[_type == "offers" && country->country == $countryName && bookmaker._ref == $bookmakerId && publishingStatus != "hidden" && publishingStatus != "draft"])`;
     const totalOffers = await client.fetch(totalOffersQuery, { 
       countryName, 
       bookmakerId: mainOffer.bookmaker._id 
@@ -126,12 +126,153 @@ export default async function OfferDetailsServer({ slug, countryName }) {
   
   if (!offerData) {
     return (
-      <div className="text-center py-20">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">Offer Not Found</h1>
-        <p className="text-gray-600 mb-4">The requested offer could not be found.</p>
-        <a href={`/${countryName.toLowerCase().replace(/\s+/g, '-')}`} className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
-          Back to Offers
-        </a>
+      <div className="min-h-screen bg-[#fafbfc] flex flex-col">
+        <main className="max-w-7xl mx-auto w-full px-4 flex-1">
+          {/* Back Button */}
+          <div className="mt-6 mb-4 flex items-center gap-2 text-sm text-gray-500">
+            <a href={`/${countryName.toLowerCase().replace(/\s+/g, '-')}`} className="hover:underline flex items-center gap-1">
+              <img src="/assets/back-arrow.png" alt="Back" width={24} height={24} />
+              Home
+            </a>
+          </div>
+          
+          {/* 410 Error Content */}
+          <div className="py-12 flex items-center justify-center">
+            <div className="text-center">
+              {/* 410 Status Icon */}
+              <div className="mb-8">
+                <div className="w-24 h-24 mx-auto bg-red-100 rounded-full flex items-center justify-center mb-4">
+                  <svg 
+                    width="48" 
+                    height="48" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="2" 
+                    viewBox="0 0 24 24"
+                    className="text-red-600"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="15" y1="9" x2="9" y2="15" />
+                    <line x1="9" y1="9" x2="15" y2="15" />
+                  </svg>
+                </div>
+              </div>
+
+              {/* Error Code */}
+              <h1 className="text-6xl font-bold text-red-600 mb-4">410</h1>
+              
+              {/* Main Message */}
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+                Offer Not Available
+              </h2>
+              
+              {/* Description */}
+              <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                This offer is not available or may be in draft mode. Please check back later or browse our available offers.
+              </p>
+              
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <a 
+                  href={`/${countryName.toLowerCase().replace(/\s+/g, '-')}`} 
+                  className="bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg px-6 py-3 transition flex items-center justify-center gap-2"
+                >
+                  <img src="/assets/back-arrow.png" alt="Back" width={20} height={20} />
+                  Browse Available Offers
+                </a>
+              </div>
+              
+              {/* Additional Info */}
+              <div className="mt-8 text-sm text-gray-500">
+                <p>Looking for similar offers? Check out our latest promotions!</p>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Check if offer is expired
+  const isExpired = offerData.mainOffer?.expires ? new Date(offerData.mainOffer.expires) < new Date() : false;
+  if (isExpired) {
+    return (
+      <div className="min-h-screen bg-[#fafbfc] flex flex-col">
+        <main className="max-w-7xl mx-auto w-full px-4 flex-1">
+          {/* Back Button */}
+          <div className="mt-6 mb-4 flex items-center gap-2 text-sm text-gray-500">
+            <a href={`/${countryName.toLowerCase().replace(/\s+/g, '-')}`} className="hover:underline flex items-center gap-1">
+              <img src="/assets/back-arrow.png" alt="Back" width={24} height={24} />
+              Home
+            </a>
+          </div>
+          
+          {/* 410 Error Content */}
+          <div className="py-12 flex items-center justify-center">
+            <div className="text-center">
+              {/* 410 Status Icon */}
+              <div className="mb-8">
+                <div className="w-24 h-24 mx-auto bg-red-100 rounded-full flex items-center justify-center mb-4">
+                  <svg 
+                    width="48" 
+                    height="48" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="2" 
+                    viewBox="0 0 24 24"
+                    className="text-red-600"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="15" y1="9" x2="9" y2="15" />
+                    <line x1="9" y1="9" x2="15" y2="15" />
+                  </svg>
+                </div>
+              </div>
+
+              {/* Error Code */}
+              <h1 className="text-6xl font-bold text-red-600 mb-4">410</h1>
+              
+              {/* Main Message */}
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+                Offer Has Expired
+              </h2>
+              
+              {/* Offer Details */}
+              <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8 max-w-md mx-auto">
+                <h3 className="font-semibold text-gray-900 mb-2">
+                  {offerData.mainOffer.title}
+                </h3>
+                <p className="text-gray-600 text-sm mb-2">
+                  Bookmaker: {offerData.mainOffer.bookmaker?.name}
+                </p>
+                <p className="text-red-600 text-sm font-medium">
+                  Expired: {new Date(offerData.mainOffer.expires).toLocaleDateString()}
+                </p>
+              </div>
+              
+              {/* Description */}
+              <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                This offer is no longer available. The promotion has ended and cannot be claimed.
+              </p>
+              
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <a 
+                  href={`/${countryName.toLowerCase().replace(/\s+/g, '-')}`} 
+                  className="bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg px-6 py-3 transition flex items-center justify-center gap-2"
+                >
+                  <img src="/assets/back-arrow.png" alt="Back" width={20} height={20} />
+                  View Active Offers
+                </a>
+              </div>
+              
+              {/* Additional Info */}
+              <div className="mt-8 text-sm text-gray-500">
+                <p>Looking for similar offers? Check out our latest promotions!</p>
+              </div>
+            </div>
+          </div>
+        </main>
       </div>
     );
   }

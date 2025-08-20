@@ -33,6 +33,20 @@ const portableTextComponents = {
     em: ({children}) => <em className="italic text-gray-700">{children}</em>,
     code: ({children}) => <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono">{children}</code>,
   },
+  types: {
+    code: ({value}) => {
+      const {language, code} = value;
+      return (
+        <div className="my-4">
+          <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto">
+            <code className={`language-${language}`}>
+              {code}
+            </code>
+          </pre>
+        </div>
+      );
+    },
+  },
 };
 
 // FAQ Item Component
@@ -96,7 +110,7 @@ function OfferDetailsInner({ slug }) {
     const fetchData = async () => {
       try {
         
-        const mainOfferQuery = `*[_type == "offers" && country->country == $countryName && slug.current == $slug && publishingStatus != "hidden"][0]{
+        const mainOfferQuery = `*[_type == "offers" && country->country == $countryName && slug.current == $slug && publishingStatus != "hidden" && publishingStatus != "draft"][0]{
           _id,
           title,
           bonusType->{name},
@@ -144,7 +158,7 @@ function OfferDetailsInner({ slug }) {
         setOffer(mainOffer);
 
         // Fetch more offers (excluding the current one) - now dynamic
-        const moreOffersQuery = `*[_type == "offers" && country->country == $countryName && slug.current != $slug && publishingStatus != "hidden"] | order(_createdAt desc) [0...$count] {
+        const moreOffersQuery = `*[_type == "offers" && country->country == $countryName && slug.current != $slug && publishingStatus != "hidden" && publishingStatus != "draft"] | order(_createdAt desc) [0...$count] {
           _id,
           bonusType->{name},
           slug,
@@ -163,7 +177,7 @@ function OfferDetailsInner({ slug }) {
         setMoreOffers(moreOffersData);
 
         // Get total count for pagination - now dynamic
-        const totalQuery = `count(*[_type == "offers" && country->country == $countryName && slug.current != $slug && publishingStatus != "hidden"])`;
+        const totalQuery = `count(*[_type == "offers" && country->country == $countryName && slug.current != $slug && publishingStatus != "hidden" && publishingStatus != "draft"])`;
         const total = await client.fetch(totalQuery, { slug, countryName });
         setTotalOffers(total);
 
@@ -268,6 +282,19 @@ function OfferDetailsInner({ slug }) {
     );
   }
 
+  // If offer doesn't exist, show 410 error page
+  if (!loading && !offer && !error) {
+    return (
+      <ExpiredOfferPage 
+        offer={null}
+        embedded={true}
+        countrySlug={getCountrySlug()}
+        isCountryEmpty={false}
+        countryName={getCountryName()}
+      />
+    );
+  }
+
   // Show error state if country not found
   if (countryError || !countryData) {
     return (
@@ -291,8 +318,8 @@ function OfferDetailsInner({ slug }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#fafbfc] flex flex-col">
-      <main className="max-w-7xl mx-auto w-full px-2 sm:px-4 flex-1">
+    <div className="min-h-screen bg-[#FFFFFF] flex flex-col">
+      <main className="max-w-7xl mx-auto w-full px-2 sm:px-4 flex-1 pb-24 sm:pb-0">
         {/* Updated Breadcrumb */}
         <div className="mt-6 mb-4 flex items-center gap-2 text-sm text-gray-500 ml-2">
           <button type="button" onClick={() => router.push(`/${getCountrySlug()}`)} className="hover:underline flex items-center gap-1">
@@ -334,7 +361,7 @@ function OfferDetailsInner({ slug }) {
         {!error && offer && (
           <>
             {/* Offer Card */}
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6 flex flex-col">
+            <div className="bg-white p-4 sm:p-6 mb-6 flex flex-col">
               {/* Top row */}
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center gap-3">
@@ -425,24 +452,9 @@ function OfferDetailsInner({ slug }) {
               </div>
             )}
 
-            {/* Mobile Get Bonus Button */}
+            {/* Mobile Get Bonus Button (replaced by sticky bar) */}
             {offer.affiliateLink?.affiliateUrl && offer.affiliateLink?.isActive && (
-              <TrackedLink
-                href={offer.affiliateLink.affiliateUrl}
-                linkId={offer._id}
-                linkType="offer"
-                linkTitle={offer.title}
-                target="_blank"
-                rel="noopener noreferrer"
-                isAffiliate={true}
-                prettyLink={offer.affiliateLink.prettyLink}
-                className="sm:hidden w-full bg-[#018651] hover:bg-[#017a4a] text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 mb-6"
-              >
-                Get Bonus
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-              </TrackedLink>
+              <div className="hidden"></div>
             )}
 
             {/* FAQ Section */}
@@ -466,15 +478,21 @@ function OfferDetailsInner({ slug }) {
 
           {/* More Offers Section */}
           {moreOffers.length > 0 && (
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6">
+            <div className="bg-white p-4 sm:p-6 mb-6">
               <div className="font-semibold text-gray-900 mb-4">More Offers</div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {moreOffers.map((moreOffer) => (
                   <div
                     key={moreOffer._id}
-                      className="border border-gray-100 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer h-full"
-                    onClick={() => router.push(`/${getCountrySlug()}/${moreOffer.bonusType?.name?.toLowerCase().replace(/\s+/g, '-')}/${moreOffer.slug?.current}`)}
+                    className="relative border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors cursor-pointer h-full"
                   >
+                    {moreOffer.slug?.current && (
+                      <Link
+                        href={`/${getCountrySlug()}/${moreOffer.bonusType?.name?.toLowerCase().replace(/\s+/g, '-')}/${moreOffer.slug?.current}`}
+                        aria-label={moreOffer.title}
+                        className="absolute inset-0 z-10"
+                      />
+                    )}
                     <div className="flex justify-between items-start">
                       <div className="flex items-center gap-3">
                         {moreOffer.bookmaker?.logo ? (
@@ -519,6 +537,27 @@ function OfferDetailsInner({ slug }) {
         </>
         )}
       </main>
+      {/* Mobile sticky CTA bar */}
+      {offer?.affiliateLink?.affiliateUrl && offer?.affiliateLink?.isActive && (
+        <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 p-3">
+          <TrackedLink
+            href={offer.affiliateLink.affiliateUrl}
+            linkId={offer._id}
+            linkType="offer"
+            linkTitle={offer.title}
+            target="_blank"
+            rel="noopener noreferrer"
+            isAffiliate={true}
+            prettyLink={offer.affiliateLink.prettyLink}
+            className="w-full bg-[#018651] hover:bg-[#017a4a] text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
+          >
+            Get Bonus
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+          </TrackedLink>
+        </div>
+      )}
     </div>
   );
 }

@@ -126,14 +126,15 @@ export default function Navbar() {
 
   // Search handler
   const handleSearch = async (term) => {
-    if (!term) {
+    const q = (term || '').trim();
+    if (!q || q.length < 4) {
       setSearchResults([]);
       setSearchLoading(false);
       return;
     }
     setSearchLoading(true);
     setSearchError(null);
-    addRecentSearch(term);
+    addRecentSearch(q);
     try {
       let results = [];
       
@@ -167,7 +168,7 @@ export default function Navbar() {
         published,
           _type
         }`;
-        const offersResults = await client.fetch(offersQuery, { countrySlug: currentCountrySlug, term: `*${term}*` });
+        const offersResults = await client.fetch(offersQuery, { countrySlug: currentCountrySlug, term: `*${q}*` });
         console.log('Offers search results:', offersResults); // Debug log
         results = [...results, ...offersResults];
       }
@@ -185,7 +186,7 @@ export default function Navbar() {
         publishedAt,
         _type
       }`;
-      const articlesResults = await client.fetch(articlesQuery, { term: `*${term}*` });
+      const articlesResults = await client.fetch(articlesQuery, { term: `*${q}*` });
       results = [...results, ...articlesResults];
       
       // Search bookmakers (worldwide) - only if no offers found for this bookmaker
@@ -201,7 +202,7 @@ export default function Navbar() {
         slug,
         _type
       }`;
-      const bookmakersResults = await client.fetch(bookmakersQuery, { term: `*${term}*` });
+      const bookmakersResults = await client.fetch(bookmakersQuery, { term: `*${q}*` });
       
       // Only add bookmaker results if we don't already have offers from these bookmakers
       const existingBookmakerIds = results
@@ -225,8 +226,26 @@ export default function Navbar() {
         slug,
         _type
       }`;
-      const bonusTypesResults = await client.fetch(bonusTypesQuery, { term: `*${term}*` });
-      results = [...results, ...bonusTypesResults];
+      const bonusTypesResults = await client.fetch(bonusTypesQuery, { term: `*${q}*` });
+      
+      // Deduplicate bonus types by _id before adding to results
+      const uniqueBonusTypes = bonusTypesResults.reduce((acc, bonusType) => {
+        if (!acc.some(existing => existing._id === bonusType._id)) {
+          acc.push(bonusType);
+        }
+        return acc;
+      }, []);
+      
+      // Also check if we already have offers with this bonus type to avoid duplicates
+      const existingBonusTypeNames = results
+        .filter(item => item._type === 'offers' && item.bonusType?.name)
+        .map(item => item.bonusType.name.toLowerCase());
+      
+      const filteredBonusTypes = uniqueBonusTypes.filter(
+        bonusType => !existingBonusTypeNames.includes(bonusType.name.toLowerCase())
+      );
+      
+      results = [...results, ...filteredBonusTypes];
       
       // Search banners (current country only)
       if (currentCountrySlug) {
@@ -243,7 +262,7 @@ export default function Navbar() {
           isActive,
           _type
         }`;
-        const bannersResults = await client.fetch(bannersQuery, { countrySlug: currentCountrySlug, term: `*${term}*` });
+        const bannersResults = await client.fetch(bannersQuery, { countrySlug: currentCountrySlug, term: `*${q}*` });
         results = [...results, ...bannersResults];
       }
       
@@ -261,7 +280,7 @@ export default function Navbar() {
           order,
           _type
         }`;
-        const comparisonResults = await client.fetch(comparisonQuery, { countrySlug: currentCountrySlug, term: `*${term}*` });
+        const comparisonResults = await client.fetch(comparisonQuery, { countrySlug: currentCountrySlug, term: `*${q}*` });
         results = [...results, ...comparisonResults];
       }
       
@@ -275,13 +294,14 @@ export default function Navbar() {
         answer,
         _type
       }`;
-      const faqResults = await client.fetch(faqQuery, { term: `*${term}*` });
+      const faqResults = await client.fetch(faqQuery, { term: `*${q}*` });
       results = [...results, ...faqResults];
       
       // Deduplicate results based on _id and _type
       const uniqueResults = results.reduce((acc, item) => {
         const key = `${item._type}-${item._id}`;
-        if (!acc.some(existing => `${existing._type}-${existing._id}` === key)) {
+        const exists = acc.some(existing => `${existing._type}-${existing._id}` === key);
+        if (!exists) {
           acc.push(item);
         }
         return acc;
@@ -376,13 +396,13 @@ export default function Navbar() {
         </button>
         {/* Logo - hide on mobile when search is open */}
         <Link href={pathname.startsWith("/ng") ? "/ng" : pathname.startsWith("/gh") ? "/gh" : "/"} className={`${searchOpen ? 'hidden sm:block' : ''}`}>
-          <img src="/assets/logo.png" alt="Booldo Logo" className="cursor-pointer w-15 h-7" />
+                          <img src="/assets/logo.png" alt="Booldo Logo" className="cursor-pointer w-[120px] h-[41px]" />
         </Link>
       </div>
       {/* Search & Flag */}
       <div className="flex items-center gap-0 sm:gap-4 flex-1 justify-end">
         {/* Search input - desktop only */}
-        <div className="hidden sm:flex items-center bg-[#f6f7f9] border border-gray-200 rounded-lg px-3 py-1 w-48 cursor-pointer" onClick={() => setSearchOpen(true)}>
+        <div className="hidden sm:flex items-center bg-[#F5F5F7] border border-[#E3E3E3] rounded-lg px-3 py-0.5 w-[222px] h-[40px] cursor-pointer gap-1" onClick={() => setSearchOpen(true)}>
           <svg className="text-gray-400 mr-2" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <circle cx="11" cy="11" r="8" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -390,7 +410,7 @@ export default function Navbar() {
           <input
             type="text"
             placeholder="Search..."
-            className="bg-transparent outline-none text-gray-700 w-full placeholder-gray-400"
+            className="bg-transparent outline-none text-gray-700 w-full font-['General_Sans'] font-medium text-[14px] leading-[100%] tracking-[1%] align-middle placeholder-[#696969]"
             value={searchValue}
             onChange={e => { setSearchValue(e.target.value); setSearchOpen(true); }}
             onFocus={() => setSearchOpen(true)}
@@ -408,7 +428,7 @@ export default function Navbar() {
         )}
         {/* Search input - mobile only, expanded when open */}
         {searchOpen && (
-          <div className="flex sm:hidden items-center bg-[#f6f7f9] border border-gray-200 rounded-lg px-3 py-1 w-full max-w-xs flex-1">
+          <div className="flex sm:hidden items-center bg-[#F5F5F7] border border-[#E3E3E3] rounded-lg px-3 py-0.5 w-full max-w-xs flex-1 gap-1">
             <svg className="text-gray-400 mr-2" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <circle cx="11" cy="11" r="8" />
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -416,7 +436,7 @@ export default function Navbar() {
             <input
               type="text"
               placeholder="Search..."
-              className="bg-transparent outline-none text-gray-700 w-full placeholder-gray-400"
+              className="bg-transparent outline-none text-gray-700 w-full font-['General_Sans'] font-medium text-[14px] leading-[100%] tracking-[1%] align-middle placeholder-[#696969]"
               value={searchValue}
               onChange={e => setSearchValue(e.target.value)}
               autoFocus
@@ -545,8 +565,8 @@ export default function Navbar() {
         >
           <div className="max-w-5xl mx-auto px-4">
             <div className="flex items-center gap-4 mb-6">
-              <Image src="/assets/logo.png" alt="Booldo Logo" width={100} height={40} className="hidden sm:block" />
-              <div className="flex-1 flex items-center bg-[#f6f7f9] border border-gray-200 rounded-lg px-3 py-2">
+                <Image src="/assets/logo.png" alt="Booldo Logo" width={110} height={40} className="hidden sm:block" />
+              <div className="flex-1 flex items-center bg-[#f6f7f9] border border-[#E3E3E3] rounded-lg px-3 py-2">
                 <svg className="text-gray-400 mr-2" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <circle cx="11" cy="11" r="8" />
                   <line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -566,7 +586,10 @@ export default function Navbar() {
             <div>
               {searchLoading && <div className="text-center text-gray-400">Searching...</div>}
               {searchError && <div className="text-center text-red-500">{searchError}</div>}
-              {!searchLoading && !searchError && searchResults.length === 0 && searchValue && (
+              {!searchLoading && !searchError && searchValue && searchValue.trim().length < 4 && (
+                <div className="text-center text-gray-400">Type at least 4 characters to search.</div>
+              )}
+              {!searchLoading && !searchError && searchResults.length === 0 && searchValue && searchValue.trim().length >= 4 && (
                 <div className="text-center text-gray-400">No results found.</div>
               )}
               {!searchLoading && !searchError && searchResults.length > 0 && (
@@ -686,34 +709,38 @@ export default function Navbar() {
                     };
 
                     const getItemUrl = () => {
+                      const fallbackCountrySlug = currentCountrySlug || selectedFlag?.slug || '';
                       switch (item._type) {
-                        case 'offers':
+                        case 'offers': {
                           if (item.slug?.current) {
-                            const countrySlug = item.country?.slug?.current || currentCountrySlug;
-                            if (countrySlug) return `/${countrySlug}/offers/${item.slug.current}`;
+                            const countrySlug = item.country?.slug?.current || fallbackCountrySlug;
+                            return countrySlug ? `/${countrySlug}/offers/${item.slug.current}` : '/';
                           }
-                          return `/${currentCountrySlug || ''}`;
-                        case 'article':
+                          return fallbackCountrySlug ? `/${fallbackCountrySlug}` : '/';
+                        }
+                        case 'article': {
                           if (item.slug?.current) {
                             return `/briefly/${item.slug.current}`;
                           }
                           return '/briefly';
-                        case 'bookmaker':
-                          // Use the bookmaker name to create a filter URL like the filter system
+                        }
+                        case 'bookmaker': {
                           if (item.name) {
                             const bookmakerSlug = item.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-                            return `/${country === "Nigeria" ? "ng" : "gh"}/${bookmakerSlug}`;
+                            return fallbackCountrySlug ? `/${fallbackCountrySlug}/${bookmakerSlug}` : `/${bookmakerSlug}`;
                           }
-                          return `/${country === "Nigeria" ? "ng" : "gh"}/offers`;
-                        case 'bonusType':
+                          return fallbackCountrySlug ? `/${fallbackCountrySlug}` : '/';
+                        }
+                        case 'bonusType': {
                           if (item.slug?.current) {
-                            return `/${item.slug.current}`;
+                            return fallbackCountrySlug ? `/${fallbackCountrySlug}/${item.slug.current}` : `/${item.slug.current}`;
                           }
-                          return '/';
+                          return fallbackCountrySlug ? `/${fallbackCountrySlug}` : '/';
+                        }
                         case 'banner':
-                          return `/${country === "Nigeria" ? "ng" : "gh"}`;
+                          return fallbackCountrySlug ? `/${fallbackCountrySlug}` : '/';
                         case 'comparison':
-                          return `/${country === "Nigeria" ? "ng" : "gh"}`;
+                          return fallbackCountrySlug ? `/${fallbackCountrySlug}` : '/';
                         case 'faq':
                           return '/faq';
                         default:
@@ -783,21 +810,26 @@ export default function Navbar() {
                     return (
                       <div
                         key={item._id}
-                                              className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex flex-col sm:flex-row sm:items-center justify-between transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:border-gray-200 cursor-pointer group"
-                                              onClick={(e) => {
+                        className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex flex-col sm:flex-row sm:items-center justify-between transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:border-gray-200 cursor-pointer group"
+                        onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
                           const url = getItemUrl();
                           if (url && url !== '#') {
                             // Close search first, then navigate
-                        setSearchOpen(false);
+                            setSearchOpen(false);
                             // Small delay to ensure search closes before navigation
                             setTimeout(() => {
-                              router.replace(url);
+                              try {
+                                router.replace(url);
+                              } catch (err) {
+                                console.error('Navigation error:', err);
+                                window.location.assign(url);
+                              }
                             }, 100);
                           }
-                      }}
-                    >
+                        }}
+                      >
                       <div className="flex items-center gap-4">
                           {getItemImage() ? (
                             <Image src={urlFor(getItemImage()).width(48).height(48).url()} alt={getItemTitle()} width={48} height={48} className="rounded-md" />

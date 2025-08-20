@@ -18,7 +18,21 @@ const FAQItem = ({ question, answer, isOpen, onToggle }) => {
       >
         <div className="font-medium text-gray-900 flex-1 text-left">
           <PortableText value={question} components={{
-            block: { normal: ({children}) => <span>{children}</span> }
+            block: { normal: ({children}) => <span>{children}</span> },
+            types: {
+              code: ({value}) => {
+                const {language, code} = value;
+                return (
+                  <div className="my-2">
+                    <pre className="bg-gray-900 text-gray-100 p-2 rounded text-xs overflow-x-auto">
+                      <code className={`language-${language}`}>
+                        {code}
+                      </code>
+                    </pre>
+                  </div>
+                );
+              },
+            },
           }} />
         </div>
         <svg
@@ -38,7 +52,21 @@ const FAQItem = ({ question, answer, isOpen, onToggle }) => {
         <div className="px-4 pb-3 border-t border-gray-200">
           <div className="pt-3 text-gray-700 text-sm">
             <PortableText value={answer} components={{
-              block: { normal: ({children}) => <p>{children}</p> }
+              block: { normal: ({children}) => <p>{children}</p> },
+              types: {
+                code: ({value}) => {
+                  const {language, code} = value;
+                  return (
+                    <div className="my-2">
+                      <pre className="bg-gray-900 text-gray-100 p-2 rounded text-xs overflow-x-auto">
+                        <code className={`language-${language}`}>
+                          {code}
+                        </code>
+                      </pre>
+                    </div>
+                  );
+                },
+              },
             }} />
           </div>
         </div>
@@ -67,20 +95,161 @@ export default function OfferDetailsClient({ offer, moreOffers, totalOffers, cou
     setIsLoadingMore(false);
   };
 
+  // Check if offer is expired
+  const isExpired = offer?.expires ? new Date(offer.expires) < new Date() : false;
+  if (offer && isExpired) {
+    return (
+      <div className="min-h-screen bg-[#fafbfc] flex flex-col">
+        <main className="max-w-7xl mx-auto w-full px-4 flex-1">
+          {/* Back Button */}
+          <div className="mt-6 mb-4 flex items-center gap-2 text-sm text-gray-500">
+            <Link href={`/${countryName.toLowerCase().replace(/\s+/g, '-')}`} className="hover:underline flex items-center gap-1">
+              <img src="/assets/back-arrow.png" alt="Back" width={24} height={24} />
+              Home
+            </Link>
+          </div>
+          
+          {/* 410 Error Content */}
+          <div className="py-12 flex items-center justify-center">
+            <div className="text-center">
+              {/* 410 Status Icon */}
+              <div className="mb-8">
+                <div className="w-24 h-24 mx-auto bg-red-100 rounded-full flex items-center justify-center mb-4">
+                  <svg 
+                    width="48" 
+                    height="48" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="2" 
+                    viewBox="0 0 24 24"
+                    className="text-red-600"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="15" y1="9" x2="9" y2="15" />
+                    <line x1="9" y1="9" x2="15" y2="15" />
+                  </svg>
+                </div>
+              </div>
+
+              {/* Error Code */}
+              <h1 className="text-6xl font-bold text-red-600 mb-4">410</h1>
+              
+              {/* Main Message */}
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+                Offer Has Expired
+              </h2>
+              
+              {/* Offer Details */}
+              <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8 max-w-md mx-auto">
+                <h3 className="font-semibold text-gray-900 mb-2">
+                  {offer.title}
+                </h3>
+                <p className="text-gray-600 text-sm mb-2">
+                  Bookmaker: {offer.bookmaker?.name}
+                </p>
+                <p className="text-red-600 text-sm font-medium">
+                  Expired: {new Date(offer.expires).toLocaleDateString()}
+                </p>
+              </div>
+              
+              {/* Description */}
+              <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                This offer is no longer available. The promotion has ended and cannot be claimed.
+              </p>
+              
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link 
+                  href={`/${countryName.toLowerCase().replace(/\s+/g, '-')}`} 
+                  className="bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg px-6 py-3 transition flex items-center justify-center gap-2"
+                >
+                  <img src="/assets/back-arrow.png" alt="Back" width={20} height={20} />
+                  View Active Offers
+                </Link>
+              </div>
+              
+              {/* Additional Info */}
+              <div className="mt-8 text-sm text-gray-500">
+                <p>Looking for similar offers? Check out our latest promotions!</p>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   if (!offer) {
     return (
-      <div className="text-center py-20">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">Offer Not Found</h1>
-        <p className="text-gray-600 mb-4">The requested offer could not be found.</p>
-        <Link href={`/${countryName.toLowerCase().replace(/\s+/g, '-')}`} className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
-          Back to Offers
+      <div className="min-h-screen bg-[#fafbfc] flex flex-col">
+        <main className="max-w-7xl mx-auto w-full px-4 flex-1">
+          {/* Back Button */}
+          <div className="mt-6 mb-4 flex items-center gap-2 text-sm text-gray-500">
+            <Link href={`/${countryName.toLowerCase().replace(/\s+/g, '-')}`} className="hover:underline flex items-center gap-1">
+              <img src="/assets/back-arrow.png" alt="Back" width={24} height={24} />
+              Home
+            </Link>
+          </div>
+          
+          {/* 410 Error Content */}
+          <div className="py-12 flex items-center justify-center">
+            <div className="text-center">
+              {/* 410 Status Icon */}
+              <div className="mb-8">
+                <div className="w-24 h-24 mx-auto bg-red-100 rounded-full flex items-center justify-center mb-4">
+                  <svg 
+                    width="48" 
+                    height="48" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="2" 
+                    viewBox="0 0 24 24"
+                    className="text-red-600"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="15" y1="9" x2="9" y2="15" />
+                    <line x1="9" y1="9" x2="15" y2="15" />
+                  </svg>
+                </div>
+              </div>
+
+              {/* Error Code */}
+              <h1 className="text-6xl font-bold text-red-600 mb-4">410</h1>
+              
+              {/* Main Message */}
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+                Offer Not Available
+              </h2>
+              
+              {/* Description */}
+              <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                This offer is not available or may be in draft mode. Please check back later or browse our available offers.
+              </p>
+              
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link 
+                  href={`/${countryName.toLowerCase().replace(/\s+/g, '-')}`} 
+                  className="bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg px-6 py-3 transition flex items-center justify-center gap-2"
+                >
+                  <img src="/assets/back-arrow.png" alt="Back" width={20} height={20} />
+                  Browse Available Offers
         </Link>
+              </div>
+              
+              {/* Additional Info */}
+              <div className="mt-8 text-sm text-gray-500">
+                <p>Looking for similar offers? Check out our latest promotions!</p>
+              </div>
+            </div>
+          </div>
+        </main>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-7xl mx-auto pb-24 sm:pb-0 bg-[#FFFFFF]">
       {/* Breadcrumb */}
       <nav className="text-sm text-gray-500 mb-6">
         <Link href={`/${countryName.toLowerCase().replace(/\s+/g, '-')}`} className="hover:text-gray-700">
@@ -91,7 +260,7 @@ export default function OfferDetailsClient({ offer, moreOffers, totalOffers, cou
       </nav>
 
       {/* Main Offer Content */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-8">
+      <div className="bg-white p-6 mb-8">
         {/* Header */}
         <div className="flex items-start justify-between mb-6">
           <div className="flex items-center gap-4">
@@ -143,8 +312,8 @@ export default function OfferDetailsClient({ offer, moreOffers, totalOffers, cou
           </div>
         )}
 
-        {/* CTA Button */}
-        <div className="text-center pt-6 border-t border-gray-200">
+        {/* CTA Button (desktop only, mobile moved to sticky bar) */}
+        <div className="hidden sm:block text-center pt-6 border-t border-gray-200">
           <TrackedLink
             href={offer.affiliateLink?.affiliateUrl || '#'}
             linkId={`bonus-${offer._id}`}
@@ -162,7 +331,7 @@ export default function OfferDetailsClient({ offer, moreOffers, totalOffers, cou
       {/* FAQ Section */}
       {offer.faq && offer.faq.length > 0 && (
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Frequently Asked Questions</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4 font-['General_Sans'] tracking-[1%]">Frequently Asked Questions</h2>
           <div className="space-y-3">
             {offer.faq.map((faqItem, index) => (
               <FAQItem
@@ -179,7 +348,7 @@ export default function OfferDetailsClient({ offer, moreOffers, totalOffers, cou
 
       {/* More Offers Section */}
       {moreOffers && moreOffers.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+        <div className="bg-white p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-gray-900">
               More Offers from {offer.bookmaker?.name}
@@ -242,6 +411,25 @@ export default function OfferDetailsClient({ offer, moreOffers, totalOffers, cou
               </button>
             </div>
           )}
+        </div>
+      )}
+      {/* Mobile sticky CTA bar */}
+      {offer.affiliateLink?.affiliateUrl && (
+        <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 p-3">
+          <TrackedLink
+            href={offer.affiliateLink.affiliateUrl}
+            linkId={`bonus-${offer._id}`}
+            linkType="offer"
+            linkTitle={offer.title}
+            isAffiliate={true}
+            prettyLink={offer.affiliateLink?.prettyLink}
+            className="w-full bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-lg text-lg font-semibold transition-colors inline-flex items-center justify-center gap-2"
+          >
+            Claim Bonus Now
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+          </TrackedLink>
         </div>
       )}
     </div>

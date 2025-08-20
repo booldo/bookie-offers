@@ -33,83 +33,112 @@ export function ExpiredOffersTool() {
   const dataset = useDataset();
   
   const [offers, setOffers] = useState([]);
+  const [allOffers, setAllOffers] = useState([]); // Store all offers for accurate counts
+  const [countries, setCountries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
     status: 'all',
+    country: 'all',
     search: ''
   });
   const [processing, setProcessing] = useState(false);
   
   const toast = useToast();
 
-  // Fetch offers with filters
-  const fetchOffers = useCallback(async () => {
+  // Fetch all offers and countries
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-             let query = `*[_type == "offers" && !(_id in path("drafts.**"))] {
-         _id,
-         _type,
-         title,
-         slug,
-         expires,
-         published,
-         publishingStatus,
-         bookmaker->{name},
-         country->{country},
-         bonusType->{name}
-       } | order(expires asc)`;
+      // Fetch all offers
+      const offersQuery = `*[_type == "offers" && !(_id in path("drafts.**"))] {
+        _id,
+        _type,
+        title,
+        slug,
+        expires,
+        published,
+        publishingStatus,
+        bookmaker->{name},
+        country->{_id, country, slug},
+        bonusType->{name}
+      } | order(expires asc)`;
 
-      const results = await client.fetch(query);
+      // Fetch all countries
+      const countriesQuery = `*[_type == "countryPage" && isActive == true] | order(country asc) {
+        _id,
+        country,
+        slug
+      }`;
+
+      const [offersResult, countriesResult] = await Promise.all([
+        client.fetch(offersQuery),
+        client.fetch(countriesQuery)
+      ]);
+
+      setAllOffers(offersResult);
+      setCountries(countriesResult);
       
-             // Apply client-side filters
-       let filteredResults = results;
-       
-       if (filters.status !== 'all') {
-         if (filters.status === 'expired') {
-           // Filter for offers that have expired (past expiration date)
-           filteredResults = filteredResults.filter(offer => 
-             offer.expires && new Date(offer.expires) < new Date()
-           );
-         } else {
-           // Filter by exact publishing status
-           filteredResults = filteredResults.filter(offer => 
-             offer.publishingStatus === filters.status
-           );
-         }
-       }
-       
-       if (filters.search) {
-        const searchLower = filters.search.toLowerCase();
-        filteredResults = filteredResults.filter(offer => 
-          offer.title?.toLowerCase().includes(searchLower) ||
-          offer.bookmaker?.name?.toLowerCase().includes(searchLower) ||
-          offer.country?.country?.toLowerCase().includes(searchLower)
-        );
-      }
+      // Apply filters to get displayed offers
+      applyFilters(offersResult, filters);
       
-             console.log('Filtered results:', {
-         total: results.length,
-         filtered: filteredResults.length,
-         status: filters.status,
-         search: filters.search
-       });
-       
-       setOffers(filteredResults);
-     } catch (error) {
-      console.error('Error fetching offers:', error);
+    } catch (error) {
+      console.error('Error fetching data:', error);
       toast.push({
         status: 'error',
-        title: 'Error fetching offers',
+        title: 'Error fetching data',
         description: error.message
       });
     } finally {
       setLoading(false);
     }
-  }, [client, filters, toast]);
+  }, [client, toast]);
+
+  // Apply filters to offers
+  const applyFilters = useCallback((offersToFilter, currentFilters) => {
+    let filteredResults = offersToFilter;
+    
+    if (currentFilters.status !== 'all') {
+      if (currentFilters.status === 'expired') {
+        // Filter for offers that have expired (past expiration date)
+        filteredResults = filteredResults.filter(offer => 
+          offer.expires && new Date(offer.expires) < new Date()
+        );
+      } else {
+        // Filter by exact publishing status
+        filteredResults = filteredResults.filter(offer => 
+          offer.publishingStatus === currentFilters.status
+        );
+      }
+    }
+    
+    if (currentFilters.country !== 'all') {
+      filteredResults = filteredResults.filter(offer => 
+        offer.country?._id === currentFilters.country
+      );
+    }
+    
+    if (currentFilters.search) {
+      const searchLower = currentFilters.search.toLowerCase();
+      filteredResults = filteredResults.filter(offer => 
+        offer.title?.toLowerCase().includes(searchLower) ||
+        offer.bookmaker?.name?.toLowerCase().includes(searchLower) ||
+        offer.country?.country?.toLowerCase().includes(searchLower)
+      );
+    }
+    
+    setOffers(filteredResults);
+  }, []);
+
+  // Update filters and reapply
+  const updateFilters = useCallback((newFilters) => {
+    const updatedFilters = { ...filters, ...newFilters };
+    setFilters(updatedFilters);
+    applyFilters(allOffers, updatedFilters);
+  }, [filters, allOffers, applyFilters]);
 
   useEffect(() => {
-    fetchOffers();
-  }, [fetchOffers]);
+    fetchData();
+  }, [fetchData]);
 
   // Check if offer is expired
   const isExpired = (offer) => {
@@ -134,13 +163,31 @@ export function ExpiredOffersTool() {
     return offer.publishingStatus || 'Draft';
   };
 
+  // Get background color for offer cards
+  const getCardBackground = (offer) => {
+    if (isExpired(offer)) return '#FEF2F2'; // Light red background
+    if (offer.publishingStatus === 'draft') return '#FFF7ED'; // Light orange background
+    if (offer.publishingStatus === 'published') return '#F0FDF4'; // Light green background
+    if (offer.publishingStatus === 'hidden') return '#FEF3C7'; // Light yellow background
+    return '#FFFFFF'; // Default white background
+  };
+
   // Format date
   const formatDate = (dateString) => {
     if (!dateString) return 'No date';
     return new Date(dateString).toLocaleDateString();
   };
 
-
+  // Get accurate counts for each filter
+  const getFilterCounts = () => {
+    const total = allOffers.length;
+    const draft = allOffers.filter(o => o.publishingStatus === 'draft').length;
+    const published = allOffers.filter(o => o.publishingStatus === 'published').length;
+    const expired = allOffers.filter(o => o.expires && new Date(o.expires) < new Date()).length;
+    const hidden = allOffers.filter(o => o.publishingStatus === 'hidden').length;
+    
+    return { total, draft, published, expired, hidden };
+  };
 
   // Toggle offer visibility (show/hide)
   const toggleOfferVisibility = async (offerId, currentStatus) => {
@@ -164,8 +211,8 @@ export function ExpiredOffersTool() {
         description: `Offer is now ${newStatus === 'published' ? 'visible' : 'hidden'} in offer cards. Refresh your frontend to see changes.`
       });
       
-      // Refresh the offers list
-      await fetchOffers();
+      // Refresh the data
+      await fetchData();
       
     } catch (error) {
       console.error('Error toggling offer visibility:', error);
@@ -179,6 +226,8 @@ export function ExpiredOffersTool() {
     }
   };
 
+  const counts = getFilterCounts();
+
   return (
     <ToastProvider>
       <Box padding={4}>
@@ -189,47 +238,58 @@ export function ExpiredOffersTool() {
               <Text size={4} weight="bold">
                 Expired Offers Manager
               </Text>
-                             <Text size={2} muted>
-                 Manage offer lifecycle, expiration status, and visibility control
-               </Text>
-               <Text size={1} muted>
-                 Note: Hidden offers will show 410 errors on the frontend and won't appear in offer cards
-               </Text>
+              <Text size={2} muted>
+                Manage offer lifecycle, expiration status, and visibility control
+              </Text>
+              <Text size={1} muted>
+                Note: Hidden offers will show 410 errors on the frontend and won't appear in offer cards
+              </Text>
             </Stack>
           </Card>
 
           {/* Filters and Actions */}
           <Card padding={4} radius={2} shadow={1}>
             <Stack space={3}>
-                             <Flex gap={3} align="center">
-                 <Text size={2} weight="semibold">Filters:</Text>
-                 
-                 <Select
-                   value={filters.status}
-                   onChange={(event) => setFilters(prev => ({ ...prev, status: event.target.value }))}
-                 >
-                   <option value="all">All ({offers.length})</option>
-                   <option value="draft">Draft ({offers.filter(o => o.publishingStatus === 'draft').length})</option>
-                   <option value="published">Published ({offers.filter(o => o.publishingStatus === 'published').length})</option>
-                   <option value="expired">Expired ({offers.filter(o => o.expires && new Date(o.expires) < new Date()).length})</option>
-                 </Select>
-                 
-                 <TextInput
+              <Flex gap={3} align="center" wrap>
+                <Text size={2} weight="semibold">Filters:</Text>
+                
+                <Select
+                  value={filters.status}
+                  onChange={(event) => updateFilters({ status: event.target.value })}
+                >
+                  <option value="all">All ({counts.total})</option>
+                  <option value="draft">Draft ({counts.draft})</option>
+                  <option value="published">Published ({counts.published})</option>
+                  <option value="expired">Expired ({counts.expired})</option>
+                  <option value="hidden">Hidden ({counts.hidden})</option>
+                </Select>
+                
+                <Select
+                  value={filters.country}
+                  onChange={(event) => updateFilters({ country: event.target.value })}
+                >
+                  <option value="all">All Countries</option>
+                  {countries.map(country => (
+                    <option key={country._id} value={country._id}>
+                      {country.country}
+                    </option>
+                  ))}
+                </Select>
+                
+                <TextInput
                   placeholder="Search offers..."
                   value={filters.search}
-                  onChange={(event) => setFilters(prev => ({ ...prev, search: event.target.value }))}
+                  onChange={(event) => updateFilters({ search: event.target.value })}
                   style={{ minWidth: '200px' }}
                 />
                 
                 <Button
                   icon={RefreshIcon}
                   text="Refresh"
-                  onClick={fetchOffers}
+                  onClick={fetchData}
                   disabled={loading}
                 />
               </Flex>
-              
-              
             </Stack>
           </Card>
 
@@ -252,18 +312,18 @@ export function ExpiredOffersTool() {
                       padding={3}
                       radius={2}
                       shadow={1}
-                      tone={isExpired(offer) ? 'critical' : 'default'}
+                      style={{ backgroundColor: getCardBackground(offer) }}
                     >
-                                             <Flex align="center" gap={3}>
-                         <Button
-                           size={1}
-                           text={offer.publishingStatus === 'hidden' ? 'Show' : 'Hide'}
-                           tone={offer.publishingStatus === 'hidden' ? 'positive' : 'caution'}
-                           onClick={() => toggleOfferVisibility(offer._id, offer.publishingStatus)}
-                           disabled={processing}
-                           title={offer.publishingStatus === 'hidden' ? 'Show this offer in offer cards' : 'Hide this offer from offer cards'}
-                         />
-                        
+                      <Flex align="center" gap={3}>
+                        <Button
+                          size={1}
+                          text={offer.publishingStatus === 'hidden' ? 'Show' : 'Hide'}
+                          tone={offer.publishingStatus === 'hidden' ? 'positive' : 'caution'}
+                          onClick={() => toggleOfferVisibility(offer._id, offer.publishingStatus)}
+                          disabled={processing}
+                          title={offer.publishingStatus === 'hidden' ? 'Show this offer in offer cards' : 'Hide this offer from offer cards'}
+                        />
+                       
                         <Box flex={1}>
                           <Stack space={2}>
                             <Flex align="center" gap={2}>
@@ -322,8 +382,6 @@ export function ExpiredOffersTool() {
             )}
           </Card>
         </Stack>
-
-        
       </Box>
     </ToastProvider>
   );

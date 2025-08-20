@@ -123,14 +123,15 @@ export default function HomeNavbar() {
 
   // Search handler
   const handleSearch = async (term) => {
-    if (!term) {
+    const q = (term || '').trim();
+    if (!q || q.length < 4) {
       setSearchResults([]);
       setSearchLoading(false);
       return;
     }
     setSearchLoading(true);
     setSearchError(null);
-    addRecentSearch(term);
+    addRecentSearch(q);
     try {
       let results = [];
       
@@ -163,7 +164,7 @@ export default function HomeNavbar() {
         published,
         _type
       }`;
-      const offersResults = await client.fetch(offersQuery, { term: `*${term}*` });
+      const offersResults = await client.fetch(offersQuery, { term: `*${q}*` });
       results = [...results, ...offersResults];
       
       // Search articles (worldwide)
@@ -179,7 +180,7 @@ export default function HomeNavbar() {
         publishedAt,
         _type
       }`;
-      const articlesResults = await client.fetch(articlesQuery, { term: `*${term}*` });
+      const articlesResults = await client.fetch(articlesQuery, { term: `*${q}*` });
       results = [...results, ...articlesResults];
       
       // Search bonus types (worldwide)
@@ -193,8 +194,26 @@ export default function HomeNavbar() {
         slug,
         _type
       }`;
-      const bonusTypesResults = await client.fetch(bonusTypesQuery, { term: `*${term}*` });
-      results = [...results, ...bonusTypesResults];
+      const bonusTypesResults = await client.fetch(bonusTypesQuery, { term: `*${q}*` });
+      
+      // Deduplicate bonus types by _id before adding to results
+      const uniqueBonusTypes = bonusTypesResults.reduce((acc, bonusType) => {
+        if (!acc.some(existing => existing._id === bonusType._id)) {
+          acc.push(bonusType);
+        }
+        return acc;
+      }, []);
+      
+      // Also check if we already have offers with this bonus type to avoid duplicates
+      const existingBonusTypeNames = results
+        .filter(item => item._type === 'offers' && item.bonusType?.name)
+        .map(item => item.bonusType.name.toLowerCase());
+      
+      const filteredBonusTypes = uniqueBonusTypes.filter(
+        bonusType => !existingBonusTypeNames.includes(bonusType.name.toLowerCase())
+      );
+      
+      results = [...results, ...filteredBonusTypes];
       
       // Search banners (worldwide)
       const bannersQuery = `*[_type == "banner" && (
@@ -210,7 +229,7 @@ export default function HomeNavbar() {
         isActive,
         _type
       }`;
-      const bannersResults = await client.fetch(bannersQuery, { term: `*${term}*` });
+      const bannersResults = await client.fetch(bannersQuery, { term: `*${q}*` });
       results = [...results, ...bannersResults];
       
       // Search comparison content (worldwide)
@@ -226,7 +245,7 @@ export default function HomeNavbar() {
         order,
         _type
       }`;
-      const comparisonResults = await client.fetch(comparisonQuery, { term: `*${term}*` });
+      const comparisonResults = await client.fetch(comparisonQuery, { term: `*${q}*` });
       results = [...results, ...comparisonResults];
       
       // Search FAQ (worldwide)
@@ -239,13 +258,14 @@ export default function HomeNavbar() {
         answer,
         _type
       }`;
-      const faqResults = await client.fetch(faqQuery, { term: `*${term}*` });
+      const faqResults = await client.fetch(faqQuery, { term: `*${q}*` });
       results = [...results, ...faqResults];
       
       // Deduplicate results based on _id and _type
       const uniqueResults = results.reduce((acc, item) => {
         const key = `${item._type}-${item._id}`;
-        if (!acc.some(existing => `${existing._type}-${existing._id}` === key)) {
+        const exists = acc.some(existing => `${existing._type}-${existing._id}` === key);
+        if (!exists) {
           acc.push(item);
         }
         return acc;
@@ -336,13 +356,13 @@ export default function HomeNavbar() {
         </button>
         {/* Logo */}
         <Link href={pathname.startsWith("/ng") ? "/ng" : pathname.startsWith("/gh") ? "/gh" : "/"}>
-          <img src="/assets/logo.png" alt="Booldo Logo" className="cursor-pointer w-15 h-7" />
+            <img src="/assets/logo.png" alt="Booldo Logo" className="cursor-pointer w-[110px] h-[40px]" />
         </Link>
       </div>
       {/* Search & Flag */}
       <div className="flex items-center gap-0 sm:gap-4 flex-1 justify-end">
         {/* Search input - desktop only */}
-        <div className="hidden sm:flex items-center bg-[#f6f7f9] border border-gray-200 rounded-lg px-3 py-1 w-48 cursor-pointer" onClick={() => setSearchOpen(true)}>
+        <div className="hidden sm:flex items-center bg-[#F5F5F7] border border-[#E3E3E3] rounded-lg px-3 py-1 w-48 cursor-pointer" onClick={() => setSearchOpen(true)}>
           <svg className="text-gray-400 mr-2" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <circle cx="11" cy="11" r="8" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -368,7 +388,7 @@ export default function HomeNavbar() {
         )}
         {/* Search input - mobile only, expanded when open */}
         {searchOpen && (
-          <div className="flex sm:hidden items-center bg-[#f6f7f9] border border-gray-200 rounded-lg px-3 py-1 w-full max-w-xs flex-1">
+          <div className="flex sm:hidden items-center bg-[#F5F5F7] border border-[#E3E3E3] rounded-lg px-3 py-1 w-full max-w-xs flex-1">
             <svg className="text-gray-400 mr-2" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <circle cx="11" cy="11" r="8" />
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -505,7 +525,7 @@ export default function HomeNavbar() {
         >
           <div className="max-w-5xl mx-auto px-4 pb-8">
             <div className="flex items-center gap-4 mb-6">
-              <img src="/assets/logo.png" alt="Booldo Logo" className="hidden sm:block w-25 h-10" />
+                              <img src="/assets/logo.png" alt="Booldo Logo" className="hidden sm:block w-[120px] h-[41px]" />
               <div className="flex-1 flex items-center bg-[#f6f7f9] border border-gray-200 rounded-lg px-3 py-2">
                 <svg className="text-gray-400 mr-2" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <circle cx="11" cy="11" r="8" />
@@ -526,7 +546,10 @@ export default function HomeNavbar() {
             <div>
               {searchLoading && <div className="text-center text-gray-400">Searching...</div>}
               {searchError && <div className="text-center text-red-500">{searchError}</div>}
-              {!searchLoading && !searchError && searchResults.length === 0 && searchValue && (
+              {!searchLoading && !searchError && searchValue && searchValue.trim().length < 4 && (
+                <div className="text-center text-gray-400">Type at least 4 characters to search.</div>
+              )}
+              {!searchLoading && !searchError && searchResults.length === 0 && searchValue && searchValue.trim().length >= 4 && (
                 <div className="text-center text-gray-400">No results found.</div>
               )}
               {!searchLoading && !searchError && searchResults.length > 0 && (
@@ -634,27 +657,31 @@ export default function HomeNavbar() {
                     };
 
                     const getItemUrl = () => {
+                      const fallbackCountrySlug = selectedFlag?.slug || '';
                       switch (item._type) {
-                        case 'offers':
+                        case 'offers': {
                           if (item.slug?.current) {
-                            const countrySlug = item.country?.slug?.current;
-                            if (countrySlug) return `/${countrySlug}/offers/${item.slug.current}`;
+                            const countrySlug = item.country?.slug?.current || fallbackCountrySlug;
+                            return countrySlug ? `/${countrySlug}/offers/${item.slug.current}` : '/';
                           }
-                          return '/';
-                        case 'article':
+                          return fallbackCountrySlug ? `/${fallbackCountrySlug}` : '/';
+                        }
+                        case 'article': {
                           if (item.slug?.current) {
                             return `/briefly/${item.slug.current}`;
                           }
                           return '/briefly';
-                        case 'bonusType':
+                        }
+                        case 'bonusType': {
                           if (item.slug?.current) {
-                            return `/${item.slug.current}`;
+                            return fallbackCountrySlug ? `/${fallbackCountrySlug}/${item.slug.current}` : `/${item.slug.current}`;
                           }
-                          return '/';
+                          return fallbackCountrySlug ? `/${fallbackCountrySlug}` : '/';
+                        }
                         case 'banner':
-                          return `/${item.country === "Nigeria" ? "ng" : "gh"}`;
+                          return fallbackCountrySlug ? `/${fallbackCountrySlug}` : '/';
                         case 'comparison':
-                          return `/${item.country === "Nigeria" ? "ng" : "gh"}`;
+                          return fallbackCountrySlug ? `/${fallbackCountrySlug}` : '/';
                         case 'faq':
                           return '/faq';
                         default:
@@ -727,7 +754,12 @@ export default function HomeNavbar() {
                             // Close search first, then navigate
                             setSearchOpen(false);
                             setTimeout(() => {
+                              try {
                               router.replace(url);
+                              } catch (err) {
+                                console.error('Navigation error:', err);
+                                window.location.assign(url);
+                              }
                             }, 100);
                           }
                         }}

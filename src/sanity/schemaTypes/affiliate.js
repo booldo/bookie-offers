@@ -151,7 +151,7 @@ export default {
     },
     {
       name: "prettyLink",
-      title: "Pretty Link",
+      title: "Generate pretty Link",
       type: "slug",
       description: "Pretty link in format: bookmaker/bonustype (e.g., betika/free-bet). Click the Generate button to create automatically.",
       options: {
@@ -203,7 +203,10 @@ export default {
             .replace(/[^ 0-\u007F\w\-/]+/g, '')
             .slice(0, 96)
       },
-      validation: Rule => Rule.required()
+      validation: Rule => Rule.required().custom((doc, context) => {
+        // Remove uniqueness validation - multiple affiliate links can have the same pretty link
+        return true;
+      })
     },
 
     {

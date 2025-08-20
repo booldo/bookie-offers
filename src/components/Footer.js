@@ -138,7 +138,7 @@ export default function Footer() {
   }
 
   return (
-    <footer className="bg-[#f6f7f9] w-full px-4 pt-8 pb-4 text-gray-700 text-sm border-t mt-8">
+    <footer className="bg-[#f6f7f9] w-full px-4 pt-8 pb-4 text-gray-700 text-sm border-t mt-8 font-['General_Sans'] tracking-[1%]">
       <div className="w-full flex flex-col gap-6">
         {/* Socials */}
         {footerData?.socialMedia?.isActive && (
@@ -182,7 +182,7 @@ export default function Footer() {
                   {/* Main menu item */}
                   <a 
                     href={getMenuItemUrl(item)} 
-                    className="hover:underline"
+                    className="hover:underline font-bold text-[#272932]"
                   >
                     {getMenuItemLabel(item)}
                   </a>
@@ -192,7 +192,7 @@ export default function Footer() {
                       <a 
                         key={`${index}-${menuIndex}`}
                         href={getHamburgerItemUrl(menuItem.label)} 
-                        className="hover:underline block"
+                        className="hover:underline block font-bold text-[#272932]"
                       >
                         {menuItem.label}
                       </a>
@@ -267,13 +267,13 @@ export default function Footer() {
             const hasInternalContent = link?.slug?.current && link?.content && link.content.length > 0;
             if (hasInternalContent) {
               return (
-                <Link key={index} href={`/footer/${link.slug.current}`} className="hover:underline">
+                <Link key={index} href={`/footer/${link.slug.current}`} className="hover:underline font-bold text-[#272932]">
                   {link.label}
                 </Link>
               );
             }
             return (
-              <a key={index} href={link.url || '#'} className="hover:underline">
+              <a key={index} href={link.url || '#'} className="hover:underline font-bold text-[#272932]">
                 {link.label}
               </a>
             );

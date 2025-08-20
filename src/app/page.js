@@ -34,24 +34,24 @@ async function CountryCards() {
           href={`/${country.slug.current}`}
           className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-[#F5F5F7] rounded-xl p-4 shadow-sm border border-gray-100 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:border-gray-200 cursor-pointer block"
         >
-          <div className="flex items-center gap-4 mb-3 sm:mb-0">
-            {country.pageFlag ? (
-              <img
-                src={urlFor(country.pageFlag).width(36).height(36).url()}
-                alt={`${country.country} flag`}
-                className="w-9 h-9 object-cover rounded"
-              />
-            ) : (
-              <div className="w-9 h-9 bg-gray-300 flex items-center justify-center rounded">
-                <span className="text-xs font-bold text-gray-600">
-                  {country.countryCode?.toUpperCase() || country.country?.charAt(0) || '?'}
-                </span>
-              </div>
-            )}
-            <div>
+          <div className="flex flex-col gap-2 mb-3 sm:mb-0">
+            <div className="flex items-center gap-3">
+              {country.pageFlag ? (
+                <img
+                  src={urlFor(country.pageFlag).width(36).height(36).url()}
+                  alt={`${country.country} flag`}
+                  className="w-9 h-9 object-cover rounded"
+                />
+              ) : (
+                <div className="w-9 h-9 bg-gray-300 flex items-center justify-center rounded">
+                  <span className="text-xs font-bold text-gray-600">
+                    {country.countryCode?.toUpperCase() || country.country?.charAt(0) || '?'}
+                  </span>
+                </div>
+              )}
               <div className="font-semibold text-gray-900 text-lg sm:text-base">{country.country}</div>
-              <div className="text-sm text-gray-500">Discover local offers and bookies</div>
             </div>
+            <div className="text-sm text-gray-500">Discover local offers and bookies</div>
           </div>
           <div className="inline-flex items-center text-sm font-semibold text-gray-900">
             View Offers

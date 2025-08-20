@@ -8,12 +8,14 @@ const CheckboxItem = memo(({ item, selected, onToggle, showCount }) => (
       type="checkbox"
       checked={selected.includes(item.name)}
       onChange={() => onToggle(item.name)}
-      className="accent-green-600 w-4 h-4 rounded"
+      className="accent-[#018651] w-4 h-4 rounded"
     />
-    <span className="flex-1 text-gray-800 text-sm">{item.name}</span>
-    {showCount && item.count !== undefined && (
-      <span className="text-gray-400 text-xs font-semibold">{item.count}</span>
-    )}
+    <div className="flex items-center gap-2 flex-1">
+      <span className="align-middle text-[#272932] text-[14px] leading-[24px] font-medium font-['General_Sans']">{item.name}</span>
+      {showCount && item.count !== undefined && (
+        <span className="text-gray-400 text-xs font-semibold">{item.count}</span>
+      )}
+    </div>
   </label>
 ));
 
@@ -64,15 +66,21 @@ export default function MultiSelectDropdown({ label, options, selected, setSelec
   const dropdownContent = useMemo(() => (
     <div className="overflow-y-auto max-h-[calc(80vh-6rem)] sm:max-h-full">
       {!nested && (
-        <div className="px-3 pb-2 pt-1 sticky top-0 bg-[#F5F5F7] z-10">
-          <input
-            type="text"
-            className="w-full rounded-md border border-gray-200 px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
-            placeholder="Search..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            autoFocus
-          />
+        <div className="px-3 pb-2 pt-1 sticky top-0 bg-[#FFFFFF] z-10">
+          <div className="relative">
+            <svg className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              type="text"
+              className="w-full rounded-md border border-gray-200 pl-8 pr-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
+              placeholder="Search..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              autoFocus
+            />
+          </div>
         </div>
       )}
       <div className="flex flex-col gap-1 px-1">
@@ -134,10 +142,10 @@ export default function MultiSelectDropdown({ label, options, selected, setSelec
     <div className="relative w-full" ref={ref}>
       <button
         type="button"
-        className="w-full bg-[#F5F5F7] border border-gray-200 rounded-2xl px-2 sm:px-3 py-2 text-left text-xs sm:text-sm flex items-center justify-between shadow-sm hover:border-gray-300 focus:outline-none"
+        className="w-full bg-[#F5F5F7] border border-gray-200 rounded-2xl px-2 sm:px-3 py-2 text-left flex items-center justify-between shadow-sm hover:border-gray-300 focus:outline-none"
         onClick={() => setOpen((v) => !v)}
       >
-        <span className="truncate text-gray-700">
+        <span className="truncate align-middle text-[#272932] text-[14px] leading-[24px] font-medium font-['General_Sans']">
           {selected.length === 0 ? label : selected.join(", ")}
         </span>
         <svg className={`ml-1 sm:ml-2 w-4 h-4 transition-transform ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" /></svg>
@@ -147,7 +155,7 @@ export default function MultiSelectDropdown({ label, options, selected, setSelec
       <div
         className={`
           sm:hidden fixed bottom-0 left-0 right-0 rounded-t-2xl p-4
-          bg-[#F5F5F7] shadow-2xl border-t border-black z-20
+          bg-[#FFFFFF] shadow-2xl border-t border-black z-20
           transform transition-transform duration-300 ease-in-out
           ${open ? 'translate-y-0' : 'translate-y-full'}
         `}
@@ -163,7 +171,7 @@ export default function MultiSelectDropdown({ label, options, selected, setSelec
 
       {/* Desktop dropdown panel */}
       {open && (
-        <div className="hidden sm:block absolute z-20 mt-2 w-64 bg-[#F5F5F7] rounded-xl shadow-xl border border-gray-100 py-2 animate-fade-in">
+        <div className="hidden sm:block absolute z-20 mt-2 w-64 bg-[#FFFFFF] rounded-xl shadow-xl border border-gray-100 py-2 animate-fade-in">
           {dropdownContent}
         </div>
       )}

@@ -1,3 +1,85 @@
+import React, { useEffect, useState } from 'react'
+import { useClient } from 'sanity'
+
+// Custom input component for affiliate link selection
+function AffiliateLinkInput(props) {
+  const { value, onChange, document } = props
+  const client = useClient()
+  const [affiliateLinks, setAffiliateLinks] = useState([])
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    const fetchAffiliateLinks = async () => {
+      if (!document?.bookmaker?._ref) {
+        setAffiliateLinks([])
+        return
+      }
+
+      setLoading(true)
+      try {
+        const query = `*[_type == "affiliate" && bookmaker._ref == $bookmakerId && isActive == true] | order(label asc) {
+          _id,
+          label,
+          affiliateUrl,
+          prettyLink,
+          bonusType->{
+            name
+          }
+        }`
+        
+        const result = await client.fetch(query, {
+          bookmakerId: document.bookmaker._ref
+        })
+        
+        setAffiliateLinks(result)
+      } catch (error) {
+        console.error('Error fetching affiliate links:', error)
+        setAffiliateLinks([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchAffiliateLinks()
+  }, [document?.bookmaker?._ref, client])
+
+  const handleChange = (e) => {
+    const selectedId = e.target.value
+    onChange(selectedId ? { _ref: selectedId, _type: 'affiliate' } : null)
+  }
+
+  return (
+    <div>
+      <select 
+        value={value?._ref || ''} 
+        onChange={handleChange}
+        disabled={loading}
+        style={{ 
+          width: '100%', 
+          padding: '8px', 
+          border: '1px solid #ccc', 
+          borderRadius: '4px',
+          backgroundColor: loading ? '#f5f5f5' : 'white'
+        }}
+      >
+        <option value="">
+          {loading ? 'Loading affiliate links...' : 'Select an affiliate link'}
+        </option>
+        {affiliateLinks.map((link) => (
+          <option key={link._id} value={link._id}>
+            {link.label} - {link.affiliateUrl}
+          </option>
+        ))}
+      </select>
+      {affiliateLinks.length === 0 && !loading && document?.bookmaker?._ref && (
+        <div style={{ marginTop: '8px', fontSize: '12px', color: '#666' }}>
+          No affiliate links found for this bookmaker. Please create affiliate links for this bookmaker first.
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default {
   name: "offers",
   title: "Offers",
@@ -30,116 +112,8 @@ export default {
         return true
       })
   }),
-  // Add draft preview functionality
-  preview: {
-    select: {
-      title: 'title',
-      bookmakerName: 'bookmaker.name',
-      country: 'country.country',
-      bonusType: 'bonusType.name',
-      expires: 'expires',
-      published: 'published',
-      maxBonus: 'maxBonus',
-      minDeposit: 'minDeposit',
-      isDraft: '_id'
-    },
-    prepare(selection) {
-      const {title, bookmakerName, country, bonusType, expires, published, maxBonus, minDeposit, isDraft} = selection
-      
-      // Check if this is a draft
-      const isDraftVersion = isDraft && isDraft.startsWith('drafts.');
-      
-      // Format dates
-      const formatDate = (date) => {
-        if (!date) return '';
-        return new Date(date).toLocaleDateString('en-US', { 
-          month: 'short', 
-          day: 'numeric', 
-          year: 'numeric' 
-        });
-      };
-      
-      // Build subtitle with key info and draft status
-      const subtitleParts = [];
-      if (isDraftVersion) subtitleParts.push('🔄 DRAFT');
-      if (bookmakerName) subtitleParts.push(bookmakerName);
-      if (bonusType) subtitleParts.push(bonusType);
-      if (country) subtitleParts.push(country);
-      
-      const subtitle = subtitleParts.join(' • ');
-      
-      // Build description with additional details
-      const descriptionParts = [];
-      if (maxBonus) descriptionParts.push(`Max: ${maxBonus}`);
-      if (minDeposit) descriptionParts.push(`Min: ${minDeposit}`);
-      if (expires) descriptionParts.push(`Expires: ${formatDate(expires)}`);
-      if (published) descriptionParts.push(`Published: ${formatDate(published)}`);
-      
-      const description = descriptionParts.join(' | ');
-      
-      return {
-        title: title || 'Untitled Offer',
-        subtitle: subtitle || 'No details available',
-        description: description || '',
-        media: isDraftVersion ? '🔄' : undefined
-      }
-    }
-  },
-  // Add custom actions for draft preview
-  document: {
-    newDocumentOptions: (prev, context) => {
-      return prev.filter((option) => option.template !== 'offers')
-    },
-    // Add preview action
-    actions: (prev, context) => {
-      const { draft, published } = context;
-      const doc = draft || published;
-      
-      if (!doc) return prev;
-      
-      // Add preview action for drafts
-      if (draft && !published) {
-        return [
-          ...prev,
-          {
-            label: 'Preview Draft',
-            onHandle: async (props) => {
-              const { draft } = props;
-              if (draft) {
-                // Generate preview URL
-                const previewUrl = await generatePreviewUrl(draft);
-                // Open in new tab
-                window.open(previewUrl, '_blank');
-              }
-            },
-            icon: () => '👁️'
-          }
-        ];
-      }
-      
-      // Add preview action for published documents
-      if (published) {
-        return [
-          ...prev,
-          {
-            label: 'View Live',
-            onHandle: async (props) => {
-              const { published } = props;
-              if (published) {
-                // Generate live URL
-                const liveUrl = await generateLiveUrl(published);
-                // Open in new tab
-                window.open(liveUrl, '_blank');
-              }
-            },
-            icon: () => '🌐'
-          }
-        ];
-      }
-      
-      return prev;
-    }
-  },
+
+
   fields: [
     {
       name: "title",
@@ -203,22 +177,11 @@ export default {
       type: "reference",
       to: [{ type: "affiliate" }],
       description: "Select an affiliate link for this offer",
-      options: {
-        filter: ({document}) => {
-          // If no bookmaker is selected, show all affiliate links
-          if (!document?.bookmaker?._ref) return {}
-          
-          // Filter affiliate links by the selected bookmaker and active status
-          return {
-            filter: 'bookmaker._ref == $bookmakerId && isActive == true',
-            params: { bookmakerId: document.bookmaker._ref }
-          }
-        }
-      }
+      inputComponent: AffiliateLinkInput
     },
     {
       name: "slug",
-      title: "Generate Pretty Link",
+      title: "Generate Page URL Link",
       type: "slug",
       description: "This will appear as www.booldo.com/pretty link",
       options: {
@@ -297,17 +260,29 @@ export default {
       name: "description",
       title: "Text Block 2 (offer description)",
       type: "array",
-      of: [{ type: "block" }]
+      of: [
+        { type: "block" },
+        {
+          type: "codeBlock",
+          title: "Code Block"
+        }
+      ]
     },
-    { name: "expires", title: "Expires", type: "date" },
-    { name: "published", title: "Published", type: "date" },
+    { name: "expires", title: "Expires", type: "date", validation: Rule => Rule.required() },
+    { name: "published", title: "Published", type: "date", validation: Rule => Rule.required() },
     { name: "banner", title: "Banner", type: "image", description: "Banner image for this specific offer" },
     { name: "bannerAlt", title: "Banner Alt Text", type: "string", description: "Alternative text for accessibility and SEO" },
     {
       name: "howItWorks",
       title: "Content",
       type: "array",
-      of: [{ type: "block" }]
+      of: [
+        { type: "block" },
+        {
+          type: "codeBlock",
+          title: "Code Block"
+        }
+      ]
     },
     {
       name: "faq",
@@ -332,50 +307,11 @@ export default {
               validation: Rule => Rule.required()
             }
           ],
-          preview: {
-            select: {
-              title: "question"
-            }
-          }
+
         }
       ]
     },
-    // Draft preview configuration
-    {
-      name: "draftPreview",
-      title: "Draft Preview Settings",
-      type: "object",
-      description: "Configure how this offer appears in draft preview mode",
-      fields: [
-        {
-          name: "previewMode",
-          title: "Preview Mode",
-          type: "string",
-          options: {
-            list: [
-              { title: "Full Preview", value: "full" },
-              { title: "Minimal Preview", value: "minimal" },
-              { title: "Mobile Preview", value: "mobile" },
-              { title: "Desktop Preview", value: "desktop" }
-            ],
-            layout: "radio"
-          },
-          initialValue: "full"
-        },
-        {
-          name: "previewNotes",
-          title: "Preview Notes",
-          type: "text",
-          description: "Internal notes for content creators about this draft"
-        },
-        {
-          name: "previewExpiry",
-          title: "Preview Expiry",
-          type: "datetime",
-          description: "When this draft preview should expire (optional)"
-        }
-      ]
-    },
+
     // Publishing workflow
     {
       name: "publishingStatus",
@@ -419,12 +355,14 @@ export default {
       name: "metaTitle",
       title: "Meta Title",
       type: "string",
+      validation: Rule => Rule.required(),
       description: "SEO: Custom meta title for this page"
     },
     {
       name: "metaDescription",
       title: "Meta Description",
       type: "text",
+      validation: Rule => Rule.required(),
       description: "SEO: Custom meta description for this page"
     },
     {
@@ -454,34 +392,3 @@ export default {
     }
   ]
 }; 
-
-// Helper functions for draft preview
-async function generatePreviewUrl(draft) {
-  try {
-    // Get the country slug for the draft
-    const countrySlug = draft.country?.slug?.current || 'ng';
-    
-    // Generate preview URL with draft ID
-    const previewUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/preview?secret=${process.env.SANITY_PREVIEW_SECRET}&slug=${draft.slug?.current}&country=${countrySlug}&draftId=${draft._id}`;
-    
-    return previewUrl;
-  } catch (error) {
-    console.error('Error generating preview URL:', error);
-    return '#';
-  }
-}
-
-async function generateLiveUrl(published) {
-  try {
-    // Get the country slug for the published document
-    const countrySlug = published.country?.slug?.current || 'ng';
-    
-    // Generate live URL
-    const liveUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/${countrySlug}/offers/${published.slug?.current}`;
-    
-    return liveUrl;
-  } catch (error) {
-    console.error('Error generating live URL:', error);
-    return '#';
-  }
-} 

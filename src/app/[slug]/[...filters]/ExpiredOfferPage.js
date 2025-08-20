@@ -50,6 +50,10 @@ function ExpiredOfferPage({ offer, embedded = false, countrySlug = "", isCountry
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">
               No Offers Available {countryName ? `in ${countryName}` : ''}
             </h2>
+          ) : !offer ? (
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+              Offer Does Not Exist
+            </h2>
           ) : (
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">
               Offer Has Expired
@@ -71,10 +75,26 @@ function ExpiredOfferPage({ offer, embedded = false, countrySlug = "", isCountry
             </div>
           )}
           
+          {/* Non-existent offer message */}
+          {!isCountryEmpty && !offer && (
+            <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8 max-w-md mx-auto">
+              <h3 className="font-semibold text-gray-900 mb-2">
+                The requested offer could not be found
+              </h3>
+              <p className="text-gray-600 text-sm mb-2">
+                This offer may have been removed or the URL may be incorrect
+              </p>
+            </div>
+          )}
+          
           {/* Description */}
           {isCountryEmpty ? (
             <p className="text-gray-600 mb-8 max-w-md mx-auto">
               We currently don't have any active offers{countryName ? ` in ${countryName}` : ''}. Please check back later or explore other countries.
+            </p>
+          ) : !offer ? (
+            <p className="text-gray-600 mb-8 max-w-md mx-auto">
+              The offer you're looking for doesn't exist or may have been removed. Please check the URL or browse our available offers.
             </p>
           ) : (
             <p className="text-gray-600 mb-8 max-w-md mx-auto">
@@ -92,6 +112,17 @@ function ExpiredOfferPage({ offer, embedded = false, countrySlug = "", isCountry
                 >
                   <Image src="/assets/back-arrow.png" alt="Back" width={20} height={20} />
                   Go Home
+                </Link>
+
+              </>
+            ) : !offer ? (
+              <>
+                <Link 
+                  href={`/${countrySlug || 'ng'}`} 
+                  className="bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg px-6 py-3 transition flex items-center justify-center gap-2"
+                >
+                  <Image src="/assets/back-arrow.png" alt="Back" width={20} height={20} />
+                  Browse Available Offers
                 </Link>
 
               </>

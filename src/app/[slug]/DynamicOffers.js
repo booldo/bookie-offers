@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import Link from "next/link";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import { client } from "../../sanity/lib/client";
 import { urlFor } from "../../sanity/lib/image";
@@ -32,7 +33,7 @@ const fetchOffers = async (countryData) => {
   }
   
   // Query offers by country reference name
-  const query = `*[_type == "offers" && country->country == $countryName && publishingStatus != "hidden"] | order(_createdAt desc) {
+  const query = `*[_type == "offers" && country->country == $countryName && publishingStatus != "hidden" && publishingStatus != "draft"] | order(_createdAt desc) {
     _id,
     slug,
     country->{
@@ -737,23 +738,25 @@ export default function DynamicOffers({ countrySlug, initialFilter = null, filte
       {/* Best Offers Header */}
       <div className="sticky top-16 z-40 bg-white sm:static sm:bg-transparent">
         <div className="flex items-center justify-between my-4">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 whitespace-nowrap font-['General_Sans']">
-            Best Offers <span className="text-gray-400 font-normal text-base sm:text-xl">{offers.length}</span>
+          <h1 className="font-['General_Sans'] font-semibold text-[24px] leading-[100%] text-[#272932] whitespace-nowrap">
+            Best Offers <span className="font-['General_Sans'] font-medium text-[16px] leading-[100%] tracking-[1%] align-middle text-[#696969]">{offers.length}</span>
             {totalPages > 1 && (
-              <span className="text-gray-400 font-normal text-base sm:text-xl ml-2">
+              <span className="font-['General_Sans'] font-medium text-[16px] leading-[100%] tracking-[1%] align-middle text-[#696969] ml-2">
                 (Page {currentPage} of {totalPages})
               </span>
             )}
           </h1>
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-500 mr-1">Sort By:</label>
+          <div className="flex items-center gap-1">
+            <label className="text-sm text-gray-500 mr-0">Sort By:</label>
             <div className="relative" ref={sortByRef}>
               <button
-                className="flex items-center gap-2 rounded-md px-3 py-1 text-sm focus:outline-none text-gray-500"
+                className="flex items-center gap-1 text-[#272932] text-[14px] leading-[24px] font-medium font-['General_Sans'] hover:text-gray-600 focus:outline-none"
                 onClick={() => setSortByOpen(p => !p)}
               >
+                <span className="truncate">
                 {sortBy}
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                </span>
+                <svg className={`w-4 h-4 transition-transform ${sortByOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" /></svg>
               </button>
 
               {/* Mobile slide-up panel */}
@@ -784,14 +787,14 @@ export default function DynamicOffers({ countrySlug, initialFilter = null, filte
 
               {/* Desktop dropdown */}
               {sortByOpen && (
-                <div className="hidden sm:block absolute right-0 mt-2 w-48 bg-white border rounded shadow-lg z-[60]">
+                                    <div className="hidden sm:block absolute right-0 mt-2 w-48 bg-[#FFFFFF] rounded-xl shadow-xl border border-gray-100 py-2 z-[60]">
                   {sortOptions.map(option => (
                     <button
                       key={option}
-                      className="flex items-center justify-between w-full px-4 py-2 hover:bg-gray-100"
+                      className="flex items-center justify-between w-full px-3 py-2 hover:bg-gray-50 rounded-lg mx-1"
                       onClick={() => { setSortBy(option); setSortByOpen(false); }}
                     >
-                      <span>{option}</span>
+                      <span className="text-[#272932] text-[14px] leading-[24px] font-medium font-['General_Sans']">{option}</span>
                       {sortBy === option && (
                         <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="green" strokeWidth="3">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -809,8 +812,8 @@ export default function DynamicOffers({ countrySlug, initialFilter = null, filte
         <div className="sm:max-w-md">
           <div className="grid grid-cols-3 gap-2 mb-6">
             <MultiSelectDropdown label="Bonus Type" options={bonusTypeOptions} selected={selectedBonusTypes} setSelected={setSelectedBonusTypesWrapped} showCount={true} />
-            <MultiSelectDropdown label="Bookmaker" options={bookmakerOptions} selected={selectedBookmakers} setSelected={setSelectedBookmakersWrapped} showCount={true} />
-            <MultiSelectDropdown label="Advanced" options={advancedOptions} selected={selectedAdvanced} setSelected={setSelectedAdvancedWrapped} showCount={true} nested={true} />
+            <MultiSelectDropdown label="Bookmaker" options={bookmakerOptions} selected={selectedBookmakers} setSelected={setSelectedBookmakersWrapped} showCount={false} />
+            <MultiSelectDropdown label="Advanced" options={advancedOptions} selected={selectedAdvanced} setSelected={setSelectedAdvancedWrapped} showCount={false} nested={true} />
           </div>
         </div>
       </div>
@@ -866,7 +869,7 @@ export default function DynamicOffers({ countrySlug, initialFilter = null, filte
       )}
 
       {/* Offer Cards */}
-      <div className="flex flex-col gap-4 mb-6">
+      <div className="flex flex-col gap-3 mb-6">
         {error && <div className="text-center text-red-500">{error}</div>}
         {loading && (
           <LoadingIndicator stage={loadingStage} />
@@ -887,42 +890,44 @@ export default function DynamicOffers({ countrySlug, initialFilter = null, filte
         
         {/* Offers list */}
         {!loading && !error && currentOffers.length > 0 && (
-          <div className="flex flex-col gap-4 mb-6">
+          <div className="flex flex-col gap-3 mb-6">
             {currentOffers.map((offer) => (
               <div
                 key={offer._id}
-                className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex flex-col transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:border-gray-200 cursor-pointer"
-                onClick={() => {
-                  if (countrySlug && offer.bonusType?.name && offer.slug?.current) {
-                    router.push(`/${countrySlug}/${offer.bonusType.name.toLowerCase().replace(/\s+/g, '-')}/${offer.slug.current}`);
-                  }
-                }}
+                                        className="group relative bg-white rounded-xl border border-gray-100 shadow-sm p-3 flex flex-col transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:border-gray-200 hover:bg-[#F5F5F7] cursor-pointer w-[1200px] h-[174px] gap-[12px] opacity-100 border-radius-[12px] border-width-[1px]"
               >
+                {countrySlug && offer.bonusType?.name && offer.slug?.current && (
+                  <Link
+                    href={`/${countrySlug}/${offer.bonusType.name.toLowerCase().replace(/\s+/g, '-')}/${offer.slug.current}`}
+                    aria-label={offer.title}
+                    className="absolute inset-0 z-10"
+                  />
+                )}
                 {/* Top row */}
-                <div className="flex justify-between items-center mb-2">
+                <div className="flex justify-between items-center mb-1">
                   <div className="flex items-center gap-2">
                     {offer.bookmaker?.logo ? (
-                      <img src={urlFor(offer.bookmaker.logo).width(32).height(32).url()} alt={offer.bookmaker.name} width="32" height="32" className="rounded-md" />
+                      <img src={urlFor(offer.bookmaker.logo).width(44).height(44).url()} alt={offer.bookmaker.name} width="44" height="44" className="rounded-md transition-transform duration-200 group-hover:scale-105" />
                     ) : (
-                      <div className="w-8 h-8 bg-gray-100 rounded-md" />
+                      <div className="w-11 h-11 bg-gray-100 rounded-md transition-transform duration-200 group-hover:scale-105" />
                     )}
-                    <span className="font-semibold text-gray-900 font-['General_Sans']">{offer.bookmaker?.name}</span>
+                    <span className="font-['General_Sans'] font-medium text-[14px] leading-[100%] tracking-[0.01em] text-[#272932] align-middle">{offer.bookmaker?.name}</span>
                   </div>
-                  <span className="text-xs text-gray-900">Published: {formatDate(offer.published)}</span>
+                  <span className="font-['General_Sans'] font-medium text-[14px] leading-[100%] tracking-[0.01em] text-[#696969]">Published: {formatDate(offer.published)}</span>
                 </div>
 
                 {/* Title */}
-                <h3 className="font-semibold text-gray-900 text-lg hover:underline cursor-pointer mb-1 font-['General_Sans']">{offer.title}</h3>
+                <h3 className="font-['General_Sans'] font-medium text-[16px] leading-[100%] tracking-[1%] text-[#272932] cursor-pointer mb-1 transition-all duration-200 group-hover:text-[#018651] group-hover:text-[20px] group-hover:font-medium group-hover:leading-[100%] group-hover:tracking-[1%]">{offer.title}</h3>
 
                 {/* Description */}
-                <div className="text-sm text-gray-500 mb-2 font-['General_Sans']">
+                <div className="font-['General_Sans'] font-normal text-[16px] leading-[20px] tracking-[0.01em] text-[#696969] mb-1">
                   {offer.offerSummary && <PortableText value={offer.offerSummary} />}
                 </div>
 
                 {/* Expires */}
-                <div className="flex items-center gap-1 text-sm text-black mt-auto">
+                <div className="flex items-center gap-1 text-[#272932] mt-auto mb-2">
                   <img src="/assets/calendar.png" alt="Calendar" width="16" height="16" className="flex-shrink-0" />
-                  <span className="text-xs">Expires: {formatDate(offer.expires)}</span>
+                  <span className="font-['General_Sans'] font-medium text-[14px] leading-[100%] tracking-[0.01em] text-[#272932]">Expires: {formatDate(offer.expires)}</span>
                 </div>
               </div>
             ))}
