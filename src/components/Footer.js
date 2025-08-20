@@ -122,6 +122,13 @@ export default function Footer() {
           gamblingResources,
           bottomRowLinks
         }`);
+        
+        // Debug logging for gambling resources
+        console.log('Footer data fetched:', data);
+        console.log('Gambling resources data:', data?.gamblingResources);
+        console.log('Gambling resources isActive:', data?.gamblingResources?.isActive);
+        console.log('Gambling resources array:', data?.gamblingResources?.resources);
+        
         setFooterData(data);
       } catch (error) {
         console.error('Error fetching footer data:', error);
@@ -243,20 +250,36 @@ export default function Footer() {
         <hr className="my-2 border-gray-200" />
 
         {/* Resources */}
-        {footerData?.gamblingResources?.isActive && (
+        {footerData?.gamblingResources && (
           <div className="md:text-center">
             <div className="mb-1">{footerData.gamblingResources.title || 'Need help? Visit these responsible gambling resources'}</div>
-            <ul className="flex flex-col gap-1 md:items-center">
-              {footerData.gamblingResources.resources?.map((resource, index) => (
-                resource.isActive && (
-                  <li key={index}>
-                    <a href={resource.url} className="text-gray-900 underline" target="_blank" rel="noopener noreferrer">
-                      {resource.name}
-                    </a>
-                  </li>
-                )
-              ))}
-            </ul>
+            {footerData.gamblingResources.resources && footerData.gamblingResources.resources.length > 0 ? (
+              <ul className="flex flex-col gap-1 md:items-center">
+                {footerData.gamblingResources.resources.map((resource, index) => (
+                  resource && resource.isActive && (
+                    <li key={index}>
+                      <a href={resource.url} className="text-gray-900 underline" target="_blank" rel="noopener noreferrer">
+                        {resource.name}
+                      </a>
+                    </li>
+                  )
+                ))}
+              </ul>
+            ) : (
+              <div className="text-xs text-gray-600">
+                <a href="https://www.gamblersanonymous.org" className="text-gray-900 underline" target="_blank" rel="noopener noreferrer">
+                  Gamblers Anonymous
+                </a>
+                <br />
+                <a href="https://www.ncpgambling.org" className="text-gray-900 underline" target="_blank" rel="noopener noreferrer">
+                  National Council on Problem Gambling
+                </a>
+                <br />
+                <a href="https://www.begambleaware.org" className="text-gray-900 underline" target="_blank" rel="noopener noreferrer">
+                  BeGambleAware
+                </a>
+              </div>
+            )}
           </div>
         )}
 

@@ -12,9 +12,9 @@ const CheckboxItem = memo(({ item, selected, onToggle, showCount }) => (
     />
     <div className="flex items-center gap-2 flex-1">
       <span className="align-middle text-[#272932] text-[14px] leading-[24px] font-medium font-['General_Sans']">{item.name}</span>
-      {showCount && item.count !== undefined && (
-        <span className="text-gray-400 text-xs font-semibold">{item.count}</span>
-      )}
+    {showCount && item.count !== undefined && (
+      <span className="text-gray-400 text-xs font-semibold">{item.count}</span>
+    )}
     </div>
   </label>
 ));
@@ -72,14 +72,14 @@ export default function MultiSelectDropdown({ label, options, selected, setSelec
               <circle cx="11" cy="11" r="8" />
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
-            <input
-              type="text"
+          <input
+            type="text"
               className="w-full rounded-md border border-gray-200 pl-8 pr-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
-              placeholder="Search..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              autoFocus
-            />
+            placeholder="Search..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            autoFocus
+          />
           </div>
         </div>
       )}

@@ -215,8 +215,19 @@ export default function Navbar() {
       
       results = [...results, ...uniqueBookmakers];
       
-      // Search bonus types (worldwide)
-      const bonusTypesQuery = `*[_type == "bonusType" && (
+      // Search bonus types (prefer current country to avoid cross-country duplicates)
+      const bonusTypesQuery = currentCountrySlug
+        ? `*[_type == "bonusType" && country->slug.current == $countrySlug && (
+          name match $term ||
+          pt::text(description) match $term
+        )] | order(_createdAt desc) {
+          _id,
+          name,
+          description,
+          slug,
+          _type
+        }`
+        : `*[_type == "bonusType" && (
         name match $term ||
         pt::text(description) match $term
       )] | order(_createdAt desc) {
@@ -226,15 +237,24 @@ export default function Navbar() {
         slug,
         _type
       }`;
-      const bonusTypesResults = await client.fetch(bonusTypesQuery, { term: `*${q}*` });
+      const bonusTypesResults = await client.fetch(bonusTypesQuery, currentCountrySlug ? { term: `*${q}*`, countrySlug: currentCountrySlug } : { term: `*${q}*` });
       
       // Deduplicate bonus types by _id before adding to results
-      const uniqueBonusTypes = bonusTypesResults.reduce((acc, bonusType) => {
+      // First dedupe by _id, then dedupe by normalized name to avoid duplicates across docs
+      const byId = bonusTypesResults.reduce((acc, bonusType) => {
         if (!acc.some(existing => existing._id === bonusType._id)) {
           acc.push(bonusType);
         }
         return acc;
       }, []);
+      const seenNames = new Set();
+      const uniqueBonusTypes = byId.filter(bt => {
+        const key = (bt.name || '').toLowerCase().trim();
+        if (!key) return false;
+        if (seenNames.has(key)) return false;
+        seenNames.add(key);
+        return true;
+      });
       
       // Also check if we already have offers with this bonus type to avoid duplicates
       const existingBonusTypeNames = results
@@ -810,26 +830,26 @@ export default function Navbar() {
                     return (
                       <div
                         key={item._id}
-                        className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex flex-col sm:flex-row sm:items-center justify-between transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:border-gray-200 cursor-pointer group"
-                        onClick={(e) => {
+                                              className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex flex-col sm:flex-row sm:items-center justify-between transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:border-gray-200 cursor-pointer group"
+                                              onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
                           const url = getItemUrl();
                           if (url && url !== '#') {
                             // Close search first, then navigate
-                            setSearchOpen(false);
+                        setSearchOpen(false);
                             // Small delay to ensure search closes before navigation
                             setTimeout(() => {
                               try {
-                                router.replace(url);
+                              router.replace(url);
                               } catch (err) {
                                 console.error('Navigation error:', err);
                                 window.location.assign(url);
                               }
                             }, 100);
                           }
-                        }}
-                      >
+                      }}
+                    >
                       <div className="flex items-center gap-4">
                           {getItemImage() ? (
                             <Image src={urlFor(getItemImage()).width(48).height(48).url()} alt={getItemTitle()} width={48} height={48} className="rounded-md" />

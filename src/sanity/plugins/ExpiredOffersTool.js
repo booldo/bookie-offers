@@ -51,17 +51,17 @@ export function ExpiredOffersTool() {
     try {
       // Fetch all offers
       const offersQuery = `*[_type == "offers" && !(_id in path("drafts.**"))] {
-        _id,
-        _type,
-        title,
-        slug,
-        expires,
-        published,
-        publishingStatus,
-        bookmaker->{name},
+         _id,
+         _type,
+         title,
+         slug,
+         expires,
+         published,
+         publishingStatus,
+         bookmaker->{name},
         country->{_id, country, slug},
-        bonusType->{name}
-      } | order(expires asc)`;
+         bonusType->{name}
+       } | order(expires asc)`;
 
       // Fetch all countries
       const countriesQuery = `*[_type == "countryPage" && isActive == true] | order(country asc) {
@@ -98,7 +98,13 @@ export function ExpiredOffersTool() {
     let filteredResults = offersToFilter;
     
     if (currentFilters.status !== 'all') {
-      if (currentFilters.status === 'expired') {
+      if (currentFilters.status === 'active') {
+        // Filter for offers that are published and not expired
+        filteredResults = filteredResults.filter(offer => 
+          offer.publishingStatus === 'published' && 
+          (!offer.expires || new Date(offer.expires) >= new Date())
+        );
+      } else if (currentFilters.status === 'expired') {
         // Filter for offers that have expired (past expiration date)
         filteredResults = filteredResults.filter(offer => 
           offer.expires && new Date(offer.expires) < new Date()
@@ -119,13 +125,13 @@ export function ExpiredOffersTool() {
     
     if (currentFilters.search) {
       const searchLower = currentFilters.search.toLowerCase();
-      filteredResults = filteredResults.filter(offer => 
-        offer.title?.toLowerCase().includes(searchLower) ||
-        offer.bookmaker?.name?.toLowerCase().includes(searchLower) ||
-        offer.country?.country?.toLowerCase().includes(searchLower)
-      );
-    }
-    
+        filteredResults = filteredResults.filter(offer => 
+          offer.title?.toLowerCase().includes(searchLower) ||
+          offer.bookmaker?.name?.toLowerCase().includes(searchLower) ||
+          offer.country?.country?.toLowerCase().includes(searchLower)
+        );
+      }
+      
     setOffers(filteredResults);
   }, []);
 
@@ -146,29 +152,31 @@ export function ExpiredOffersTool() {
     return new Date(offer.expires) < new Date();
   };
 
+  // Get status text
+  const getStatusText = (offer) => {
+    if (offer.publishingStatus === 'hidden') return 'Hidden';
+    if (isExpired(offer)) return 'Expired';
+    if (offer.publishingStatus === 'published' && (!offer.expires || new Date(offer.expires) >= new Date())) return 'Active';
+    if (offer.publishingStatus === 'draft') return 'Draft';
+    return offer.publishingStatus || 'Unknown';
+  };
+
   // Get status badge color
   const getStatusColor = (offer) => {
-    if (isExpired(offer)) return 'red';
-    if (offer.publishingStatus === 'published') return 'green';
-    if (offer.publishingStatus === 'draft') return 'gray';
     if (offer.publishingStatus === 'hidden') return 'orange';
+    if (isExpired(offer)) return 'red';
+    if (offer.publishingStatus === 'published' && (!offer.expires || new Date(offer.expires) >= new Date())) return 'green';
+    if (offer.publishingStatus === 'draft') return 'gray';
     if (offer.publishingStatus === 'review') return 'yellow';
     return 'blue';
   };
 
-  // Get status text
-  const getStatusText = (offer) => {
-    if (isExpired(offer)) return 'Expired';
-    if (offer.publishingStatus === 'hidden') return 'Hidden';
-    return offer.publishingStatus || 'Draft';
-  };
-
   // Get background color for offer cards
   const getCardBackground = (offer) => {
+    if (offer.publishingStatus === 'hidden') return '#FEF3C7'; // Light yellow background
     if (isExpired(offer)) return '#FEF2F2'; // Light red background
     if (offer.publishingStatus === 'draft') return '#FFF7ED'; // Light orange background
-    if (offer.publishingStatus === 'published') return '#F0FDF4'; // Light green background
-    if (offer.publishingStatus === 'hidden') return '#FEF3C7'; // Light yellow background
+    if (offer.publishingStatus === 'published' && (!offer.expires || new Date(offer.expires) >= new Date())) return '#F0FDF4'; // Light green background
     return '#FFFFFF'; // Default white background
   };
 
@@ -181,19 +189,42 @@ export function ExpiredOffersTool() {
   // Get accurate counts for each filter
   const getFilterCounts = () => {
     const total = allOffers.length;
-    const draft = allOffers.filter(o => o.publishingStatus === 'draft').length;
-    const published = allOffers.filter(o => o.publishingStatus === 'published').length;
-    const expired = allOffers.filter(o => o.expires && new Date(o.expires) < new Date()).length;
+    const active = allOffers.filter(o => 
+      o.publishingStatus === 'published' && 
+      (!o.expires || new Date(o.expires) >= new Date())
+    ).length;
+    const expired = allOffers.filter(o => 
+      o.expires && new Date(o.expires) < new Date()
+    ).length;
     const hidden = allOffers.filter(o => o.publishingStatus === 'hidden').length;
+    const draft = allOffers.filter(o => o.publishingStatus === 'draft').length;
     
-    return { total, draft, published, expired, hidden };
+    return { total, active, expired, hidden, draft };
+  };
+
+  // Get count for specific country
+  const getCountryCount = (countryId) => {
+    if (countryId === 'all') return allOffers.length;
+    return allOffers.filter(o => o.country?._id === countryId).length;
   };
 
   // Toggle offer visibility (show/hide)
   const toggleOfferVisibility = async (offerId, currentStatus) => {
     setProcessing(true);
     try {
-      const newStatus = currentStatus === 'hidden' ? 'published' : 'hidden';
+      // Determine the new status based on current status
+      let newStatus;
+      let newVisibility;
+      
+      if (currentStatus === 'hidden') {
+        // If hidden, make it published and visible
+        newStatus = 'published';
+        newVisibility = true;
+      } else {
+        // If published/draft/any other status, make it hidden
+        newStatus = 'hidden';
+        newVisibility = false;
+      }
       
       console.log(`Toggling offer ${offerId} from ${currentStatus} to ${newStatus}`);
       
@@ -201,7 +232,7 @@ export function ExpiredOffersTool() {
         .patch(offerId)
         .set({
           publishingStatus: newStatus,
-          isVisible: newStatus === 'published'
+          isVisible: newVisibility
         })
         .commit();
       
@@ -226,6 +257,23 @@ export function ExpiredOffersTool() {
     }
   };
 
+  // Get button text and tone for hide/show button
+  const getVisibilityButtonProps = (offer) => {
+    if (offer.publishingStatus === 'hidden') {
+      return {
+        text: 'Show',
+        tone: 'positive',
+        title: 'Show this offer in offer cards'
+      };
+    } else {
+      return {
+        text: 'Hide',
+        tone: 'caution',
+        title: 'Hide this offer from offer cards (will show 410 error)'
+      };
+    }
+  };
+
   const counts = getFilterCounts();
 
   return (
@@ -238,56 +286,67 @@ export function ExpiredOffersTool() {
               <Text size={4} weight="bold">
                 Expired Offers Manager
               </Text>
-              <Text size={2} muted>
-                Manage offer lifecycle, expiration status, and visibility control
-              </Text>
-              <Text size={1} muted>
-                Note: Hidden offers will show 410 errors on the frontend and won't appear in offer cards
-              </Text>
+                             <Text size={2} muted>
+                 Manage offer lifecycle, expiration status, and visibility control
+               </Text>
+               <Text size={1} muted>
+                 Note: Hidden offers will show 410 errors on the frontend and won't appear in offer cards
+               </Text>
             </Stack>
           </Card>
 
           {/* Filters and Actions */}
           <Card padding={4} radius={2} shadow={1}>
             <Stack space={3}>
-              <Flex gap={3} align="center" wrap>
-                <Text size={2} weight="semibold">Filters:</Text>
-                
-                <Select
-                  value={filters.status}
+              <Flex gap={3} align="center" wrap style={{ alignItems: 'center' }}>
+                 <Text size={2} weight="semibold">Filters:</Text>
+                <Box>
+                 <Select
+                   value={filters.status}
                   onChange={(event) => updateFilters({ status: event.target.value })}
+                  fontSize={1}
+                  radius={2}
+                  style={{ minWidth: '240px', width: '240px', height: '36px' }}
                 >
                   <option value="all">All ({counts.total})</option>
-                  <option value="draft">Draft ({counts.draft})</option>
-                  <option value="published">Published ({counts.published})</option>
+                  <option value="active">Active offers ({counts.active})</option>
                   <option value="expired">Expired ({counts.expired})</option>
                   <option value="hidden">Hidden ({counts.hidden})</option>
+                  <option value="draft">Draft ({counts.draft})</option>
                 </Select>
-                
+                </Box>
+                <Box>
                 <Select
                   value={filters.country}
                   onChange={(event) => updateFilters({ country: event.target.value })}
+                  fontSize={1}
+                  radius={2}
+                  style={{ minWidth: '240px', width: '240px', height: '36px' }}
                 >
-                  <option value="all">All Countries</option>
+                  <option value="all">All Countries ({counts.total})</option>
                   {countries.map(country => (
                     <option key={country._id} value={country._id}>
-                      {country.country}
+                      {country.country} ({getCountryCount(country._id)})
                     </option>
                   ))}
                 </Select>
-                
-                <TextInput
+                </Box>
+                <Box>
+                 <TextInput
                   placeholder="Search offers..."
                   value={filters.search}
                   onChange={(event) => updateFilters({ search: event.target.value })}
-                  style={{ minWidth: '200px' }}
+                  fontSize={1}
+                  radius={2}
+                  style={{ minWidth: '240px', width: '240px', height: '36px' }}
                 />
-                
+                </Box>
                 <Button
                   icon={RefreshIcon}
                   text="Refresh"
                   onClick={fetchData}
                   disabled={loading}
+                  style={{ height: '36px' }}
                 />
               </Flex>
             </Stack>
@@ -317,13 +376,13 @@ export function ExpiredOffersTool() {
                       <Flex align="center" gap={3}>
                         <Button
                           size={1}
-                          text={offer.publishingStatus === 'hidden' ? 'Show' : 'Hide'}
-                          tone={offer.publishingStatus === 'hidden' ? 'positive' : 'caution'}
+                          text={getVisibilityButtonProps(offer).text}
+                          tone={getVisibilityButtonProps(offer).tone}
                           onClick={() => toggleOfferVisibility(offer._id, offer.publishingStatus)}
                           disabled={processing}
-                          title={offer.publishingStatus === 'hidden' ? 'Show this offer in offer cards' : 'Hide this offer from offer cards'}
+                          title={getVisibilityButtonProps(offer).title}
                         />
-                       
+                        
                         <Box flex={1}>
                           <Stack space={2}>
                             <Flex align="center" gap={2}>
@@ -364,13 +423,17 @@ export function ExpiredOffersTool() {
                         </Box>
                         
                         <Flex gap={1}>
-                          {isExpired(offer) ? (
+                          {offer.publishingStatus === 'hidden' ? (
+                            <Badge tone="critical" icon={EyeClosedIcon}>
+                              HIDDEN
+                            </Badge>
+                          ) : isExpired(offer) ? (
                             <Badge tone="critical" icon={ClockIcon}>
                               EXPIRED
                             </Badge>
                           ) : (
                             <Badge tone="positive" icon={EyeOpenIcon}>
-                              ACTIVE
+                              VISIBLE
                             </Badge>
                           )}
                         </Flex>

@@ -196,13 +196,21 @@ export default function HomeNavbar() {
       }`;
       const bonusTypesResults = await client.fetch(bonusTypesQuery, { term: `*${q}*` });
       
-      // Deduplicate bonus types by _id before adding to results
-      const uniqueBonusTypes = bonusTypesResults.reduce((acc, bonusType) => {
+      // Deduplicate bonus types by _id, then by normalized name to avoid visible duplicates
+      const byId = bonusTypesResults.reduce((acc, bonusType) => {
         if (!acc.some(existing => existing._id === bonusType._id)) {
           acc.push(bonusType);
         }
         return acc;
       }, []);
+      const seenNames = new Set();
+      const uniqueBonusTypes = byId.filter(bt => {
+        const key = (bt.name || '').toLowerCase().trim();
+        if (!key) return false;
+        if (seenNames.has(key)) return false;
+        seenNames.add(key);
+        return true;
+      });
       
       // Also check if we already have offers with this bonus type to avoid duplicates
       const existingBonusTypeNames = results
@@ -210,7 +218,7 @@ export default function HomeNavbar() {
         .map(item => item.bonusType.name.toLowerCase());
       
       const filteredBonusTypes = uniqueBonusTypes.filter(
-        bonusType => !existingBonusTypeNames.includes(bonusType.name.toLowerCase())
+        bonusType => !existingBonusTypeNames.includes((bonusType.name || '').toLowerCase())
       );
       
       results = [...results, ...filteredBonusTypes];

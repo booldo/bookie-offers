@@ -58,8 +58,8 @@ export const TrackedLink: React.FC<TrackedLinkProps> = ({
     displayUrl = `/${countryCodeFromPath}/${offerSlug}`;
   }
 
-  // For affiliate links, we need to use the pretty link for the href so it shows in browser status bar
-  // but the onClick handler will prevent navigation and redirect to affiliate URL
+  // For affiliate links, use the pretty link for the href so it shows in browser status bar
+  // and lets the server route handle the redirect to the affiliate URL
   let linkHref = href;
   if (isAffiliate && prettyLink) {
     const prettyLinkValue = typeof prettyLink === 'string' ? prettyLink : prettyLink?.current || '';
@@ -70,15 +70,18 @@ export const TrackedLink: React.FC<TrackedLinkProps> = ({
   }
 
   const handleClick = async (e: React.MouseEvent) => {
-    // For affiliate links, prevent default navigation and redirect to affiliate URL
-    if (isAffiliate && href && href !== '#') {
+    // For affiliate links with prettyLink, allow normal navigation to prettyLink;
+    // the server will redirect to the external affiliate URL. Still track the click.
+    if (isAffiliate && prettyLink) {
+      // Fire-and-forget to avoid blocking navigation
+      try { void trackLinkClick(linkId, linkType, href, linkTitle); } catch {}
+      return;
+    }
+    // If it's an affiliate without a prettyLink fallback, open the affiliate URL directly
+    if (isAffiliate && !prettyLink && href && href !== '#') {
       e.preventDefault();
       e.stopPropagation();
-      
-      // Track the click with the original affiliate URL
       await trackLinkClick(linkId, linkType, href, linkTitle);
-      
-      // Open affiliate URL in new tab
       window.open(href, target || '_blank', 'noopener,noreferrer');
       return;
     }

@@ -23,8 +23,16 @@ export default function BannerCarousel({ banners = [] }) {
     <div className="w-full flex flex-col items-center mt-4 sm:mt-8">
       <div className="w-full rounded-xl overflow-hidden shadow-sm relative h-24 sm:h-48 z-0">
         {banners.map((banner, idx) => {
-          // Handle Sanity image objects
-          const imageUrl = banner.image ? urlFor(banner.image).width(1200).height(200).url() : null;
+          // Handle Sanity image objects with proper validation
+          let imageUrl = null;
+          if (banner.image && banner.image._type === 'image' && banner.image.asset) {
+            try {
+              imageUrl = urlFor(banner.image).width(1200).height(200).url();
+            } catch (error) {
+              console.warn('Invalid banner image structure in carousel:', banner.image);
+              imageUrl = null;
+            }
+          }
           
           // Don't render if no valid image
           if (!imageUrl) return null;

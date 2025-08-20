@@ -82,7 +82,7 @@ export async function generateStaticParams() {
           if (bonusType.name && bookmaker.name) {
             params.push({ 
               slug: countrySlug,
-              filters: [`${bonusType.name.toLowerCase().replace(/\s+/g, '-')}-${bookmaker.name.toLowerCase().replace(/\s+/g, '-')}`]
+              filters: [`${bonusType.name.toLowerCase().replace(/\s+/g, '-')}-${bookmaker.name.toLowerCase().replace(/-/g, ' ')}`]
             });
           }
         });
@@ -112,7 +112,7 @@ export async function generateStaticParams() {
         });
       });
 
-      // Generate 3-way combination filter pages
+      // Three-way combinations: Bonus Type + Bookmaker + Payment Method
       country.bonusTypes?.forEach(bonusType => {
         country.bookmakers?.forEach(bookmaker => {
           uniquePaymentMethods.forEach(pmName => {
@@ -126,74 +126,41 @@ export async function generateStaticParams() {
         });
       });
 
-      // Generate 4-way combination filter pages (Bonus Type + Bookmaker + Payment Method + License)
-      // First, get unique licenses for this country
-      const uniqueLicenses = new Set();
-      country.bookmakers?.forEach(bookmaker => {
-        if (Array.isArray(bookmaker.license)) {
-          bookmaker.license.forEach(license => {
-            if (license && typeof license === 'string') {
-              uniqueLicenses.add(license);
+      // Four-way combinations: Bonus Type + Bookmaker + Payment Method + Country-specific
+      country.bonusTypes?.forEach(bonusType => {
+        country.bookmakers?.forEach(bookmaker => {
+          uniquePaymentMethods.forEach(pmName => {
+            if (bonusType.name && bookmaker.name && pmName) {
+              // Add a country-specific identifier
+              const countryIdentifier = countrySlug.toUpperCase();
+              params.push({ 
+                slug: countrySlug,
+                filters: [`${bonusType.name.toLowerCase().replace(/\s+/g, '-')}-${bookmaker.name.toLowerCase().replace(/\s+/g, '-')}-${pmName.toLowerCase().replace(/\s+/g, '-')}-${countryIdentifier}`]
+              });
             }
           });
-        }
-      });
-
-      // 4-way combinations: Bonus Type + Bookmaker + Payment Method + License
-      country.bonusTypes?.forEach(bonusType => {
-        country.bookmakers?.forEach(bookmaker => {
-          uniquePaymentMethods.forEach(pmName => {
-            uniqueLicenses.forEach(licenseName => {
-              if (bonusType.name && bookmaker.name && pmName && licenseName) {
-                params.push({ 
-                  slug: countrySlug,
-                  filters: [`${bonusType.name.toLowerCase().replace(/\s+/g, '-')}-${bookmaker.name.toLowerCase().replace(/\s+/g, '-')}-${pmName.toLowerCase().replace(/\s+/g, '-')}-${licenseName.toLowerCase().replace(/\s+/g, '-')}`]
-                });
-              }
-            });
-          });
         });
       });
 
-      // Generate 5-way combination filter pages (Bonus Type + Bookmaker + Payment Method + License + Country-specific features)
-      const countryFeatures = ['mobile-optimized', 'live-betting', 'instant-withdrawal', '24-7-support'];
-      
+      // Five-way combinations: Bonus Type + Bookmaker + Payment Method + Country + Special
       country.bonusTypes?.forEach(bonusType => {
         country.bookmakers?.forEach(bookmaker => {
           uniquePaymentMethods.forEach(pmName => {
-            uniqueLicenses.forEach(licenseName => {
-              countryFeatures.forEach(feature => {
-                if (bonusType.name && bookmaker.name && pmName && licenseName) {
-                  params.push({ 
-                    slug: countrySlug,
-                    filters: [`${bonusType.name.toLowerCase().replace(/\s+/g, '-')}-${bookmaker.name.toLowerCase().replace(/\s+/g, '-')}-${pmName.toLowerCase().replace(/\s+/g, '-')}-${licenseName.toLowerCase().replace(/\s+/g, '-')}-${feature}`]
-                  });
-                }
+            if (bonusType.name && bookmaker.name && pmName) {
+              // Add multiple identifiers for comprehensive filtering
+              const countryIdentifier = countrySlug.toUpperCase();
+              const specialIdentifier = 'premium';
+              params.push({ 
+                slug: countrySlug,
+                filters: [`${bonusType.name.toLowerCase().replace(/\s+/g, '-')}-${bookmaker.name.toLowerCase().replace(/\s+/g, '-')}-${pmName.toLowerCase().replace(/\s+/g, '-')}-${countryIdentifier}-${specialIdentifier}`]
               });
-            });
+            }
           });
         });
       });
 
-      // Generate pretty link pages for affiliate links
-      try {
-        const affiliateLinks = await client.fetch(`
-          *[_type == "affiliate" && isActive == true && prettyLink.current != null && bookmaker->country._ref == ^._id]{
-            prettyLink
-          }
-        `, { _id: country._id });
-
-        affiliateLinks.forEach(link => {
-          if (link.prettyLink?.current) {
-            params.push({
-              slug: countrySlug,
-              filters: [link.prettyLink.current]
-            });
-          }
-        });
-      } catch (error) {
-        console.error('Error generating pretty link params:', error);
-      }
+      // Note: Pretty links are handled dynamically by the route handler to enable redirects
+      // We don't generate static params for them to ensure the redirect logic works properly
     }
     
     return params;
@@ -245,11 +212,24 @@ async function getCountryPageData(slug) {
 
     return { 
       countryData, 
-      banners: banners.map(b => ({
-        ...b,
-        imageUrl: b.image ? urlFor(b.image).width(1200).height(200).url() : undefined,
-        imageAlt: b.imageAlt || b.title
-      }))
+      banners: banners.map(b => {
+        // Validate image object before processing
+        let imageUrl = undefined;
+        if (b.image && b.image._type === 'image' && b.image.asset) {
+          try {
+            imageUrl = urlFor(b.image).width(1200).height(200).url();
+          } catch (error) {
+            console.warn('Invalid banner image structure:', b.image);
+            imageUrl = undefined;
+          }
+        }
+        
+        return {
+          ...b,
+          imageUrl,
+          imageAlt: b.imageAlt || b.title
+        };
+      }).filter(b => b.imageUrl) // Only include banners with valid images
     };
   } catch (error) {
     console.error('Error fetching country page data:', error);
@@ -316,7 +296,7 @@ export default async function CountryPageShell({ params, children, isOfferDetail
       <Navbar />
       <main className="max-w-7xl mx-auto w-full px-2 sm:px-4 flex-1">
         {/* Static country banner - prerendered */}
-        {countryData.banner && (
+        {countryData.banner && countryData.banner._type === 'image' && countryData.banner.asset && (
           <div className="mb-6">
             <Image
               src={urlFor(countryData.banner).width(1200).height(200).url()}

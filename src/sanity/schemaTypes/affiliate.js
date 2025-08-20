@@ -185,7 +185,46 @@ export default {
               const bonusTypeName = result.bonusType.name?.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
 
               if (bookmakerName && bonusTypeName) {
-                return `${bookmakerName}/${bonusTypeName}`;
+                const baseSlug = `${bookmakerName}/${bonusTypeName}`;
+
+                // Fetch existing prettyLinks for this bookmaker/bonusType to determine next available numeric suffix
+                const existingQuery = `
+                  *[_type == "affiliate" && bookmaker._ref == $bookmakerId && bonusType._ref == $bonusTypeId && defined(prettyLink.current) && _id != $currentId]{
+                    prettyLink
+                  }
+                `;
+                const existing = await client.fetch(existingQuery, {
+                  bookmakerId: doc.bookmaker._ref,
+                  bonusTypeId: doc.bonusType._ref,
+                  currentId: doc._id || ''
+                });
+
+                const existingSlugs = (existing || [])
+                  .map(e => (typeof e.prettyLink === 'string' ? e.prettyLink : e.prettyLink?.current) || '')
+                  .filter(Boolean);
+
+                if (!existingSlugs.length) {
+                  return baseSlug;
+                }
+
+                // Determine the highest suffix used for this base
+                let maxSuffix = 1;
+                existingSlugs.forEach(slugVal => {
+                  if (slugVal === baseSlug) {
+                    maxSuffix = Math.max(maxSuffix, 1);
+                  } else if (slugVal.startsWith(baseSlug + '-')) {
+                    const tail = slugVal.substring(baseSlug.length + 1);
+                    const n = parseInt(tail, 10);
+                    if (!Number.isNaN(n)) {
+                      maxSuffix = Math.max(maxSuffix, n);
+                    }
+                  }
+                });
+
+                if (existingSlugs.includes(baseSlug)) {
+                  return `${baseSlug}-${maxSuffix + 1}`;
+                }
+                return baseSlug;
               }
             }
             
@@ -204,7 +243,6 @@ export default {
             .slice(0, 96)
       },
       validation: Rule => Rule.required().custom((doc, context) => {
-        // Remove uniqueness validation - multiple affiliate links can have the same pretty link
         return true;
       })
     },

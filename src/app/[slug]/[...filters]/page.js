@@ -13,6 +13,43 @@ export { generateStaticParams };
 export async function generateMetadata({ params }) {
   const awaitedParams = await params;
   
+  // Affiliate pretty link metadata (supports multi-segment pretty links like bookmaker/bonus-type[-n])
+  try {
+    const segments = awaitedParams.filters || [];
+    const prettyJoined = Array.isArray(segments) ? segments.join('/') : '';
+    if (prettyJoined) {
+      const affiliateLink = await client.fetch(`
+        *[_type == "affiliate" && prettyLink.current == $prettyLink && isActive == true][0]{
+          bookmaker->{
+            name,
+            logo,
+            logoAlt,
+            description,
+            country->{ country, slug }
+          },
+          bonusType->{ name, description }
+        }
+      `, { prettyLink: prettyJoined });
+
+      if (affiliateLink) {
+        const { bookmaker, bonusType } = affiliateLink;
+        const title = `${bonusType?.name} - ${bookmaker?.name} | Booldo`;
+        const description = `Get ${bonusType?.name} from ${bookmaker?.name}. ${bonusType?.description || ''}`;
+        return {
+          title,
+          description,
+          openGraph: {
+            title,
+            description,
+            images: bookmaker?.logo ? [urlFor(bookmaker.logo).url()] : [],
+          },
+        };
+      }
+    }
+  } catch (error) {
+    console.error('Error generating metadata for affiliate pretty link:', error);
+  }
+  
   // Check if this is an offer details page (has 3 segments: country/bonus-type/offer-slug)
   const isOfferDetailsPage = awaitedParams.filters && awaitedParams.filters.length >= 2;
   
@@ -157,6 +194,102 @@ export async function generateMetadata({ params }) {
 export default async function CountryFiltersPage({ params }) {
   const awaitedParams = await params;
   
+  // Temporary debugging - remove after testing
+  console.log(' DEBUG - Full params:', awaitedParams);
+  console.log(' DEBUG - Slug:', awaitedParams.slug);
+  console.log(' DEBUG - Filters:', awaitedParams.filters);
+  console.log(' DEBUG - URL path:', `/${awaitedParams.slug}/${(awaitedParams.filters || []).join('/')}`);
+  
+  // Debug: Let's see what affiliate links exist in Sanity
+  try {
+    const allAffiliateLinks = await client.fetch(`
+      *[_type == "affiliate" && isActive == true]{
+        _id,
+        affiliateUrl,
+        prettyLink,
+        bookmaker->{ name },
+        bonusType->{ name }
+      }
+    `);
+    console.log('🔍 DEBUG - All active affiliate links in Sanity:', allAffiliateLinks);
+  } catch (error) {
+    console.error('Error fetching all affiliate links:', error);
+  }
+  
+  // Handle affiliate pretty links FIRST - before any other logic
+  const segments = awaitedParams.filters || [];
+  
+  // Check for pretty links in different formats
+  if (segments.length > 0) {
+    // Try the full joined path first (e.g., "betika/welcome-bonus-2")
+    const fullPath = segments.join('/');
+    console.log('🔍 DEBUG - Checking full path:', fullPath);
+    
+    // Query for active affiliate links with this pretty link
+    const affiliateLink = await client.fetch(`
+      *[_type == "affiliate" && isActive == true && prettyLink.current == $prettyLink][0]{
+        _id,
+        affiliateUrl,
+        prettyLink
+      }
+    `, { prettyLink: fullPath });
+    
+    console.log('🔍 DEBUG - Affiliate link found for full path:', affiliateLink);
+    
+    if (affiliateLink?.affiliateUrl) {
+      console.log('🔍 DEBUG - Redirecting to affiliate URL:', affiliateLink.affiliateUrl);
+      // Redirect to the affiliate URL - this will throw NEXT_REDIRECT and exit the function
+      redirect(affiliateLink.affiliateUrl);
+    }
+    
+    // If no match found, try single segment (for single-segment pretty links)
+    if (segments.length === 1) {
+      const singleSegment = segments[0];
+      console.log('🔍 DEBUG - Checking single segment:', singleSegment);
+      
+      const singleAffiliateLink = await client.fetch(`
+        *[_type == "affiliate" && isActive == true && prettyLink.current == $prettyLink][0]{
+          _id,
+          affiliateUrl,
+          prettyLink
+        }
+      `, { prettyLink: singleSegment });
+      
+      console.log('🔍 DEBUG - Single segment affiliate link:', singleAffiliateLink);
+      
+      if (singleAffiliateLink?.affiliateUrl) {
+        console.log('🔍 DEBUG - Redirecting single segment to affiliate URL:', singleAffiliateLink.affiliateUrl);
+        // Redirect to the affiliate URL - this will throw NEXT_REDIRECT and exit the function
+        redirect(singleAffiliateLink.affiliateUrl);
+      }
+    }
+    
+    // If still no match, check if this could be a bookmaker/bonus-type format
+    // Pretty links are stored as "bookmaker/bonus-type" in Sanity
+    if (segments.length === 2) {
+      const bookmakerBonusType = segments.join('/');
+      console.log('🔍 DEBUG - Checking bookmaker/bonus-type format:', bookmakerBonusType);
+      
+      const bookmakerBonusTypeLink = await client.fetch(`
+        *[_type == "affiliate" && isActive == true && prettyLink.current == $prettyLink][0]{
+          _id,
+          affiliateUrl,
+          prettyLink
+        }
+      `, { prettyLink: bookmakerBonusType });
+      
+      console.log('🔍 DEBUG - Bookmaker/bonus-type affiliate link:', bookmakerBonusTypeLink);
+      
+      if (bookmakerBonusTypeLink?.affiliateUrl) {
+        console.log('🔍 DEBUG - Redirecting bookmaker/bonus-type to affiliate URL:', bookmakerBonusTypeLink.affiliateUrl);
+        // Redirect to the affiliate URL - this will throw NEXT_REDIRECT and exit the function
+        redirect(bookmakerBonusTypeLink.affiliateUrl);
+      }
+    }
+  }
+  
+  console.log('🔍 DEBUG - No affiliate redirect found, continuing with normal processing');
+  
   // Check if this is an offer details page (has 3 segments: country/bonus-type/offer-slug)
   const isOfferDetailsPage = awaitedParams.filters && awaitedParams.filters.length >= 2;
   
@@ -186,37 +319,37 @@ export default async function CountryFiltersPage({ params }) {
   
   // Check if this might be a pretty link (single segment that could be an affiliate link)
   if (isSingleFilterPage && singleFilter) {
-    try {
-      // Check if this is a pretty link for an affiliate
-      const affiliateLink = await client.fetch(`
-        *[_type == "affiliate" && prettyLink.current == $prettyLink && isActive == true][0]{
+    console.log('🔍 DEBUG - Checking single filter for pretty link:', singleFilter);
+    
+    // Check if this is a pretty link for an affiliate
+    const affiliateLink = await client.fetch(`
+      *[_type == "affiliate" && isActive == true && prettyLink.current == $prettyLink][0]{
+        _id,
+        affiliateUrl,
+        bookmaker->{
           _id,
-          affiliateUrl,
-          bookmaker->{
-            _id,
-            name,
-            logo,
-            logoAlt,
-            description,
-            country->{
-              country,
-              slug
-            }
-          },
-          bonusType->{
-            name,
-            description
+          name,
+          logo,
+          logoAlt,
+          description,
+          country->{
+            country,
+            slug
           }
+        },
+        bonusType->{
+          name,
+          description
         }
-      `, { prettyLink: singleFilter });
-
-      if (affiliateLink && affiliateLink.affiliateUrl) {
-        // Redirect to the affiliate URL
-        redirect(affiliateLink.affiliateUrl);
       }
-    } catch (error) {
-      console.error('Error checking for pretty link:', error);
-      // Continue with normal filter processing if there's an error
+    `, { prettyLink: singleFilter });
+
+    console.log('🔍 DEBUG - Single filter affiliate link found:', affiliateLink);
+
+    if (affiliateLink && affiliateLink.affiliateUrl) {
+      console.log('🔍 DEBUG - Redirecting single filter to affiliate URL:', affiliateLink.affiliateUrl);
+      // Redirect to the affiliate URL - this will throw NEXT_REDIRECT and exit the function
+      redirect(affiliateLink.affiliateUrl);
     }
   }
   
@@ -299,7 +432,7 @@ export default async function CountryFiltersPage({ params }) {
               <div className="h-6 bg-gray-200 rounded w-20 animate-pulse"></div>
             </div>
             <div className="sm:max-w-md">
-                              <div className="grid grid-cols-3 gap-2 mb-6">
+              <div className="grid grid-cols-3 gap-2 mb-6">
                 {[1, 2, 3].map(i => (
                   <div key={i} className="h-10 bg-gray-200 rounded animate-pulse"></div>
                 ))}
