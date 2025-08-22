@@ -123,12 +123,6 @@ export default function Footer() {
           bottomRowLinks
         }`);
         
-        // Debug logging for gambling resources
-        console.log('Footer data fetched:', data);
-        console.log('Gambling resources data:', data?.gamblingResources);
-        console.log('Gambling resources isActive:', data?.gamblingResources?.isActive);
-        console.log('Gambling resources array:', data?.gamblingResources?.resources);
-        
         setFooterData(data);
       } catch (error) {
         console.error('Error fetching footer data:', error);

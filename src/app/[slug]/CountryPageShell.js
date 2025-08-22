@@ -133,11 +133,11 @@ export async function generateStaticParams() {
             if (bonusType.name && bookmaker.name && pmName) {
               // Add a country-specific identifier
               const countryIdentifier = countrySlug.toUpperCase();
-              params.push({ 
-                slug: countrySlug,
+                params.push({ 
+                  slug: countrySlug,
                 filters: [`${bonusType.name.toLowerCase().replace(/\s+/g, '-')}-${bookmaker.name.toLowerCase().replace(/\s+/g, '-')}-${pmName.toLowerCase().replace(/\s+/g, '-')}-${countryIdentifier}`]
-              });
-            }
+                });
+              }
           });
         });
       });
@@ -150,8 +150,8 @@ export async function generateStaticParams() {
               // Add multiple identifiers for comprehensive filtering
               const countryIdentifier = countrySlug.toUpperCase();
               const specialIdentifier = 'premium';
-              params.push({ 
-                slug: countrySlug,
+                  params.push({ 
+                    slug: countrySlug,
                 filters: [`${bonusType.name.toLowerCase().replace(/\s+/g, '-')}-${bookmaker.name.toLowerCase().replace(/\s+/g, '-')}-${pmName.toLowerCase().replace(/\s+/g, '-')}-${countryIdentifier}-${specialIdentifier}`]
               });
             }
@@ -225,9 +225,9 @@ async function getCountryPageData(slug) {
         }
         
         return {
-          ...b,
+        ...b,
           imageUrl,
-          imageAlt: b.imageAlt || b.title
+        imageAlt: b.imageAlt || b.title
         };
       }).filter(b => b.imageUrl) // Only include banners with valid images
     };

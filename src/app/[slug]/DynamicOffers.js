@@ -760,7 +760,7 @@ export default function DynamicOffers({ countrySlug, initialFilter = null, filte
               </button>
 
               {/* Mobile slide-up panel */}
-              <div className={`sm:hidden fixed bottom-0 left-0 right-0 rounded-t-2xl p-4 bg-white shadow-2xl border-t z-[60] transform transition-transform duration-300 ${sortByOpen ? 'translate-y-0' : 'translate-y-full'}`}>
+              <div className={`sm:hidden fixed bottom-0 left-0 right-0 rounded-t-2xl p-4 bg-white shadow-2xl border-t border-gray-200 z-[60] transform transition-transform duration-300 ${sortByOpen ? 'translate-y-0' : 'translate-y-full'}`}>
                 <div className="flex justify-between items-center pb-2 mb-3">
                   <h3 className="font-semibold text-lg">Sort By</h3>
                   <button onClick={() => setSortByOpen(false)} className="p-1">

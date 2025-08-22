@@ -256,6 +256,13 @@ export default function OfferDetailsClient({ offer, moreOffers, totalOffers, cou
           {countryName} Offers
         </Link>
         <span className="mx-2">/</span>
+        <Link 
+          href={`/${countryName.toLowerCase().replace(/\s+/g, '-')}/${offer.bonusType?.name?.toLowerCase().replace(/\s+/g, '-')}`} 
+          className="hover:text-gray-700 text-gray-700 font-medium"
+        >
+          {offer.bonusType?.name || "Bonus"}
+        </Link>
+        <span className="mx-2">/</span>
         <span className="text-gray-900">{offer.title}</span>
       </nav>
 
@@ -348,7 +355,7 @@ export default function OfferDetailsClient({ offer, moreOffers, totalOffers, cou
 
       {/* More Offers Section */}
       {moreOffers && moreOffers.length > 0 && (
-        <div className="bg-white p-6">
+        <div className="bg-white p-6 mb-4">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-gray-900">
               More Offers from {offer.bookmaker?.name}
@@ -361,37 +368,81 @@ export default function OfferDetailsClient({ offer, moreOffers, totalOffers, cou
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {moreOffers.slice(0, loadMoreCount).map((moreOffer) => (
               <div key={moreOffer._id} className="border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    {moreOffer.bookmaker?.logo && (
-                      <Image
-                        src={urlFor(moreOffer.bookmaker.logo).width(40).height(40).url()}
-                        alt={moreOffer.bookmaker.logoAlt || moreOffer.bookmaker.name}
-                        width={40}
-                        height={40}
-                        className="w-10 h-10 rounded-md object-contain"
-                      />
-                    )}
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{moreOffer.title}</h3>
-                      <div className="flex items-center gap-2 text-sm text-gray-500">
-                        {moreOffer.bonusType?.name && (
-                          <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
-                            {moreOffer.bonusType.name}
-                          </span>
-                        )}
-                        {moreOffer.maxBonus && (
-                          <span className="text-green-600 font-medium">
-                            Up to {moreOffer.maxBonus}
-                          </span>
-                        )}
+                <div className="flex flex-col gap-3">
+                  {/* Top row: Logo, Bookmaker Name, and Published Date */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {moreOffer.bookmaker?.logo ? (
+                        <Image
+                          src={urlFor(moreOffer.bookmaker.logo).width(44).height(44).url()}
+                          alt={moreOffer.bookmaker.logoAlt || moreOffer.bookmaker.name}
+                          width={44}
+                          height={44}
+                          className="w-11 h-11 rounded-[6px] object-contain flex-shrink-0"
+                        />
+                      ) : (
+                        <div className="w-11 h-11 bg-gray-100 rounded-[6px] flex-shrink-0" />
+                      )}
+                      <div className="font-['General_Sans'] font-semibold text-[16px] leading-[100%] tracking-[1%] text-[#272932]">
+                        {moreOffer.bookmaker?.name}
                       </div>
                     </div>
+                    {/* Published Date - positioned on the far right */}
+                    {moreOffer.published && (
+                      <div className="text-sm text-gray-500">
+                        <span className="font-['General_Sans'] font-medium text-[14px] leading-[100%] tracking-[1%] text-[#696969]">
+                          Published: {formatDate(moreOffer.published)}
+                        </span>
+                      </div>
+                    )}
                   </div>
                   
+                  {/* Offer Title */}
+                  <div className="font-['General_Sans'] font-medium text-[20px] leading-[100%] tracking-[1%] text-[#272932]">
+                    {moreOffer.title}
+                  </div>
+                  
+                  {/* Offer Summary */}
+                  {moreOffer.offerSummary && (
+                    <div className="font-['General_Sans'] font-normal text-[16px] leading-[20px] tracking-[1%] text-[#696969] line-clamp-2 mb-3">
+                      <PortableText value={moreOffer.offerSummary} components={{
+                        block: { normal: ({children}) => <span>{children}</span> },
+                        types: {
+                          code: ({value}) => {
+                            const {language, code} = value;
+                            return (
+                              <div className="my-2">
+                                <pre className="bg-gray-900 text-gray-100 p-2 rounded text-xs overflow-x-auto">
+                                  <code className={`language-${language}`}>
+                                    {code}
+                                  </code>
+                                </pre>
+                              </div>
+                            );
+                          },
+                        },
+                      }} />
+                    </div>
+                  )}
+                  
+                  {/* Bonus Type and Max Bonus */}
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    {moreOffer.bonusType?.name && (
+                      <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
+                        {moreOffer.bonusType.name}
+                      </span>
+                    )}
+                    {moreOffer.maxBonus && (
+                      <span className="text-green-600 font-medium">
+                        Up to {moreOffer.maxBonus}
+                      </span>
+                    )}
+                  </div>
+                  
+                  {/* View Details Button */}
                   <Link
                     href={`/${countryName.toLowerCase().replace(/\s+/g, '-')}/offers/${moreOffer.slug.current}`}
-                    className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                    className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex-shrink-0 self-start"
                   >
                     View Details
                   </Link>

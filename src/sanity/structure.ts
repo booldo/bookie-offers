@@ -89,104 +89,15 @@ export const structure: StructureResolver = (S) =>
             )
         ),
 
-      // Content Management Section
-      S.listItem()
-        .title('Content Management')
-        .child(
-          S.list()
-            .title('Content Management')
-            .items([
-
-              
-              S.listItem()
-                .title('Articles')
-                .child(
-                  S.documentList()
-                    .title('Articles')
-                    .filter('_type == "article"')
-                ),
-              S.listItem()
-                .title('About')
-                .child(
-                  S.documentList()
-                    .title('About')
-                    .filter('_type == "about"')
-                ),
-              S.listItem()
-                .title('Contact')
-                .child(
-                  S.documentList()
-                    .title('Contact')
-                    .filter('_type == "contact"')
-                ),
-              S.listItem()
-                .title('FAQs')
-                .child(
-                  S.documentList()
-                    .title('FAQs')
-                    .filter('_type == "faq"')
-                ),
-              S.listItem()
-                .title('Licenses')
-                .child(
-                  S.documentList()
-                    .title('Licenses')
-                    .filter('_type == "licenses"')
-                ),
-              S.listItem()
-                .title('Payment Options')
-                .child(
-                  S.documentList()
-                    .title('Payment Options')
-                    .filter('_type == "paymentOptions"')
-                ),
-              S.listItem()
-                .title('Calculators')
-                .child(
-                  S.documentList()
-                    .title('Calculators')
-                    .filter('_type == "calculator"')
-                ),
-              S.listItem()
-                .title('Landing Page')
-                .child(
-                  S.documentList()
-                    .title('Landing Page')
-                    .filter('_type == "landingPage"')
-                ),
-              S.listItem()
-                .title('Click Tracking')
-                .child(
-                  S.documentList()
-                    .title('Click Tracking')
-                    .filter('_type == "clickTracking"')
-                ),
-              S.listItem()
-                .title('Hamburger Menu')
-                .child(
-                  S.documentList()
-                    .title('Add Page')
-                    .filter('_type == "hamburgerMenu"')
-                ),
-              S.listItem()
-                .title('Footer')
-                .child(
-                  S.documentList()
-                    .title('Footer')
-                    .filter('_type == "footer"')
-                ),
-            ])
-        ),
-
       // Divider
       S.divider(),
 
-      // All Documents (for admin purposes)
+      // Page Contents (all documents)
       S.listItem()
-        .title('All Documents')
+        .title('Page Contents')
         .child(
           S.list()
-            .title('All Documents')
+            .title('Page Contents')
             .items(S.documentTypeListItems())
         ),
     ])

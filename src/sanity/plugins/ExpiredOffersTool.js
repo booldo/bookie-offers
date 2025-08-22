@@ -105,17 +105,14 @@ export function ExpiredOffersTool() {
           (!offer.expires || new Date(offer.expires) >= new Date())
         );
       } else if (currentFilters.status === 'expired') {
-        // Filter for offers that have expired (past expiration date)
-        filteredResults = filteredResults.filter(offer => 
-          offer.expires && new Date(offer.expires) < new Date()
-        );
-      } else {
-        // Filter by exact publishing status
-        filteredResults = filteredResults.filter(offer => 
-          offer.publishingStatus === currentFilters.status
-        );
+           // Filter for offers that have expired (past expiration date)
+           filteredResults = filteredResults.filter(offer => 
+             offer.expires && new Date(offer.expires) < new Date()
+           );
+         } else if (currentFilters.status === 'hidden') {
+          filteredResults = filteredResults.filter(offer => offer.publishingStatus === 'hidden');
+        }
       }
-    }
     
     if (currentFilters.country !== 'all') {
       filteredResults = filteredResults.filter(offer => 
@@ -152,32 +149,32 @@ export function ExpiredOffersTool() {
     return new Date(offer.expires) < new Date();
   };
 
-  // Get status text
+  // Get status text for display
   const getStatusText = (offer) => {
+    if (offer.publishingStatus === 'hidden' && isExpired(offer)) return 'Hidden & Expired';
     if (offer.publishingStatus === 'hidden') return 'Hidden';
     if (isExpired(offer)) return 'Expired';
     if (offer.publishingStatus === 'published' && (!offer.expires || new Date(offer.expires) >= new Date())) return 'Active';
-    if (offer.publishingStatus === 'draft') return 'Draft';
     return offer.publishingStatus || 'Unknown';
   };
 
   // Get status badge color
   const getStatusColor = (offer) => {
-    if (offer.publishingStatus === 'hidden') return 'orange';
+    if (offer.publishingStatus === 'hidden' && isExpired(offer)) return 'red';
+    if (offer.publishingStatus === 'hidden') return 'red';
     if (isExpired(offer)) return 'red';
     if (offer.publishingStatus === 'published' && (!offer.expires || new Date(offer.expires) >= new Date())) return 'green';
-    if (offer.publishingStatus === 'draft') return 'gray';
     if (offer.publishingStatus === 'review') return 'yellow';
     return 'blue';
   };
 
   // Get background color for offer cards
   const getCardBackground = (offer) => {
-    if (offer.publishingStatus === 'hidden') return '#FEF3C7'; // Light yellow background
-    if (isExpired(offer)) return '#FEF2F2'; // Light red background
-    if (offer.publishingStatus === 'draft') return '#FFF7ED'; // Light orange background
-    if (offer.publishingStatus === 'published' && (!offer.expires || new Date(offer.expires) >= new Date())) return '#F0FDF4'; // Light green background
-    return '#FFFFFF'; // Default white background
+    if (offer.publishingStatus === 'hidden' && isExpired(offer)) return '#1F2937'; // Dark gray for hidden & expired
+    if (offer.publishingStatus === 'hidden') return '#374151'; // Medium gray for hidden
+    if (isExpired(offer)) return '#4B5563'; // Light gray for expired
+    if (offer.publishingStatus === 'published' && (!offer.expires || new Date(offer.expires) >= new Date())) return '#1F2937'; // Dark gray for active
+    return '#1F2937'; // Default dark gray background
   };
 
   // Format date
@@ -197,9 +194,8 @@ export function ExpiredOffersTool() {
       o.expires && new Date(o.expires) < new Date()
     ).length;
     const hidden = allOffers.filter(o => o.publishingStatus === 'hidden').length;
-    const draft = allOffers.filter(o => o.publishingStatus === 'draft').length;
     
-    return { total, active, expired, hidden, draft };
+    return { total, active, expired, hidden };
   };
 
   // Get count for specific country
@@ -221,7 +217,7 @@ export function ExpiredOffersTool() {
         newStatus = 'published';
         newVisibility = true;
       } else {
-        // If published/draft/any other status, make it hidden
+        // If published/any other status, make it hidden
         newStatus = 'hidden';
         newVisibility = false;
       }
@@ -268,7 +264,7 @@ export function ExpiredOffersTool() {
     } else {
       return {
         text: 'Hide',
-        tone: 'caution',
+        tone: 'critical',
         title: 'Hide this offer from offer cards (will show 410 error)'
       };
     }
@@ -303,17 +299,16 @@ export function ExpiredOffersTool() {
                 <Box>
                  <Select
                    value={filters.status}
-                  onChange={(event) => updateFilters({ status: event.target.value })}
-                  fontSize={1}
-                  radius={2}
-                  style={{ minWidth: '240px', width: '240px', height: '36px' }}
-                >
-                  <option value="all">All ({counts.total})</option>
-                  <option value="active">Active offers ({counts.active})</option>
-                  <option value="expired">Expired ({counts.expired})</option>
-                  <option value="hidden">Hidden ({counts.hidden})</option>
-                  <option value="draft">Draft ({counts.draft})</option>
-                </Select>
+                   onChange={(event) => updateFilters({ status: event.target.value })}
+                   fontSize={1}
+                   radius={2}
+                   style={{ minWidth: '240px', width: '240px', height: '36px' }}
+                 >
+                   <option value="all">All ({counts.total})</option>
+                   <option value="active">Active ({counts.active})</option>
+                   <option value="expired">Expired ({counts.expired})</option>
+                   <option value="hidden">Hidden ({counts.hidden})</option>
+                 </Select>
                 </Box>
                 <Box>
                 <Select
@@ -329,7 +324,7 @@ export function ExpiredOffersTool() {
                       {country.country} ({getCountryCount(country._id)})
                     </option>
                   ))}
-                </Select>
+                 </Select>
                 </Box>
                 <Box>
                  <TextInput
@@ -373,15 +368,15 @@ export function ExpiredOffersTool() {
                       shadow={1}
                       style={{ backgroundColor: getCardBackground(offer) }}
                     >
-                      <Flex align="center" gap={3}>
-                        <Button
-                          size={1}
+                                             <Flex align="center" gap={3}>
+                         <Button
+                           size={1}
                           text={getVisibilityButtonProps(offer).text}
                           tone={getVisibilityButtonProps(offer).tone}
-                          onClick={() => toggleOfferVisibility(offer._id, offer.publishingStatus)}
-                          disabled={processing}
+                           onClick={() => toggleOfferVisibility(offer._id, offer.publishingStatus)}
+                           disabled={processing}
                           title={getVisibilityButtonProps(offer).title}
-                        />
+                         />
                         
                         <Box flex={1}>
                           <Stack space={2}>
@@ -423,8 +418,12 @@ export function ExpiredOffersTool() {
                         </Box>
                         
                         <Flex gap={1}>
-                          {offer.publishingStatus === 'hidden' ? (
+                          {offer.publishingStatus === 'hidden' && isExpired(offer) ? (
                             <Badge tone="critical" icon={EyeClosedIcon}>
+                              HIDDEN & EXPIRED
+                            </Badge>
+                          ) : offer.publishingStatus === 'hidden' ? (
+                            <Badge tone="caution" icon={EyeClosedIcon}>
                               HIDDEN
                             </Badge>
                           ) : isExpired(offer) ? (

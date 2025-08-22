@@ -169,7 +169,7 @@ function OfferDetailsInner({ slug }) {
             logoAlt
           },
           title,
-          description,
+          offerSummary,
           expires,
           published
         }`;
@@ -230,7 +230,7 @@ function OfferDetailsInner({ slug }) {
           logoAlt
         },
         title,
-        description,
+        offerSummary,
         expires,
         published
       }`;
@@ -327,7 +327,15 @@ function OfferDetailsInner({ slug }) {
             Home
           </button>
           <span className="mx-1">/</span>
-          <span className="text-gray-700 font-medium">{offer?.bonusType?.name || "Bonus"}</span>
+          <button 
+            type="button" 
+            onClick={() => router.push(`/${getCountrySlug()}/${offer?.bonusType?.name?.toLowerCase().replace(/\s+/g, '-')}`)} 
+            className="hover:underline text-gray-700 font-medium"
+          >
+            {offer?.bonusType?.name || "Bonus"}
+          </button>
+          <span className="mx-1">/</span>
+          <span className="text-gray-900 font-medium">{offer?.title || "Offer"}</span>
         </div>
         
         {loading && (
@@ -478,7 +486,7 @@ function OfferDetailsInner({ slug }) {
 
           {/* More Offers Section */}
           {moreOffers.length > 0 && (
-            <div className="bg-white p-4 sm:p-6 mb-6">
+            <div className="bg-white p-4 sm:p-6 mb-4">
               <div className="font-semibold text-gray-900 mb-4">More Offers</div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {moreOffers.map((moreOffer) => (
@@ -493,31 +501,55 @@ function OfferDetailsInner({ slug }) {
                         className="absolute inset-0 z-10"
                       />
                     )}
-                    <div className="flex justify-between items-start">
-                      <div className="flex items-center gap-3">
-                        {moreOffer.bookmaker?.logo ? (
-                          <Image src={urlFor(moreOffer.bookmaker.logo).width(32).height(32).url()} alt={moreOffer.bookmaker.name} width={32} height={32} className="rounded-md" />
-                        ) : (
-                          <div className="w-8 h-8 bg-gray-100 rounded-md" />
-                        )}
-                        <div>
-                          <div className="font-semibold text-gray-900">{moreOffer.bookmaker?.name}</div>
-                            <div className="text-sm text-gray-600 line-clamp-2">{moreOffer.title}</div>
+                    <div className="flex flex-col gap-3">
+                      {/* Top row: Logo, Bookmaker Name, and Published Date */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          {moreOffer.bookmaker?.logo ? (
+                            <Image 
+                              src={urlFor(moreOffer.bookmaker.logo).width(44).height(44).url()} 
+                              alt={moreOffer.bookmaker.name} 
+                              width={44} 
+                              height={44} 
+                              className="rounded-[6px] flex-shrink-0" 
+                            />
+                          ) : (
+                            <div className="w-11 h-11 bg-gray-100 rounded-[6px] flex-shrink-0" />
+                          )}
+                          <div className="font-['General_Sans'] font-semibold text-[16px] leading-[100%] tracking-[1%] text-[#272932]">
+                            {moreOffer.bookmaker?.name}
                           </div>
                         </div>
-                        <span className="text-xs text-gray-500">{formatDate(moreOffer.published)}</span>
+                        {/* Published Date - positioned on the far right */}
+                        {moreOffer.published && (
+                          <div className="text-sm text-gray-500">
+                            <span className="font-['General_Sans'] font-medium text-[14px] leading-[100%] tracking-[1%] text-[#696969]">
+                              Published: {formatDate(moreOffer.published)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Offer Title */}
+                      <div className="font-['General_Sans'] font-medium text-[20px] leading-[100%] tracking-[1%] text-[#272932]">
+                        {moreOffer.title}
+                      </div>
+                      
+                      {/* Offer Summary */}
+                      {moreOffer.offerSummary && (
+                        <div className="font-['General_Sans'] font-normal text-[16px] leading-[20px] tracking-[1%] text-[#696969] line-clamp-2">
+                          <PortableText value={moreOffer.offerSummary} components={portableTextComponents} />
+                        </div>
+                      )}
+                      
+                      {/* Expiry Date */}
+                      {moreOffer.expires && (
+                        <div className="flex items-center gap-1 text-sm text-black mt-auto">
+                          <img src="/assets/calendar.png" alt="Calendar" width="16" height="16" className="flex-shrink-0" />
+                          <span className="text-xs">Expires: {formatDate(moreOffer.expires)}</span>
+                        </div>
+                      )}
                     </div>
-                    {moreOffer.offerSummary && (
-                      <div className="mt-2 text-sm text-gray-600">
-                        <PortableText value={moreOffer.offerSummary} components={portableTextComponents} />
-                      </div>
-                    )}
-                    {moreOffer.expires && (
-                      <div className="flex items-center gap-1 text-sm text-black mt-2">
-                        <img src="/assets/calendar.png" alt="Calendar" width="16" height="16" className="flex-shrink-0" />
-                        <span className="text-xs">Expires: {formatDate(moreOffer.expires)}</span>
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>

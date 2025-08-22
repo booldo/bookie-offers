@@ -398,7 +398,7 @@ export default function Navbar() {
 
   return (
     <>
-    <nav className="w-full flex items-center justify-between px-4 py-3 border-b bg-white sticky top-0 z-50">
+    <nav className="w-full flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-white sticky top-0 z-50 shadow-sm">
       <div className="flex items-center gap-2">
         {/* Hamburger/X Toggle */}
         <button className="p-2 focus:outline-none" onClick={() => setMenuOpen(!menuOpen)}>
@@ -476,7 +476,7 @@ export default function Navbar() {
             </svg>
           </button>
           {dropdownOpen && (
-            <div className="absolute right-0 mt-2 w-56 bg-white border rounded shadow-lg z-[100]">
+            <div className="absolute right-0 mt-2 w-56 bg-white border rounded shadow-xl z-[100]">
               {countriesLoading ? (
                 // Skeleton loading for countries
                 Array.from({ length: 6 }).map((_, index) => (

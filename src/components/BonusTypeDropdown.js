@@ -155,7 +155,7 @@ export default function MultiSelectDropdown({ label, options, selected, setSelec
       <div
         className={`
           sm:hidden fixed bottom-0 left-0 right-0 rounded-t-2xl p-4
-          bg-[#FFFFFF] shadow-2xl border-t border-black z-20
+          bg-[#FFFFFF] shadow-2xl border-t border-gray-200 z-20
           transform transition-transform duration-300 ease-in-out
           ${open ? 'translate-y-0' : 'translate-y-full'}
         `}
