@@ -132,7 +132,6 @@ function OfferDetailsInner({ slug }) {
           },
           maxBonus,
           minDeposit,
-          description,
           expires,
           published,
           affiliateLink->{
@@ -392,12 +391,7 @@ function OfferDetailsInner({ slug }) {
               </div>
             )}
             
-            {/* Offer Description */}
-            {offer.description && (
-            <div className="text-gray-700 mb-4">
-                <PortableText value={offer.description} components={portableTextComponents} />
-              </div>
-            )}
+
             
 
               
@@ -504,8 +498,8 @@ function OfferDetailsInner({ slug }) {
                     <div className="flex flex-col gap-3">
                       {/* Top row: Logo, Bookmaker Name, and Published Date */}
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          {moreOffer.bookmaker?.logo ? (
+                      <div className="flex items-center gap-3">
+                        {moreOffer.bookmaker?.logo ? (
                             <Image 
                               src={urlFor(moreOffer.bookmaker.logo).width(44).height(44).url()} 
                               alt={moreOffer.bookmaker.name} 
@@ -528,7 +522,7 @@ function OfferDetailsInner({ slug }) {
                             </span>
                           </div>
                         )}
-                      </div>
+                    </div>
                       
                       {/* Offer Title */}
                       <div className="font-['General_Sans'] font-medium text-[20px] leading-[100%] tracking-[1%] text-[#272932]">
@@ -536,19 +530,19 @@ function OfferDetailsInner({ slug }) {
                       </div>
                       
                       {/* Offer Summary */}
-                      {moreOffer.offerSummary && (
+                    {moreOffer.offerSummary && (
                         <div className="font-['General_Sans'] font-normal text-[16px] leading-[20px] tracking-[1%] text-[#696969] line-clamp-2">
-                          <PortableText value={moreOffer.offerSummary} components={portableTextComponents} />
-                        </div>
-                      )}
+                        <PortableText value={moreOffer.offerSummary} components={portableTextComponents} />
+                      </div>
+                    )}
                       
                       {/* Expiry Date */}
-                      {moreOffer.expires && (
+                    {moreOffer.expires && (
                         <div className="flex items-center gap-1 text-sm text-black mt-auto">
-                          <img src="/assets/calendar.png" alt="Calendar" width="16" height="16" className="flex-shrink-0" />
-                          <span className="text-xs">Expires: {formatDate(moreOffer.expires)}</span>
-                        </div>
-                      )}
+                        <img src="/assets/calendar.png" alt="Calendar" width="16" height="16" className="flex-shrink-0" />
+                        <span className="text-xs">Expires: {formatDate(moreOffer.expires)}</span>
+                      </div>
+                    )}
                     </div>
                   </div>
                 ))}

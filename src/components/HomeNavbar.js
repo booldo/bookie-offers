@@ -10,14 +10,6 @@ import { formatDate } from "../utils/dateFormatter";
 
 const WORLD_WIDE_FLAG = { src: "/assets/flags.png", name: "World Wide", path: "/", topIcon: "/assets/dropdown.png" };
 
-const popularSearches = [
-  "Welcome bonus",
-  "Deposit bonus",
-  "Best bonus",
-  "Best bookies",
-  "Best bookies"
-];
-
 export default function HomeNavbar() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [flags, setFlags] = useState([WORLD_WIDE_FLAG]);
@@ -33,6 +25,7 @@ export default function HomeNavbar() {
   const [searchError, setSearchError] = useState(null);
   const [countriesLoading, setCountriesLoading] = useState(true);
   const [brieflyOpen, setBrieflyOpen] = useState(false);
+  const [popularSearches, setPopularSearches] = useState([]);
   const searchDebounceRef = useRef();
   const menuRef = useRef();
   const [hamburgerMenu, setHamburgerMenu] = useState(null);
@@ -60,6 +53,52 @@ export default function HomeNavbar() {
       return [term, ...filtered].slice(0, 5); // Keep max 5
     });
   };
+
+  // Load most searches from Sanity
+  useEffect(() => {
+    const fetchMostSearches = async () => {
+      try {
+        const landingPageData = await client.fetch(`*[_type == "landingPage"][0]{
+          mostSearches[]{
+            searchTerm,
+            isActive,
+            order
+          }
+        }`);
+        
+        if (landingPageData?.mostSearches) {
+          // Filter active searches and sort by order
+          const activeSearches = landingPageData.mostSearches
+            .filter(search => search.isActive)
+            .sort((a, b) => (a.order || 1) - (b.order || 1))
+            .map(search => search.searchTerm);
+          
+          setPopularSearches(activeSearches);
+        } else {
+          // Fallback to default searches if none configured
+          setPopularSearches([
+            "Welcome bonus",
+            "Deposit bonus",
+            "Best bonus",
+            "Best bookies",
+            "Free bets"
+          ]);
+        }
+      } catch (error) {
+        console.error('Error fetching most searches:', error);
+        // Fallback to default searches on error
+        setPopularSearches([
+          "Welcome bonus",
+          "Deposit bonus",
+          "Best bonus",
+          "Best bookies",
+          "Free bets"
+        ]);
+      }
+    };
+
+    fetchMostSearches();
+  }, []);
 
   // Load countries from Sanity and build flags
   useEffect(() => {
@@ -364,7 +403,7 @@ export default function HomeNavbar() {
         </button>
         {/* Logo */}
         <Link href={pathname.startsWith("/ng") ? "/ng" : pathname.startsWith("/gh") ? "/gh" : "/"}>
-            <img src="/assets/logo.png" alt="Booldo Logo" className="cursor-pointer w-[110px] h-[40px]" />
+            <img src="/assets/logo.png" alt="Booldo Logo" className="cursor-pointer w-[120px] h-[41px]" />
         </Link>
       </div>
       {/* Search & Flag */}
@@ -375,15 +414,15 @@ export default function HomeNavbar() {
             <circle cx="11" cy="11" r="8" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
-          <input
-            type="text"
-            placeholder="Search..."
-            className="bg-transparent outline-none text-gray-700 w-full placeholder-gray-400"
-            value={searchValue}
-            onChange={e => { setSearchValue(e.target.value); setSearchOpen(true); }}
-            onFocus={() => setSearchOpen(true)}
-            readOnly={!searchOpen}
-          />
+                          <input
+                  type="text"
+                  placeholder="Search..."
+                  className="bg-transparent outline-none text-gray-700 w-full placeholder-gray-400 font-['General_Sans']"
+                  value={searchValue}
+                  onChange={e => { setSearchValue(e.target.value); setSearchOpen(true); }}
+                  onFocus={() => setSearchOpen(true)}
+                  readOnly={!searchOpen}
+                />
         </div>
         {/* Search icon - mobile only */}
         {!searchOpen && (
@@ -404,12 +443,12 @@ export default function HomeNavbar() {
             <input
               type="text"
               placeholder="Search..."
-              className="bg-transparent outline-none text-gray-700 w-full placeholder-gray-400"
+              className="bg-transparent outline-none text-gray-700 w-full placeholder-gray-400 font-['General_Sans']"
               value={searchValue}
               onChange={e => setSearchValue(e.target.value)}
               autoFocus
             />
-            <button className="ml-2 text-gray-500 text-base font-medium hover:underline" onClick={() => setSearchOpen(false)}>Cancel</button>
+            <button className="ml-2 text-gray-500 text-base font-medium hover:underline font-['General_Sans']" onClick={() => setSearchOpen(false)}>Cancel</button>
           </div>
         )}
         {/* Flag dropdown */}
@@ -444,7 +483,7 @@ export default function HomeNavbar() {
                 >
                   <div className="flex items-center gap-2">
                     <img src={flag.src} alt={flag.name || flag.country} className="w-5 h-5" />
-                    <span>{flag.name || flag.country}</span>
+                    <span className="font-['General_Sans']">{flag.name || flag.country}</span>
                   </div>
                                       {(selectedFlag.name || selectedFlag.country) === (flag.name || flag.country) && (
                     <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="green" strokeWidth="3">
@@ -466,14 +505,14 @@ export default function HomeNavbar() {
             {/* Default Menu Items */}
             <Link 
               href={pathname.startsWith('/ng') ? '/ng' : pathname.startsWith('/gh') ? '/gh' : '/'} 
-              className="hover:underline"
+              className="hover:underline font-['General_Sans']"
             >
               Home
             </Link>
             <div className="relative">
               <button 
                 onClick={() => setBrieflyOpen(!brieflyOpen)}
-                className="hover:underline flex items-center gap-1 w-full text-left"
+                className="hover:underline flex items-center gap-1 w-full text-left font-['General_Sans']"
               >
                 Briefly
                 <svg className={`w-4 h-4 transition-transform duration-200 ${brieflyOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -482,17 +521,17 @@ export default function HomeNavbar() {
               </button>
               {brieflyOpen && (
                 <div className="mt-2 space-y-2">
-                  <Link href="/briefly" className="block pl-6 hover:underline text-gray-800 text-base font-medium">
+                  <Link href="/briefly" className="block pl-6 hover:underline text-gray-800 text-base font-medium font-['General_Sans']">
                     Blog
                   </Link>
-                  <Link href="/briefly/calculators" className="block pl-6 hover:underline text-gray-800 text-base font-medium">
+                  <Link href="/briefly/calculators" className="block pl-6 hover:underline text-gray-800 text-base font-medium font-['General_Sans']">
                     Calculators
                   </Link>
                 </div>
               )}
             </div>
-            <Link href="/about" className="hover:underline">About Us</Link>
-            <Link href="/contact" className="hover:underline">Contact Us</Link>
+            <Link href="/about" className="hover:underline font-['General_Sans']">About Us</Link>
+            <Link href="/contact" className="hover:underline font-['General_Sans']">Contact Us</Link>
             
             {/* Additional Dynamic Menu Items */}
             {hamburgerMenu?.additionalMenuItems?.map((item, index) => (
@@ -500,7 +539,7 @@ export default function HomeNavbar() {
                 <Link
                   key={index}
                   href={`/hamburger-menu/${item.label.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`}
-                  className="hover:underline"
+                  className="hover:underline font-['General_Sans']"
                 >
                   {item.label}
                 </Link>
@@ -512,7 +551,7 @@ export default function HomeNavbar() {
             <div className="border-t border-gray-200 px-10 py-4">
               <Link 
                 href="/hamburger-menu/main"
-                className="text-sm text-gray-500 font-medium hover:text-gray-700 hover:underline cursor-pointer"
+                className="text-sm text-gray-500 font-medium hover:text-gray-700 hover:underline cursor-pointer font-['General_Sans']"
               >
                 {hamburgerMenu.title}
               </Link>
@@ -548,17 +587,17 @@ export default function HomeNavbar() {
                   autoFocus
                 />
               </div>
-              <button className="ml-4 text-gray-500 text-base font-medium hover:underline" onClick={() => setSearchOpen(false)}>Cancel</button>
+              <button className="ml-4 text-gray-500 text-base font-medium hover:underline font-['General_Sans']" onClick={() => setSearchOpen(false)}>Cancel</button>
             </div>
             {/* Search Results */}
             <div>
-              {searchLoading && <div className="text-center text-gray-400">Searching...</div>}
-              {searchError && <div className="text-center text-red-500">{searchError}</div>}
+              {searchLoading && <div className="text-center text-gray-400 font-['General_Sans']">Searching...</div>}
+              {searchError && <div className="text-center text-red-500 font-['General_Sans']">{searchError}</div>}
               {!searchLoading && !searchError && searchValue && searchValue.trim().length < 4 && (
-                <div className="text-center text-gray-400">Type at least 4 characters to search.</div>
+                <div className="text-center text-gray-400 font-['General_Sans']">Type at least 4 characters to search.</div>
               )}
               {!searchLoading && !searchError && searchResults.length === 0 && searchValue && searchValue.trim().length >= 4 && (
-                <div className="text-center text-gray-400">No results found.</div>
+                <div className="text-center text-gray-400 font-['General_Sans']">No results found.</div>
               )}
               {!searchLoading && !searchError && searchResults.length > 0 && (
                 <div className="flex flex-col gap-4 mb-6">
@@ -781,8 +820,8 @@ export default function HomeNavbar() {
                             </div>
                           )}
                           <div>
-                            <div className="font-semibold text-gray-900 text-base group-hover:text-green-600 transition-colors">{getItemTitle()}</div>
-                            <div className="text-sm text-gray-500 mt-1">{getItemDescription()}</div>
+                            <div className="font-semibold text-gray-900 text-base group-hover:text-green-600 transition-colors font-['General_Sans']">{getItemTitle()}</div>
+                            <div className="text-sm text-gray-500 mt-1 font-['General_Sans']">{getItemDescription()}</div>
                             {item._type === 'offers' && item.country && (
                               <div className="flex items-center gap-2 text-xs text-gray-500 mt-2">
                                 <span className="inline-flex items-center gap-1">
@@ -803,10 +842,10 @@ export default function HomeNavbar() {
                           </div>
                         </div>
                         <div className="flex flex-col items-end mt-4 sm:mt-0">
-                          <span className="text-xs text-gray-400 mb-2">
+                          <span className="text-xs text-gray-400 mb-2 font-['General_Sans']">
                             {getItemDate() && `Published: ${formatDate(getItemDate())}`}
                           </span>
-                          <span className="text-xs text-gray-400 capitalize">{item._type}</span>
+                          <span className="text-xs text-gray-400 capitalize font-['General_Sans']">{item._type}</span>
                         </div>
                       </div>
                     );
@@ -816,34 +855,34 @@ export default function HomeNavbar() {
               {/* Popular Searches */}
               {!searchLoading && !searchError && !searchValue && (
                 <div className="mb-6">
-                  <div className="text-gray-500 text-sm mb-2 font-medium">Popular Searches</div>
+                  <div className="text-gray-500 text-sm mb-2 font-medium font-['General_Sans']">Popular Searches</div>
                   <div className="flex flex-wrap gap-2">
-                    {popularSearches.map((term, idx) => (
-                      <button
-                        key={term + idx}
-                        className="bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full px-4 py-2 text-sm font-medium transition"
-                        onClick={() => {
-                          setSearchValue(term);
-                        }}
-                      >
-                        {term}
-                      </button>
-                    ))}
+                                          {popularSearches.map((term, idx) => (
+                        <button
+                          key={term + idx}
+                          className="bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full px-4 py-2 text-sm font-medium transition font-['General_Sans']"
+                          onClick={() => {
+                            setSearchValue(term);
+                          }}
+                        >
+                          {term}
+                        </button>
+                      ))}
                   </div>
                   {/* Recent Searches */}
                   {recentSearches.length > 0 && (
                     <div className="mt-6">
-                      <div className="text-gray-500 text-sm mb-2 font-medium">Recent Searches</div>
+                      <div className="text-gray-500 text-sm mb-2 font-medium font-['General_Sans']">Recent Searches</div>
                       <div className="flex flex-wrap gap-2">
-                        {recentSearches.map((term, idx) => (
-                          <button
-                            key={term + idx}
-                            className="bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full px-4 py-2 text-sm font-medium transition"
-                            onClick={() => setSearchValue(term)}
-                          >
-                            {term}
-                          </button>
-                        ))}
+                                                  {recentSearches.map((term, idx) => (
+                            <button
+                              key={term + idx}
+                              className="bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full px-4 py-2 text-sm font-medium transition font-['General_Sans']"
+                              onClick={() => setSearchValue(term)}
+                            >
+                              {term}
+                            </button>
+                          ))}
                       </div>
                     </div>
                   )}

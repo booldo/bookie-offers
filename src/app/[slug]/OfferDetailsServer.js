@@ -40,7 +40,6 @@ async function getOfferDetailsData(slug, countryName) {
       },
       maxBonus,
       minDeposit,
-      description,
       expires,
       published,
       affiliateLink->{
@@ -90,7 +89,6 @@ async function getOfferDetailsData(slug, countryName) {
       },
       maxBonus,
       minDeposit,
-      description,
       published,
       banner,
       bannerAlt,

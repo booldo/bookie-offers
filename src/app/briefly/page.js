@@ -40,7 +40,7 @@ export default function BrieflyPage() {
   return (
     <div className="min-h-screen flex flex-col bg-[#fafbfc]">
       <HomeNavbar />
-      <main className="flex-1 max-w-6xl mx-auto py-10 px-4 w-full">
+      <main className="flex-1 max-w-6xl mx-auto py-8 sm:py-10 px-4 sm:px-6 lg:px-8 w-full">
         <div className="flex items-center gap-2 mb-6">
           <button
             onClick={() => router.push('/')} 
@@ -50,10 +50,10 @@ export default function BrieflyPage() {
             <Image src="/assets/back-arrow.png" alt="Back" width={28} height={28} />
           </button>
           <span className="text-green-700 text-2xl">●</span>
-          <h2 className="text-2xl font-bold">Blog</h2>
+          <h2 className="text-xl sm:text-2xl font-bold font-['General_Sans']">Blog</h2>
         </div>
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="flex flex-col items-center bg-white rounded-lg shadow-sm p-4 animate-pulse">
                 <div className="w-32 h-32 bg-gray-200 rounded mb-3" />
@@ -63,7 +63,7 @@ export default function BrieflyPage() {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {articles.map((article) => (
                   <Link
                     key={article._id}
@@ -85,10 +85,10 @@ export default function BrieflyPage() {
                     </div>
                   )}
                       </div>
-                <div className="text-base font-semibold text-gray-900 leading-tight text-center">
+                <div className="text-sm sm:text-base font-semibold text-gray-900 leading-tight text-center font-['General_Sans']">
                   {article.title}
                     </div>
-                <span className="mt-2 px-3 py-1 bg-green-700 text-white text-xs rounded">Briefly</span>
+                <span className="mt-2 px-3 py-1 bg-green-700 text-white text-xs rounded font-['General_Sans']">Briefly</span>
                   </Link>
                 ))}
               </div>

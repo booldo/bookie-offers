@@ -58,7 +58,7 @@ export default function FooterPage() {
     return (
       <div className="min-h-screen flex flex-col bg-[#fafbfc]">
         <HomeNavbar />
-        <main className="flex-1 max-w-6xl mx-auto py-10 px-4 w-full">
+        <main className="flex-1 max-w-6xl mx-auto py-8 sm:py-10 px-4 sm:px-6 lg:px-8 w-full">
           <div className="h-8 w-2/3 bg-gray-200 rounded animate-pulse mb-4" />
           <div className="h-4 bg-gray-200 rounded animate-pulse mb-2" />
           <div className="h-4 bg-gray-200 rounded animate-pulse mb-2" />
@@ -73,7 +73,7 @@ export default function FooterPage() {
     return (
       <div className="min-h-screen flex flex-col bg-[#fafbfc]">
         <HomeNavbar />
-        <main className="flex-1 max-w-4xl mx-auto py-16 px-4">Page not found</main>
+        <main className="flex-1 max-w-4xl mx-auto py-12 sm:py-16 px-4 sm:px-6 font-['General_Sans']">Page not found</main>
         <Footer />
       </div>
     );
@@ -89,25 +89,25 @@ export default function FooterPage() {
         )}
       </Head>
       <HomeNavbar />
-      <main className="flex-1 max-w-6xl mx-auto py-10 px-4 w-full">
-        <div className="flex items-center gap-2 mb-4">
+      <main className="flex-1 max-w-6xl mx-auto py-8 sm:py-10 px-4 sm:px-6 lg:px-8 w-full">
+        <div className="flex items-center gap-2 mb-4 sm:mb-6">
           <button onClick={() => router.back()} className="focus:outline-none" aria-label="Go back">
             <Image src="/assets/back-arrow.png" alt="Back" width={28} height={28} />
           </button>
-          <h1 className="text-3xl font-bold">{page.label}</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold font-['General_Sans']">{page.label}</h1>
         </div>
-        <div className="flex flex-col md:flex-row gap-8">
+        <div className="flex flex-col lg:flex-row gap-6 sm:gap-8">
           {/* Main Content */}
           <div className="flex-1">
-            <div className="text-gray-800 text-base space-y-6 mb-8">
+            <div className="text-gray-800 text-sm sm:text-base space-y-4 sm:space-y-6 mb-6 sm:mb-8 font-['General_Sans']">
               <PortableText value={page.content} />
             </div>
           </div>
           {/* Sidebar */}
-          <aside className="w-full md:w-80 flex-shrink-0">
+          <aside className="w-full lg:w-80 flex-shrink-0">
             <div className="flex items-center gap-2 mb-3">
               <span className="text-green-700 text-xl">●</span>
-              <h2 className="text-xl font-semibold">Articles</h2>
+              <h2 className="text-lg sm:text-xl font-semibold font-['General_Sans']">Articles</h2>
             </div>
             <div className="flex flex-col gap-4">
               {articles.map((a) => (
@@ -124,7 +124,7 @@ export default function FooterPage() {
                       <div className="w-full h-full bg-gray-200" />
                     )}
                   </div>
-                  <div className="text-sm font-semibold text-gray-900 leading-tight">
+                  <div className="text-sm font-semibold text-gray-900 leading-tight font-['General_Sans']">
                     {a.title}
                   </div>
                 </Link>

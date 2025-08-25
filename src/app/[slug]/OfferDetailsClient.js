@@ -311,13 +311,7 @@ export default function OfferDetailsClient({ offer, moreOffers, totalOffers, cou
           </div>
         )}
 
-        {/* Description */}
-        {offer.description && (
-          <div className="mb-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-3">Description</h2>
-            <p className="text-gray-700 leading-relaxed">{offer.description}</p>
-          </div>
-        )}
+
 
         {/* CTA Button (desktop only, mobile moved to sticky bar) */}
         <div className="hidden sm:block text-center pt-6 border-t border-gray-200">
@@ -370,12 +364,12 @@ export default function OfferDetailsClient({ offer, moreOffers, totalOffers, cou
               <div key={moreOffer._id} className="border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors">
                 <div className="flex flex-col gap-3">
                   {/* Top row: Logo, Bookmaker Name, and Published Date */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
                       {moreOffer.bookmaker?.logo ? (
-                        <Image
+                      <Image
                           src={urlFor(moreOffer.bookmaker.logo).width(44).height(44).url()}
-                          alt={moreOffer.bookmaker.logoAlt || moreOffer.bookmaker.name}
+                        alt={moreOffer.bookmaker.logoAlt || moreOffer.bookmaker.name}
                           width={44}
                           height={44}
                           className="w-11 h-11 rounded-[6px] object-contain flex-shrink-0"
@@ -426,17 +420,17 @@ export default function OfferDetailsClient({ offer, moreOffers, totalOffers, cou
                   )}
                   
                   {/* Bonus Type and Max Bonus */}
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
-                    {moreOffer.bonusType?.name && (
-                      <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
-                        {moreOffer.bonusType.name}
-                      </span>
-                    )}
-                    {moreOffer.maxBonus && (
-                      <span className="text-green-600 font-medium">
-                        Up to {moreOffer.maxBonus}
-                      </span>
-                    )}
+                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                        {moreOffer.bonusType?.name && (
+                          <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
+                            {moreOffer.bonusType.name}
+                          </span>
+                        )}
+                        {moreOffer.maxBonus && (
+                          <span className="text-green-600 font-medium">
+                            Up to {moreOffer.maxBonus}
+                          </span>
+                        )}
                   </div>
                   
                   {/* View Details Button */}

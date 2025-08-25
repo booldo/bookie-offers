@@ -81,7 +81,7 @@ function ArticlesSidebar({ articles }) {
                       <div className="w-full h-full bg-gray-200" />
                     )}
                   </div>
-                  <div className="text-sm font-semibold text-gray-900 leading-tight">
+                  <div className="text-sm font-semibold text-gray-900 leading-tight font-['General_Sans']">
                     {article.title}
                   </div>
                 </Link>
@@ -100,23 +100,23 @@ export default async function AboutPage() {
   return (
     <div className="min-h-screen flex flex-col bg-[#fafbfc]">
       <HomeNavbar />
-      <main className="flex-1 max-w-6xl mx-auto py-10 px-4 w-full">
-        <div className="flex items-center gap-2 mb-4">
+      <main className="flex-1 max-w-6xl mx-auto py-8 sm:py-10 px-4 sm:px-6 lg:px-8 w-full">
+        <div className="flex items-center gap-2 mb-4 sm:mb-6">
           <BackButton />
-          <h1 className="text-4xl font-bold">{about?.title || 'About us'}</h1>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold font-['General_Sans']">{about?.title || 'About us'}</h1>
         </div>
-        <div className="flex flex-col md:flex-row gap-8">
+        <div className="flex flex-col lg:flex-row gap-6 sm:gap-8">
           {/* Main About Content - Static */}
-          <div className="flex-1 text-gray-800 text-base space-y-5">
+          <div className="flex-1 text-gray-800 text-sm sm:text-base space-y-4 sm:space-y-5 font-['General_Sans']">
             {about?.content ? (
               <PortableText value={about.content} />
             ) : (
-              <p className="text-gray-500">No content available yet.</p>
+              <p className="text-gray-500 font-['General_Sans']">No content available yet.</p>
             )}
           </div>
           
           {/* Sidebar - Static with fallback */}
-          <aside className="w-full md:w-80 flex-shrink-0">
+          <aside className="w-full lg:w-80 flex-shrink-0">
             <Suspense fallback={<ArticlesLoading />}>
               <ArticlesSidebar articles={articles} />
             </Suspense>

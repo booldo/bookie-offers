@@ -10,14 +10,6 @@ import { formatDate } from "../utils/dateFormatter";
 
 const WORLD_WIDE_FLAG = { src: "/assets/flags.png", name: "World Wide", path: "/", topIcon: "/assets/dropdown.png" };
 
-const popularSearches = [
-  "Welcome bonus",
-  "Deposit bonus",
-  "Best bonus",
-  "Best bookies",
-  "Best bookies"
-];
-
 export default function Navbar() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [flags, setFlags] = useState([WORLD_WIDE_FLAG]);
@@ -33,6 +25,7 @@ export default function Navbar() {
   const [searchError, setSearchError] = useState(null);
   const [countriesLoading, setCountriesLoading] = useState(true);
   const [brieflyOpen, setBrieflyOpen] = useState(false);
+  const [popularSearches, setPopularSearches] = useState([]);
   const searchDebounceRef = useRef();
   const menuRef = useRef();
   const [hamburgerMenu, setHamburgerMenu] = useState(null);
@@ -60,6 +53,52 @@ export default function Navbar() {
       return [term, ...filtered].slice(0, 5); // Keep max 5
     });
   };
+
+  // Load most searches from Sanity
+  useEffect(() => {
+    const fetchMostSearches = async () => {
+      try {
+        const landingPageData = await client.fetch(`*[_type == "landingPage"][0]{
+          mostSearches[]{
+            searchTerm,
+            isActive,
+            order
+          }
+        }`);
+        
+        if (landingPageData?.mostSearches) {
+          // Filter active searches and sort by order
+          const activeSearches = landingPageData.mostSearches
+            .filter(search => search.isActive)
+            .sort((a, b) => (a.order || 1) - (b.order || 1))
+            .map(search => search.searchTerm);
+          
+          setPopularSearches(activeSearches);
+        } else {
+          // Fallback to default searches if none configured
+          setPopularSearches([
+            "Welcome bonus",
+            "Deposit bonus",
+            "Best bonus",
+            "Best bookies",
+            "Free bets"
+          ]);
+        }
+      } catch (error) {
+        console.error('Error fetching most searches:', error);
+        // Fallback to default searches on error
+        setPopularSearches([
+          "Welcome bonus",
+          "Deposit bonus",
+          "Best bonus",
+          "Best bookies",
+          "Free bets"
+        ]);
+      }
+    };
+
+    fetchMostSearches();
+  }, []);
 
   // Load countries dynamically and build flags list (keep Worldwide)
   useEffect(() => {

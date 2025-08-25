@@ -255,19 +255,6 @@ export default {
       }),
       description: "A short summary of this offer (max 15 words)"
     },
-
-  {
-      name: "description",
-      title: "Text Block 2 (offer description)",
-      type: "array",
-      of: [
-        { type: "block" },
-        {
-          type: "codeBlock",
-          title: "Code Block"
-        }
-      ]
-    },
     { name: "expires", title: "Expires", type: "date", validation: Rule => Rule.required() },
     { name: "published", title: "Published", type: "date", validation: Rule => Rule.required() },
     { name: "banner", title: "Banner", type: "image", description: "Banner image for this specific offer" },

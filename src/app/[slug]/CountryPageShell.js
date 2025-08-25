@@ -273,12 +273,12 @@ export default async function CountryPageShell({ params, children, isOfferDetail
     return (
       <div className="min-h-screen bg-[#fafbfc] flex flex-col">
         <Navbar />
-        <main className="max-w-7xl mx-auto w-full px-2 sm:px-4 flex-1">
-          <div className="flex justify-center items-center py-20">
+        <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 flex-1">
+          <div className="flex justify-center items-center py-16 sm:py-20">
             <div className="text-center">
-              <h1 className="text-2xl font-bold text-gray-900 mb-4">Country Not Found</h1>
-              <p className="text-gray-600 mb-4">The requested country page could not be found.</p>
-              <a href="/" className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 font-['General_Sans']">Country Not Found</h1>
+              <p className="text-gray-600 mb-4 font-['General_Sans']">The requested country page could not be found.</p>
+              <a href="/" className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded font-['General_Sans']">
                 Go Home
               </a>
             </div>
@@ -294,16 +294,16 @@ export default async function CountryPageShell({ params, children, isOfferDetail
   return (
     <div className="min-h-screen bg-[#fafbfc] flex flex-col">
       <Navbar />
-      <main className="max-w-7xl mx-auto w-full px-2 sm:px-4 flex-1">
+      <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 flex-1">
         {/* Static country banner - prerendered */}
         {countryData.banner && countryData.banner._type === 'image' && countryData.banner.asset && (
-          <div className="mb-6">
+          <div className="mb-4 sm:mb-6">
             <Image
               src={urlFor(countryData.banner).width(1200).height(200).url()}
               alt={countryData.bannerAlt || countryData.title}
               width={1200}
               height={200}
-              className="w-full h-24 sm:h-48 object-cover rounded-xl"
+              className="w-full h-24 sm:h-32 md:h-48 object-cover rounded-xl"
               priority
             />
           </div>
@@ -311,35 +311,35 @@ export default async function CountryPageShell({ params, children, isOfferDetail
         
         {/* Static banner carousel - prerendered; hidden on offer details */}
         {!isOfferDetailsPage && banners && banners.length > 0 && (
-          <div className="flex flex-col items-center mb-6">
+          <div className="flex flex-col items-center mb-4 sm:mb-6">
             <BannerCarousel banners={banners} />
           </div>
         )}
         
         {/* Dynamic offers section - uses PPR with Suspense */}
-        <div className="mb-6">
+        <div className="mb-4 sm:mb-6">
           {children}
         </div>
         
         {/* Static comparison + FAQ section - prerendered */}
         {((filterComparison) || (filterFaqs && filterFaqs.length > 0) || countryData.comparison || (countryData.faqs && countryData.faqs.length > 0)) && (
-          <section className="bg-white rounded-xl p-4 sm:p-6 mb-10 shadow-sm border border-gray-100">
+          <section className="bg-white rounded-xl p-4 sm:p-6 mb-8 sm:mb-10 shadow-sm border border-gray-100">
             {(filterComparison || countryData.comparison) && (
-              <div className="mb-6">
-                <h2 className="text-xl sm:text-2xl font-semibold mb-3">Comparison</h2>
-                <div className="text-gray-600 text-sm">
+              <div className="mb-4 sm:mb-6">
+                <h2 className="text-lg sm:text-xl md:text-2xl font-semibold mb-3 font-['General_Sans']">Comparison</h2>
+                <div className="text-gray-600 text-sm sm:text-base font-['General_Sans']">
                   <PortableText value={filterComparison || countryData.comparison} />
                 </div>
               </div>
             )}
             {((filterFaqs && filterFaqs.length > 0) || (countryData.faqs && countryData.faqs.length > 0)) && (
               <div>
-                <h2 className="text-xl sm:text-2xl font-semibold mb-3">FAQs</h2>
+                <h2 className="text-lg sm:text-xl md:text-2xl font-semibold mb-3 font-['General_Sans']">FAQs</h2>
                 <div className="space-y-3">
                   {(filterFaqs || countryData.faqs).map((faq, idx) => (
-                    <div key={idx} className="border border-gray-200 rounded-lg p-3">
-                      <div className="font-medium text-gray-900 mb-1">{faq.question}</div>
-                      <div className="text-gray-700 text-sm whitespace-pre-line">{faq.answer}</div>
+                    <div key={idx} className="border border-gray-200 rounded-lg p-3 sm:p-4">
+                      <div className="font-medium text-gray-900 mb-1 font-['General_Sans']">{faq.question}</div>
+                      <div className="text-gray-700 text-sm sm:text-base whitespace-pre-line font-['General_Sans']">{faq.answer}</div>
                     </div>
                   ))}
                 </div>

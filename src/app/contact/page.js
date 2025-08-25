@@ -36,8 +36,8 @@ export default async function ContactPage() {
   return (
     <div className="min-h-screen flex flex-col bg-[#fafbfc]">
       <HomeNavbar />
-      <main className="flex-1 flex items-center justify-center px-4 py-16">
-        <div className="bg-white rounded-2xl shadow-lg max-w-xl w-full p-8 flex flex-col items-center border border-gray-100">
+      <main className="flex-1 flex items-center justify-center px-4 sm:px-6 py-12 sm:py-16">
+        <div className="bg-white rounded-2xl shadow-lg max-w-xl w-full p-6 sm:p-8 flex flex-col items-center border border-gray-100">
           {/* Static contact icon */}
           <div className="mb-4">
             <svg width="56" height="56" fill="none" viewBox="0 0 56 56">
@@ -48,23 +48,23 @@ export default async function ContactPage() {
           </div>
           
           {/* Static content - prerendered */}
-          <h1 className="text-3xl font-bold mb-2 text-center text-green-800">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2 text-center text-green-800 font-['General_Sans']">
             {contact?.title || 'Contact Us'}
           </h1>
-          <p className="mb-6 text-gray-600 text-center text-lg">
+          <p className="mb-6 text-gray-600 text-center text-base sm:text-lg font-['General_Sans']">
             {contact?.subtitle || `We'd love to hear from you! For questions, suggestions, or partnership inquiries, reach out anytime:`}
           </p>
           
           {/* Static email link */}
           <a
             href={`mailto:${contact?.email || 'info@booldo.com'}`}
-            className="text-green-700 text-xl font-semibold underline hover:text-green-900 transition"
+            className="text-green-700 text-lg sm:text-xl font-semibold underline hover:text-green-900 transition font-['General_Sans']"
           >
             {contact?.email || 'info@booldo.com'}
           </a>
           
           {/* Static note */}
-          <div className="mt-8 text-gray-400 text-sm text-center">
+          <div className="mt-8 text-gray-400 text-sm text-center font-['General_Sans']">
             {contact?.note || (
               <>
                 We aim to respond to all emails within 24 hours.<br />Thank you for connecting with Booldo!
