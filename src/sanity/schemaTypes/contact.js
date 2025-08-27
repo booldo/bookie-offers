@@ -29,6 +29,13 @@ export default {
       rows: 3,
       description: 'Small note displayed under the email',
     },
+    {
+      name: '_updatedAt',
+      title: 'Last Updated',
+      type: 'datetime',
+      readOnly: true,
+      description: 'Automatically updated when the document is modified'
+    }
   ],
 }
 

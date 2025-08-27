@@ -328,13 +328,6 @@ export default {
                   type: 'url',
                   description: 'If provided and no content is set, the link will point to this external URL'
                 },
-                {
-                  name: 'isActive',
-                  title: 'Active',
-                  type: 'boolean',
-                  description: 'Whether this link is displayed',
-                  initialValue: true
-                },
                 // Metadata fields for SEO
                 {
                   name: 'metaTitle',
@@ -359,6 +352,45 @@ export default {
                   options: {
                     layout: 'tags'
                   }
+                },
+                {
+                  name: 'sitemapInclude',
+                  title: 'Include in Sitemap',
+                  type: 'boolean',
+                  description: 'SEO: Should this page be included in sitemap.xml?',
+                  initialValue: true
+                },
+                {
+                  name: 'noindex',
+                  title: 'Noindex',
+                  type: 'boolean',
+                  description: 'SEO: Prevent this page from being indexed by search engines'
+                },
+                {
+                  name: 'nofollow',
+                  title: 'Nofollow',
+                  type: 'boolean',
+                  description: 'SEO: Prevent search engines from following links on this page'
+                },
+                {
+                  name: 'canonicalUrl',
+                  title: 'Canonical URL',
+                  type: 'url',
+                  description: 'SEO: Canonical URL for this page (leave blank for default)'
+                },
+                {
+                  name: 'isActive',
+                  title: 'Active',
+                  type: 'boolean',
+                  description: 'Whether this link is displayed',
+                  initialValue: true
+                },
+                {
+                  name: '_updatedAt',
+                  title: 'Last Updated',
+                  type: 'datetime',
+                  readOnly: true,
+                  description: 'Automatically updated when the document is modified'
                 }
               ],
               preview: {

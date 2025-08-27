@@ -248,11 +248,43 @@ export default {
     },
 
     {
+      name: "sitemapInclude",
+      title: "Include in Sitemap",
+      type: "boolean",
+      description: "SEO: Should this page be included in sitemap.xml?",
+      initialValue: true
+    },
+    {
+      name: "noindex",
+      title: "Noindex",
+      type: "boolean",
+      description: "SEO: Prevent this page from being indexed by search engines"
+    },
+    {
+      name: "nofollow",
+      title: "Nofollow",
+      type: "boolean",
+      description: "SEO: Prevent search engines from following links on this page"
+    },
+    {
+      name: "canonicalUrl",
+      title: "Canonical URL",
+      type: "url",
+      description: "SEO: Canonical URL for this page (leave blank for default)"
+    },
+    {
       name: "isActive",
       title: "Active",
       type: "boolean",
       initialValue: true,
       description: "Whether this affiliate link is currently active"
+    },
+    {
+      name: "_updatedAt",
+      title: "Last Updated",
+      type: "datetime",
+      readOnly: true,
+      description: "Automatically updated when the document is modified"
     }
   ]
 }; 

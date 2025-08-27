@@ -29,49 +29,64 @@ export async function getPageSeo(type, slug) {
 
 export async function getAllSitemapEntries() {
   try {
-  // Fetch all docs with sitemapInclude != false, including country info for offers
+    // Fetch all docs with sitemapInclude != false, including country info for offers
     const query = `*[_type in ["offers","article","banner","faq","calculator"] && (sitemapInclude == true || !defined(sitemapInclude))]{
-    _type,
-    slug,
-    _updatedAt,
-    country->{
-      slug
-    }
-  }`;
-  
-  // Also fetch affiliate links with pretty links
-  const affiliateQuery = `*[_type == "affiliate" && isActive == true && prettyLink.current != null]{
-    _type,
-    prettyLink,
-    bookmaker->{
+      _type,
+      slug,
+      _updatedAt,
+      sitemapInclude,
+      noindex,
+      nofollow,
       country->{
         slug
       }
-    },
-    _updatedAt
-  }`;
+    }`;
+  
+    // Also fetch affiliate links with pretty links
+    const affiliateQuery = `*[_type == "affiliate" && isActive == true && prettyLink.current != null && (sitemapInclude == true || !defined(sitemapInclude))]{
+      _type,
+      prettyLink,
+      sitemapInclude,
+      noindex,
+      nofollow,
+      bookmaker->{
+        country->{
+          slug
+        }
+      },
+      _updatedAt
+    }`;
 
     // Fetch country pages for basic filter URLs
-    const countryQuery = `*[_type == "countryPage" && isActive == true]{
+    const countryQuery = `*[_type == "countryPage" && isActive == true && (sitemapInclude == true || !defined(sitemapInclude))]{
       slug,
+      sitemapInclude,
+      noindex,
+      nofollow,
       _updatedAt
     }`;
 
     // Fetch basic filter options (bonus types and bookmakers) with proper country reference
     const basicFiltersQuery = `{
-    "bonusTypes": *[_type == "bonusType" && defined(country) && country->slug.current]{
-      name,
-      country->{
-        slug
+      "bonusTypes": *[_type == "bonusType" && defined(country) && country->slug.current && (sitemapInclude == true || !defined(sitemapInclude))]{
+        name,
+        sitemapInclude,
+        noindex,
+        nofollow,
+        country->{
+          slug
+        },
+        _updatedAt
       },
-      _updatedAt
-    },
-    "bookmakers": *[_type == "bookmaker" && defined(country) && country->slug.current]{
-      name,
-      country->{
-        slug
-      },
-      _updatedAt
+      "bookmakers": *[_type == "bookmaker" && defined(country) && country->slug.current && (sitemapInclude == true || !defined(sitemapInclude))]{
+        name,
+        sitemapInclude,
+        noindex,
+        nofollow,
+        country->{
+          slug
+        },
+        _updatedAt
       }
     }`;
     
@@ -87,6 +102,9 @@ export async function getAllSitemapEntries() {
       _type: 'affiliate',
       slug: link.prettyLink,
       countrySlug: link.bookmaker?.country?.slug?.current,
+      sitemapInclude: link.sitemapInclude,
+      noindex: link.noindex,
+      nofollow: link.nofollow,
       _updatedAt: link._updatedAt
     }));
 
@@ -96,25 +114,31 @@ export async function getAllSitemapEntries() {
     // Add country pages
     countries.forEach(country => {
       if (country.slug?.current) {
-          filterEntries.push({
+        filterEntries.push({
           _type: 'country',
           slug: country.slug.current,
+          sitemapInclude: country.sitemapInclude,
+          noindex: country.noindex,
+          nofollow: country.nofollow,
           _updatedAt: country._updatedAt
-          });
-        }
-      });
+        });
+      }
+    });
 
     // Add bonus type filter pages - only if country slug exists
     basicFilters.bonusTypes?.forEach(bonusType => {
       if (bonusType.name && bonusType.country?.slug?.current) {
-          filterEntries.push({
-            _type: 'filter',
+        filterEntries.push({
+          _type: 'filter',
           slug: `${bonusType.country.slug.current}/${bonusType.name.toLowerCase().replace(/\s+/g, '-')}`,
           countrySlug: bonusType.country.slug.current,
+          sitemapInclude: bonusType.sitemapInclude,
+          noindex: bonusType.noindex,
+          nofollow: bonusType.nofollow,
           _updatedAt: bonusType._updatedAt
-          });
-        }
-      });
+        });
+      }
+    });
 
     // Add bookmaker filter pages - only if country slug exists
     basicFilters.bookmakers?.forEach(bookmaker => {
@@ -123,6 +147,9 @@ export async function getAllSitemapEntries() {
           _type: 'filter',
           slug: `${bookmaker.country.slug.current}/${bookmaker.name.toLowerCase().replace(/\s+/g, '-')}`,
           countrySlug: bookmaker.country.slug.current,
+          sitemapInclude: bookmaker.sitemapInclude,
+          noindex: bookmaker.noindex,
+          nofollow: bookmaker.nofollow,
           _updatedAt: bookmaker._updatedAt
         });
       }
@@ -132,7 +159,9 @@ export async function getAllSitemapEntries() {
     const allEntries = [...entries, ...transformedAffiliateLinks, ...filterEntries];
     const validEntries = allEntries.filter(entry => 
       entry.slug && 
-      (typeof entry.slug === 'string' ? entry.slug !== 'undefined' : entry.slug.current !== 'undefined')
+      (typeof entry.slug === 'string' ? entry.slug !== 'undefined' : entry.slug.current !== 'undefined') &&
+      // Only include entries that should be in sitemap
+      (entry.sitemapInclude === true || !entry.sitemapInclude)
     );
     
     return validEntries;
@@ -142,6 +171,9 @@ export async function getAllSitemapEntries() {
     const fallbackQuery = `*[_type in ["offers","article","banner","faq","calculator"] && (sitemapInclude == true || !defined(sitemapInclude))]{
       _type,
       slug,
+      sitemapInclude,
+      noindex,
+      nofollow,
       _updatedAt,
       country->{
         slug

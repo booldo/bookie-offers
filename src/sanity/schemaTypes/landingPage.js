@@ -104,6 +104,13 @@ export default {
       ],
       description: "Popular search terms to display on the landing page and in search suggestions",
       validation: Rule => Rule.max(20)
+    },
+    {
+      name: "_updatedAt",
+      title: "Last Updated",
+      type: "datetime",
+      readOnly: true,
+      description: "Automatically updated when the document is modified"
     }
   ]
 };

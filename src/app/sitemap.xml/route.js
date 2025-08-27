@@ -1,44 +1,116 @@
 import { NextResponse } from "next/server";
 import { getAllSitemapEntries, getLandingPageSettings } from "../../sanity/lib/seo";
+import { client } from "../../sanity/lib/client";
 
 export async function GET() {
   try {
-    const baseUrl = "http://localhost:3000";
+    const baseUrl = "https://bookie-offers.vercel.app";
     const entries = await getAllSitemapEntries();
     const landingPage = await getLandingPageSettings();
     const extraUrls = landingPage?.sitemapExtraUrls || [];
 
-    // Start with important static pages
+    // Start with important static pages - these should ALWAYS be in sitemap
     let urls = [
       {
         loc: `${baseUrl}/`,
         lastmod: new Date().toISOString(),
+        priority: "1.0"
       },
       {
         loc: `${baseUrl}/briefly`,
         lastmod: new Date().toISOString(),
+        priority: "0.8"
       },
       {
         loc: `${baseUrl}/briefly/calculators`,
         lastmod: new Date().toISOString(),
+        priority: "0.8"
       },
       {
         loc: `${baseUrl}/about`,
         lastmod: new Date().toISOString(),
+        priority: "0.7"
       },
       {
         loc: `${baseUrl}/contact`,
         lastmod: new Date().toISOString(),
+        priority: "0.7"
+      },
+      {
+        loc: `${baseUrl}/faq`,
+        lastmod: new Date().toISOString(),
+        priority: "0.7"
       }
     ];
 
-    // Process dynamic entries
+    // Fetch additional static pages that should be in sitemap
+    try {
+      // Fetch footer pages
+      const footerPages = await client.fetch(`*[_type == "footer" && isActive == true]{
+        bottomRowLinks{
+          links[]{
+            slug,
+            isActive,
+            _updatedAt
+          }
+        }
+      }`);
+
+      // Add footer pages to sitemap
+      footerPages.forEach(footer => {
+        footer.bottomRowLinks?.links?.forEach(link => {
+          if (link.isActive && link.slug?.current) {
+            urls.push({
+              loc: `${baseUrl}/footer/${link.slug.current}`,
+              lastmod: link._updatedAt ? new Date(link._updatedAt).toISOString() : new Date().toISOString(),
+              priority: "0.6"
+            });
+          }
+        });
+      });
+
+      // Fetch hamburger menu pages
+      const hamburgerPages = await client.fetch(`*[_type == "hamburgerMenu" && isActive == true]{
+        additionalMenuItems[]{
+          label,
+          isActive,
+          _updatedAt
+        }
+      }`);
+
+      // Add hamburger menu pages to sitemap
+      hamburgerPages.forEach(menu => {
+        menu.additionalMenuItems?.forEach(item => {
+          if (item.isActive && item.label) {
+            const slug = item.label.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+            urls.push({
+              loc: `${baseUrl}/hamburger-menu/${slug}`,
+              lastmod: item._updatedAt ? new Date(item._updatedAt).toISOString() : new Date().toISOString(),
+              priority: "0.6"
+            });
+          }
+        });
+      });
+
+      // Add main hamburger menu page
+      urls.push({
+        loc: `${baseUrl}/hamburger-menu/main`,
+        lastmod: new Date().toISOString(),
+        priority: "0.6"
+      });
+
+    } catch (error) {
+      console.error('Error fetching additional static pages:', error);
+    }
+
+    // Process dynamic entries from Sanity
     console.log('Processing sitemap entries:', entries.length);
     console.log('Sample entries:', entries.slice(0, 3));
     
     const dynamicUrls = entries.map((entry) => {
       let path = "/";
       let isValid = true;
+      let priority = "0.5";
       
       if (entry._type === "offers") {
         // For offers, use the country from the offer data
@@ -49,6 +121,7 @@ export async function GET() {
           isValid = false;
         } else {
           path = `/${countrySlug}/offers/${offerSlug}`;
+          priority = "0.8"; // Offers are high priority
         }
       } else if (entry._type === "article") {
         const articleSlug = entry.slug?.current;
@@ -57,6 +130,7 @@ export async function GET() {
           isValid = false;
         } else {
           path = `/briefly/${articleSlug}`;
+          priority = "0.7"; // Articles are medium-high priority
         }
       } else if (entry._type === "banner") {
         const bannerSlug = entry.slug?.current;
@@ -65,6 +139,7 @@ export async function GET() {
           isValid = false;
         } else {
           path = `/banner/${bannerSlug}`;
+          priority = "0.6";
         }
       } else if (entry._type === "faq") {
         const faqSlug = entry.slug?.current;
@@ -73,6 +148,7 @@ export async function GET() {
           isValid = false;
         } else {
           path = `/faq/${faqSlug}`;
+          priority = "0.6";
         }
       } else if (entry._type === "calculator") {
         const calcSlug = entry.slug?.current;
@@ -81,6 +157,7 @@ export async function GET() {
           isValid = false;
         } else {
           path = `/briefly/calculator/${calcSlug}`;
+          priority = "0.7"; // Calculators are medium-high priority
         }
       } else if (entry._type === "affiliate") {
         // For affiliate links, use the pretty link with country
@@ -91,6 +168,7 @@ export async function GET() {
           isValid = false;
         } else {
           path = `/${countrySlug}/${affiliateSlug}`;
+          priority = "0.8"; // Affiliate links are high priority
         }
       } else if (entry._type === "filter") {
         // For filter pages, use the filter slug
@@ -100,6 +178,7 @@ export async function GET() {
           isValid = false;
         } else {
           path = `/${filterSlug}`;
+          priority = "0.7"; // Filter pages are medium-high priority
         }
       } else if (entry._type === "country") {
         // For country pages
@@ -109,20 +188,31 @@ export async function GET() {
           isValid = false;
         } else {
           path = `/${countrySlug}`;
+          priority = "0.9"; // Country pages are very high priority
         }
       }
       
       return {
         loc: `${baseUrl}${path}`,
         lastmod: entry._updatedAt ? new Date(entry._updatedAt).toISOString() : undefined,
+        priority: priority,
+        sitemapInclude: entry.sitemapInclude,
+        noindex: entry.noindex,
+        nofollow: entry.nofollow,
         isValid: isValid
       };
     });
 
-    // Filter out any invalid URLs
+    // Filter out any invalid URLs and respect sitemapInclude settings
     const validDynamicUrls = dynamicUrls.filter(url => {
       if (!url.isValid) {
         console.warn('Filtered out invalid URL (missing slug):', url.loc);
+        return false;
+      }
+      
+      // Check if entry should be excluded from sitemap
+      if (url.sitemapInclude === false) {
+        console.log('Excluding from sitemap (sitemapInclude = false):', url.loc);
         return false;
       }
       
@@ -143,8 +233,11 @@ export async function GET() {
     // Add valid dynamic URLs
     urls = urls.concat(validDynamicUrls);
     
-    // Add extra URLs
-    urls = urls.concat((extraUrls || []).map((url) => ({ loc: url })));
+    // Add extra URLs from landing page settings
+    urls = urls.concat((extraUrls || []).map((url) => ({ 
+      loc: url,
+      priority: "0.5"
+    })));
 
     // Remove duplicates based on loc
     const uniqueUrls = urls.filter((url, index, self) => 
@@ -156,7 +249,7 @@ export async function GET() {
 ${uniqueUrls
     .map(
       (u) =>
-        `<url><loc>${u.loc}</loc>${u.lastmod ? `<lastmod>${u.lastmod}</lastmod>` : ""}</url>`
+        `<url><loc>${u.loc}</loc>${u.lastmod ? `<lastmod>${u.lastmod}</lastmod>` : ""}${u.priority ? `<priority>${u.priority}</priority>` : ""}</url>`
     )
     .join("\n")}
 </urlset>`;
@@ -173,7 +266,7 @@ ${uniqueUrls
     // Return a basic sitemap with just the homepage if there's an error
     const fallbackXml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-<url><loc>http://localhost:3000</loc></url>
+<url><loc>https://bookie-offers.vercel.app</loc><priority>1.0</priority></url>
 </urlset>`;
     
     return new NextResponse(fallbackXml, {

@@ -58,12 +58,16 @@ export async function generateMetadata({ params }) {
       const countrySlug = awaitedParams.slug;
       const offerSlug = awaitedParams.filters[awaitedParams.filters.length - 1];
       
-      // Fetch offer metadata
+      // Fetch offer metadata including SEO fields
       const offerData = await client.fetch(`
         *[_type == "offers" && slug.current == $offerSlug][0]{
           title,
           metaTitle,
           metaDescription,
+          noindex,
+          nofollow,
+          canonicalUrl,
+          sitemapInclude,
           bookmaker->{
             name,
             logo,
@@ -82,7 +86,8 @@ export async function generateMetadata({ params }) {
         const title = offerData.metaTitle || `${offerData.title} - ${offerData.bookmaker?.name} | Booldo`;
         const description = offerData.metaDescription || `Get ${offerData.bonusType?.name || 'exclusive'} bonus from ${offerData.bookmaker?.name}. ${offerData.title}`;
         
-        return {
+        // Build metadata object with SEO fields
+        const metadata = {
           title,
           description,
           openGraph: {
@@ -91,6 +96,30 @@ export async function generateMetadata({ params }) {
             images: offerData.bookmaker?.logo ? [urlFor(offerData.bookmaker.logo).url()] : [],
           },
         };
+
+        // Apply robots meta tags if specified
+        if (offerData.noindex === true || offerData.nofollow === true) {
+          const robots = [];
+          if (offerData.noindex === true) robots.push('noindex');
+          if (offerData.nofollow === true) robots.push('nofollow');
+          if (robots.length > 0) {
+            metadata.robots = robots.join(', ');
+          }
+        }
+
+        // Apply canonical URL if specified
+        if (offerData.canonicalUrl) {
+          metadata.alternates = {
+            canonical: offerData.canonicalUrl,
+          };
+        } else {
+          // Use dynamic canonical URL based on country and offer
+          metadata.alternates = {
+            canonical: `https://booldo.com/${countrySlug}/offers/${offerSlug}`,
+          };
+        }
+
+        return metadata;
       }
     } catch (error) {
       console.error('Error generating metadata for offer details:', error);
@@ -139,44 +168,95 @@ export async function generateMetadata({ params }) {
       }
 
       // Resolve country name
-      const countryDoc = await client.fetch(`*[_type == "countryPage" && slug.current == $slug][0]{country, metaTitle, metaDescription}`, { slug: awaitedParams.slug });
+      const countryDoc = await client.fetch(`*[_type == "countryPage" && slug.current == $slug][0]{country, metaTitle, metaDescription, noindex, nofollow, canonicalUrl}`, { slug: awaitedParams.slug });
       const countryName = countryDoc?.country;
       
       if (countryName) {
         // Try bookmaker metadata by name within this country
         const bookmaker = await client.fetch(`*[_type == "bookmaker" && country->country == $country && name match $name][0]{
-          metaTitle, metaDescription, logo
+          metaTitle, metaDescription, logo, noindex, nofollow, canonicalUrl
         }`, { country: countryName, name: singleFilter.replace(/-/g, ' ') });
         if (bookmaker) {
           const title = bookmaker.metaTitle || `${singleFilter.replace(/-/g, ' ')} | Booldo`;
           const description = bookmaker.metaDescription || `Explore offers and information for ${singleFilter.replace(/-/g, ' ')} in ${countryName}.`;
-          return {
-            title,
-            description,
-            openGraph: {
-              title,
-              description,
-              images: bookmaker.logo ? [urlFor(bookmaker.logo).url()] : [],
-            },
-          };
+          
+          const metadata = { title, description };
+          
+          // Apply robots meta tags if specified
+          if (bookmaker.noindex === true || bookmaker.nofollow === true) {
+            const robots = [];
+            if (bookmaker.noindex === true) robots.push('noindex');
+            if (bookmaker.nofollow === true) robots.push('nofollow');
+            if (robots.length > 0) {
+              metadata.robots = robots.join(', ');
+            }
+          }
+
+          // Apply canonical URL if specified
+          if (bookmaker.canonicalUrl) {
+            metadata.alternates = { canonical: bookmaker.canonicalUrl };
+          } else {
+            metadata.alternates = { canonical: `https://booldo.com/${awaitedParams.slug}/${singleFilter}` };
+          }
+
+          return metadata;
         }
 
         // Try bonus type metadata by name within this country
         const bonusType = await client.fetch(`*[_type == "bonusType" && country->country == $country && name match $name][0]{
-          metaTitle, metaDescription
+          metaTitle, metaDescription, noindex, nofollow, canonicalUrl
         }`, { country: countryName, name: singleFilter.replace(/-/g, ' ') });
         if (bonusType) {
           const title = bonusType.metaTitle || `${singleFilter.replace(/-/g, ' ')} | Booldo`;
           const description = bonusType.metaDescription || `Discover ${singleFilter.replace(/-/g, ' ')} offers in ${countryName}.`;
-          return { title, description };
+          
+          const metadata = { title, description };
+          
+          // Apply robots meta tags if specified
+          if (bonusType.noindex === true || bonusType.nofollow === true) {
+            const robots = [];
+            if (bonusType.noindex === true) robots.push('noindex');
+            if (bonusType.nofollow === true) robots.push('nofollow');
+            if (robots.length > 0) {
+              metadata.robots = robots.join(', ');
+            }
+          }
+
+          // Apply canonical URL if specified
+          if (bonusType.canonicalUrl) {
+            metadata.alternates = { canonical: bonusType.canonicalUrl };
+          } else {
+            metadata.alternates = { canonical: `https://booldo.com/${awaitedParams.slug}/${singleFilter}` };
+          }
+
+          return metadata;
         }
 
         // Combination filter (contains '-') or fallback: use country page metadata
         if (singleFilter.includes('-') || countryDoc) {
-          return {
+          const metadata = {
             title: countryDoc.metaTitle || `${countryName} Offers | Booldo`,
             description: countryDoc.metaDescription || `Find the best offers and bookmakers in ${countryName}.`,
           };
+
+          // Apply robots meta tags if specified
+          if (countryDoc.noindex === true || countryDoc.nofollow === true) {
+            const robots = [];
+            if (countryDoc.noindex === true) robots.push('noindex');
+            if (countryDoc.nofollow === true) robots.push('nofollow');
+            if (robots.length > 0) {
+              metadata.robots = robots.join(', ');
+            }
+          }
+
+          // Apply canonical URL if specified
+          if (countryDoc.canonicalUrl) {
+            metadata.alternates = { canonical: countryDoc.canonicalUrl };
+          } else {
+            metadata.alternates = { canonical: `https://booldo.com/${awaitedParams.slug}` };
+          }
+
+          return metadata;
         }
       }
     } catch (error) {

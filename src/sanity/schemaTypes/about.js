@@ -26,6 +26,13 @@ export default {
       ],
       validation: Rule => Rule.required(),
     },
+    {
+      name: '_updatedAt',
+      title: 'Last Updated',
+      type: 'datetime',
+      readOnly: true,
+      description: 'Automatically updated when the document is modified'
+    }
   ],
 }
 

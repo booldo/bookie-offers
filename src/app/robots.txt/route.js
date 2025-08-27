@@ -8,7 +8,7 @@ export async function GET() {
 Allow: /
 
 # Sitemaps
-Sitemap: http://localhost:3000/sitemap.xml`;
+Sitemap: https://bookie-offers.vercel.app/sitemap.xml`;
 
     return new NextResponse(robotsContent, {
       status: 200,
@@ -22,7 +22,7 @@ Sitemap: http://localhost:3000/sitemap.xml`;
 Allow: /
 
 # Sitemaps
-Sitemap: http://localhost:3000/sitemap.xml`;
+Sitemap: https://bookie-offers.vercel.app/sitemap.xml`;
 
     return new NextResponse(fallbackContent, {
       status: 200,
