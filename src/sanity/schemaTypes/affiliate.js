@@ -279,12 +279,6 @@ export default {
       initialValue: true,
       description: "Whether this affiliate link is currently active"
     },
-    {
-      name: "_updatedAt",
-      title: "Last Updated",
-      type: "datetime",
-      readOnly: true,
-      description: "Automatically updated when the document is modified"
-    }
+
   ]
 }; 

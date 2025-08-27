@@ -30,7 +30,7 @@ export default {
       description: 'Small note displayed under the email',
     },
     {
-      name: '_updatedAt',
+      name: 'updatedAt',
       title: 'Last Updated',
       type: 'datetime',
       readOnly: true,

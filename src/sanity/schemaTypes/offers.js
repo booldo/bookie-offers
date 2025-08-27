@@ -377,12 +377,6 @@ export default {
       description: "SEO: Should this page be included in sitemap.xml?",
       initialValue: true
     },
-    {
-      name: "_updatedAt",
-      title: "Last Updated",
-      type: "datetime",
-      readOnly: true,
-      description: "Automatically updated when the document is modified"
-    }
+
   ]
 }; 

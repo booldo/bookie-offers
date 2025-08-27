@@ -27,7 +27,7 @@ export default {
       validation: Rule => Rule.required(),
     },
     {
-      name: '_updatedAt',
+      name: 'updatedAt',
       title: 'Last Updated',
       type: 'datetime',
       readOnly: true,

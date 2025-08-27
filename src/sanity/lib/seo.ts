@@ -30,7 +30,7 @@ export async function getPageSeo(type, slug) {
 export async function getAllSitemapEntries() {
   try {
     // Fetch all docs with sitemapInclude != false, including country info for offers
-    const query = `*[_type in ["offers","article","banner","faq","calculator"] && (sitemapInclude == true || !defined(sitemapInclude))]{
+    const query = `*[_type in ["offers","article","banner","faq","calculator"] && (sitemapInclude == true || !defined(sitemapInclude)) && (isActive == true || !defined(isActive))]{
       _type,
       slug,
       _updatedAt,
@@ -68,8 +68,9 @@ export async function getAllSitemapEntries() {
 
     // Fetch basic filter options (bonus types and bookmakers) with proper country reference
     const basicFiltersQuery = `{
-      "bonusTypes": *[_type == "bonusType" && defined(country) && country->slug.current && (sitemapInclude == true || !defined(sitemapInclude))]{
+      "bonusTypes": *[_type == "bonusType"]{
         name,
+        slug,
         sitemapInclude,
         noindex,
         nofollow,
@@ -78,8 +79,9 @@ export async function getAllSitemapEntries() {
         },
         _updatedAt
       },
-      "bookmakers": *[_type == "bookmaker" && defined(country) && country->slug.current && (sitemapInclude == true || !defined(sitemapInclude))]{
+      "bookmakers": *[_type == "bookmaker"]{
         name,
+        slug,
         sitemapInclude,
         noindex,
         nofollow,
@@ -96,6 +98,28 @@ export async function getAllSitemapEntries() {
       client.fetch(countryQuery),
       client.fetch(basicFiltersQuery)
     ]);
+
+    // Debug logging
+    console.log('Sitemap entries fetched:', {
+      offers: entries.filter(e => e._type === 'offers').length,
+      articles: entries.filter(e => e._type === 'article').length,
+      banners: entries.filter(e => e._type === 'banner').length,
+      faqs: entries.filter(e => e._type === 'faq').length,
+      calculators: entries.filter(e => e._type === 'calculator').length,
+      total: entries.length
+    });
+    
+    console.log('Filter entries:', {
+      bonusTypes: basicFilters.bonusTypes?.length || 0,
+      bookmakers: basicFilters.bookmakers?.length || 0,
+      countries: countries.length
+    });
+    
+    // Debug the actual data fetched
+    console.log('Basic filters data:', {
+      bonusTypes: basicFilters.bonusTypes?.slice(0, 2) || [],
+      bookmakers: basicFilters.bookmakers?.slice(0, 2) || []
+    });
     
     // Transform affiliate links to match the expected format
     const transformedAffiliateLinks = affiliateLinks.map(link => ({
@@ -116,7 +140,7 @@ export async function getAllSitemapEntries() {
       if (country.slug?.current) {
         filterEntries.push({
           _type: 'country',
-          slug: country.slug.current,
+          slug: { current: country.slug.current },
           sitemapInclude: country.sitemapInclude,
           noindex: country.noindex,
           nofollow: country.nofollow,
@@ -125,13 +149,15 @@ export async function getAllSitemapEntries() {
       }
     });
 
-    // Add bonus type filter pages - only if country slug exists
+    // Add bonus type filter pages - only if slug exists
+    console.log('Processing bonus types:', basicFilters.bonusTypes?.length || 0);
     basicFilters.bonusTypes?.forEach(bonusType => {
-      if (bonusType.name && bonusType.country?.slug?.current) {
+      console.log('Bonus type:', { name: bonusType.name, slug: bonusType.slug, country: bonusType.country?.slug?.current });
+      if (bonusType.slug?.current) {
         filterEntries.push({
           _type: 'filter',
-          slug: `${bonusType.country.slug.current}/${bonusType.name.toLowerCase().replace(/\s+/g, '-')}`,
-          countrySlug: bonusType.country.slug.current,
+          slug: { current: bonusType.slug.current },
+          countrySlug: bonusType.country?.slug?.current,
           sitemapInclude: bonusType.sitemapInclude,
           noindex: bonusType.noindex,
           nofollow: bonusType.nofollow,
@@ -140,13 +166,15 @@ export async function getAllSitemapEntries() {
       }
     });
 
-    // Add bookmaker filter pages - only if country slug exists
+    // Add bookmaker filter pages - only if slug exists
+    console.log('Processing bookmakers:', basicFilters.bookmakers?.length || 0);
     basicFilters.bookmakers?.forEach(bookmaker => {
-      if (bookmaker.name && bookmaker.country?.slug?.current) {
+      console.log('Bookmaker:', { name: bookmaker.name, slug: bookmaker.slug, country: bookmaker.country?.slug?.current });
+      if (bookmaker.slug?.current) {
         filterEntries.push({
           _type: 'filter',
-          slug: `${bookmaker.country.slug.current}/${bookmaker.name.toLowerCase().replace(/\s+/g, '-')}`,
-          countrySlug: bookmaker.country.slug.current,
+          slug: { current: bookmaker.slug.current },
+          countrySlug: bookmaker.country?.slug?.current,
           sitemapInclude: bookmaker.sitemapInclude,
           noindex: bookmaker.noindex,
           nofollow: bookmaker.nofollow,
@@ -157,12 +185,30 @@ export async function getAllSitemapEntries() {
     
     // Filter out any entries with undefined or invalid slugs before returning
     const allEntries = [...entries, ...transformedAffiliateLinks, ...filterEntries];
+    
+    // Debug logging for all entries
+    console.log('All entries before filtering:', {
+      total: allEntries.length,
+      byType: allEntries.reduce((acc, entry) => {
+        acc[entry._type] = (acc[entry._type] || 0) + 1;
+        return acc;
+      }, {})
+    });
+    
     const validEntries = allEntries.filter(entry => 
       entry.slug && 
       (typeof entry.slug === 'string' ? entry.slug !== 'undefined' : entry.slug.current !== 'undefined') &&
       // Only include entries that should be in sitemap
       (entry.sitemapInclude === true || !entry.sitemapInclude)
     );
+    
+    console.log('Valid entries after filtering:', {
+      total: validEntries.length,
+      byType: validEntries.reduce((acc, entry) => {
+        acc[entry._type] = (acc[entry._type] || 0) + 1;
+        return acc;
+      }, {})
+    });
     
     return validEntries;
   } catch (error) {

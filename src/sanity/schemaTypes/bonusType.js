@@ -30,6 +30,34 @@ export default {
         // If there's an error, allow the operation
         return true
       })
+  }).custom((doc, context) => {
+    if (!doc?.slug?.current) return true // Skip validation if slug is missing
+    
+    // Check if another bonus type with same slug exists (globally unique)
+    const { getClient } = context
+    const client = getClient({ apiVersion: '2023-05-03' })
+    
+    // Exclude both draft and published versions of the current document
+    const currentId = doc._id || 'draft'
+    const draftId = currentId.startsWith('drafts.') ? currentId : `drafts.${currentId}`
+    const publishedId = currentId.replace(/^drafts\./, '')
+    const query = `count(*[_type == "bonusType" && slug.current == $slug && !(_id in [$draftId, $publishedId])])`
+    
+    return client.fetch(query, { 
+      slug: doc.slug.current, 
+      draftId, 
+      publishedId 
+    })
+      .then(count => {
+        if (count > 0) {
+          return `A bonus type with slug "${doc.slug.current}" already exists. Slugs must be unique across all countries.`
+        }
+        return true
+      })
+      .catch(() => {
+        // If there's an error, allow the operation
+        return true
+      })
   }),
   preview: {
     select: {
@@ -69,6 +97,37 @@ export default {
       options: {
         filter: 'isActive == true'
       }
+    },
+    {
+      name: "slug",
+      title: "URL Slug",
+      type: "slug",
+      description: "URL slug for this bonus type (e.g., 'ng/free-bet', 'gh/welcome-offer')",
+      options: {
+        source: async (doc, context) => {
+          const { getClient } = context;
+          const client = getClient({ apiVersion: '2023-05-03' });
+          if (!doc.country?._ref || !doc.name) {
+            return "Please select country and enter bonus name first";
+          }
+          try {
+            const query = `*[_type == "countryPage" && _id == $countryId][0]{ countryCode }`;
+            const result = await client.fetch(query, { countryId: doc.country._ref });
+            if (result?.countryCode && doc.name) {
+              const countryCode = result.countryCode.toLowerCase();
+              const bonusName = doc.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+              return `${countryCode}/${bonusName}`;
+            }
+            return "Could not generate slug";
+          } catch (error) {
+            console.error('Error generating slug:', error);
+            return "Error generating slug";
+          }
+        },
+        maxLength: 96,
+        slugify: input => input.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-\/]/g, '')
+      },
+      validation: Rule => Rule.required(),
     },
     {
       name: "comparison",
@@ -137,12 +196,6 @@ export default {
       description: "SEO: Should this page be included in sitemap.xml?",
       initialValue: true
     },
-    {
-      name: "_updatedAt",
-      title: "Last Updated",
-      type: "datetime",
-      readOnly: true,
-      description: "Automatically updated when the document is modified"
-    }
+
   ]
 }; 

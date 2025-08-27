@@ -31,6 +31,34 @@ export default {
         // If there's an error, allow the operation
         return true
       })
+  }).custom((doc, context) => {
+    if (!doc?.slug?.current) return true // Skip validation if slug is missing
+    
+    // Check if another bookmaker with same slug exists (globally unique)
+    const { getClient } = context
+    const client = getClient({ apiVersion: '2023-05-03' })
+    
+    // Exclude both draft and published versions of the current document
+    const currentId = doc._id || 'draft'
+    const draftId = currentId.startsWith('drafts.') ? currentId : `drafts.${currentId}`
+    const publishedId = currentId.replace(/^drafts\./, '')
+    const query = `count(*[_type == "bookmaker" && slug.current == $slug && !(_id in [$draftId, $publishedId])])`
+    
+    return client.fetch(query, { 
+      slug: doc.slug.current, 
+      draftId, 
+      publishedId 
+    })
+      .then(count => {
+        if (count > 0) {
+          return `A bookmaker with slug "${doc.slug.current}" already exists. Slugs must be unique across all countries.`
+        }
+        return true
+      })
+      .catch(() => {
+        // If there's an error, allow the operation
+        return true
+      })
   }),
   preview: {
     select: {
@@ -54,8 +82,6 @@ export default {
       type: "string",
       validation: Rule => Rule.required()
     },
-    { name: "logo", title: "Logo", type: "image" },
-    { name: "logoAlt", title: "Logo Alt Text", type: "string", description: "Alternative text for accessibility and SEO" },
     {
       name: "country",
       title: "Country",
@@ -67,6 +93,39 @@ export default {
         filter: 'isActive == true'
       }
     },
+    {
+      name: "slug",
+      title: "URL Slug",
+      type: "slug",
+      description: "URL slug for this bookmaker (e.g., 'ng/betika', 'gh/mozzart')",
+      options: {
+        source: async (doc, context) => {
+          const { getClient } = context;
+          const client = getClient({ apiVersion: '2023-05-03' });
+          if (!doc.country?._ref || !doc.name) {
+            return "Please select country and enter bookmaker name first";
+          }
+          try {
+            const query = `*[_type == "countryPage" && _id == $countryId][0]{ countryCode }`;
+            const result = await client.fetch(query, { countryId: doc.country._ref });
+            if (result?.countryCode && doc.name) {
+              const countryCode = result.countryCode.toLowerCase();
+              const bookmakerName = doc.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+              return `${countryCode}/${bookmakerName}`;
+            }
+            return "Could not generate slug";
+          } catch (error) {
+            console.error('Error generating slug:', error);
+            return "Error generating slug";
+          }
+        },
+        maxLength: 96,
+        slugify: input => input.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-\/]/g, '')
+      },
+      validation: Rule => Rule.required(),
+    },
+    { name: "logo", title: "Logo", type: "image" },
+    { name: "logoAlt", title: "Logo Alt Text", type: "string", description: "Alternative text for accessibility and SEO" },
     {
       name: "license",
       title: "License",
@@ -154,12 +213,6 @@ export default {
       description: "SEO: Should this page be included in sitemap.xml?",
       initialValue: true
     },
-    {
-      name: "_updatedAt",
-      title: "Last Updated",
-      type: "datetime",
-      readOnly: true,
-      description: "Automatically updated when the document is modified"
-    }
+
   ]
 }; 

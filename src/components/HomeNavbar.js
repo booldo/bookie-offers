@@ -414,15 +414,15 @@ export default function HomeNavbar() {
             <circle cx="11" cy="11" r="8" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
-                          <input
-                  type="text"
-                  placeholder="Search..."
+          <input
+            type="text"
+            placeholder="Search..."
                   className="bg-transparent outline-none text-gray-700 w-full placeholder-gray-400 font-['General_Sans']"
-                  value={searchValue}
-                  onChange={e => { setSearchValue(e.target.value); setSearchOpen(true); }}
-                  onFocus={() => setSearchOpen(true)}
-                  readOnly={!searchOpen}
-                />
+            value={searchValue}
+            onChange={e => { setSearchValue(e.target.value); setSearchOpen(true); }}
+            onFocus={() => setSearchOpen(true)}
+            readOnly={!searchOpen}
+          />
         </div>
         {/* Search icon - mobile only */}
         {!searchOpen && (
@@ -857,32 +857,32 @@ export default function HomeNavbar() {
                 <div className="mb-6">
                   <div className="text-gray-500 text-sm mb-2 font-medium font-['General_Sans']">Popular Searches</div>
                   <div className="flex flex-wrap gap-2">
-                                          {popularSearches.map((term, idx) => (
-                        <button
-                          key={term + idx}
+                    {popularSearches.map((term, idx) => (
+                      <button
+                        key={term + idx}
                           className="bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full px-4 py-2 text-sm font-medium transition font-['General_Sans']"
-                          onClick={() => {
-                            setSearchValue(term);
-                          }}
-                        >
-                          {term}
-                        </button>
-                      ))}
+                        onClick={() => {
+                          setSearchValue(term);
+                        }}
+                      >
+                        {term}
+                      </button>
+                    ))}
                   </div>
                   {/* Recent Searches */}
                   {recentSearches.length > 0 && (
                     <div className="mt-6">
                       <div className="text-gray-500 text-sm mb-2 font-medium font-['General_Sans']">Recent Searches</div>
                       <div className="flex flex-wrap gap-2">
-                                                  {recentSearches.map((term, idx) => (
-                            <button
-                              key={term + idx}
+                        {recentSearches.map((term, idx) => (
+                          <button
+                            key={term + idx}
                               className="bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full px-4 py-2 text-sm font-medium transition font-['General_Sans']"
-                              onClick={() => setSearchValue(term)}
-                            >
-                              {term}
-                            </button>
-                          ))}
+                            onClick={() => setSearchValue(term)}
+                          >
+                            {term}
+                          </button>
+                        ))}
                       </div>
                     </div>
                   )}

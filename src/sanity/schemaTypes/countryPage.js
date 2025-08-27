@@ -171,12 +171,6 @@ export default {
       initialValue: true,
       description: "Whether this country page should be displayed"
     },
-    {
-      name: "_updatedAt",
-      title: "Last Updated",
-      type: "datetime",
-      readOnly: true,
-      description: "Automatically updated when the document is modified"
-    }
+
   ]
 };

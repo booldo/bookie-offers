@@ -386,7 +386,7 @@ export default {
                   initialValue: true
                 },
                 {
-                  name: '_updatedAt',
+                  name: 'updatedAt',
                   title: 'Last Updated',
                   type: 'datetime',
                   readOnly: true,

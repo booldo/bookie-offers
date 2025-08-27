@@ -51,7 +51,8 @@ export async function GET() {
           links[]{
             slug,
             isActive,
-            _updatedAt
+            _updatedAt,
+            updatedAt
           }
         }
       }`);
@@ -62,7 +63,7 @@ export async function GET() {
           if (link.isActive && link.slug?.current) {
             urls.push({
               loc: `${baseUrl}/footer/${link.slug.current}`,
-              lastmod: link._updatedAt ? new Date(link._updatedAt).toISOString() : new Date().toISOString(),
+              lastmod: (link.updatedAt || link._updatedAt) ? new Date(link.updatedAt || link._updatedAt).toISOString() : new Date().toISOString(),
               priority: "0.6"
             });
           }
@@ -74,7 +75,8 @@ export async function GET() {
         additionalMenuItems[]{
           label,
           isActive,
-          _updatedAt
+          _updatedAt,
+          updatedAt
         }
       }`);
 
@@ -85,7 +87,7 @@ export async function GET() {
             const slug = item.label.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
             urls.push({
               loc: `${baseUrl}/hamburger-menu/${slug}`,
-              lastmod: item._updatedAt ? new Date(item._updatedAt).toISOString() : new Date().toISOString(),
+              lastmod: (item.updatedAt || item._updatedAt) ? new Date(item.updatedAt || item._updatedAt).toISOString() : new Date().toISOString(),
               priority: "0.6"
             });
           }
@@ -104,6 +106,8 @@ export async function GET() {
     }
 
     // Process dynamic entries from Sanity
+    
+    // Debug logging
     console.log('Processing sitemap entries:', entries.length);
     console.log('Sample entries:', entries.slice(0, 3));
     
@@ -114,8 +118,9 @@ export async function GET() {
       
       if (entry._type === "offers") {
         // For offers, use the country from the offer data
-        const countrySlug = entry.country?.slug?.current || 'ng'; // Default to Nigeria if no country
-        const offerSlug = entry.slug?.current;
+        const rawCountrySlug = entry.country?.slug;
+        const countrySlug = typeof rawCountrySlug === 'string' ? rawCountrySlug : (rawCountrySlug?.current || 'ng');
+        const offerSlug = typeof entry.slug === 'string' ? entry.slug : entry.slug?.current;
         if (!offerSlug) {
           console.warn('Offer missing slug:', entry);
           isValid = false;
@@ -124,7 +129,7 @@ export async function GET() {
           priority = "0.8"; // Offers are high priority
         }
       } else if (entry._type === "article") {
-        const articleSlug = entry.slug?.current;
+        const articleSlug = typeof entry.slug === 'string' ? entry.slug : entry.slug?.current;
         if (!articleSlug) {
           console.warn('Article missing slug:', entry);
           isValid = false;
@@ -133,7 +138,7 @@ export async function GET() {
           priority = "0.7"; // Articles are medium-high priority
         }
       } else if (entry._type === "banner") {
-        const bannerSlug = entry.slug?.current;
+        const bannerSlug = typeof entry.slug === 'string' ? entry.slug : entry.slug?.current;
         if (!bannerSlug) {
           console.warn('Banner missing slug:', entry);
           isValid = false;
@@ -142,7 +147,7 @@ export async function GET() {
           priority = "0.6";
         }
       } else if (entry._type === "faq") {
-        const faqSlug = entry.slug?.current;
+        const faqSlug = typeof entry.slug === 'string' ? entry.slug : entry.slug?.current;
         if (!faqSlug) {
           console.warn('FAQ missing slug:', entry);
           isValid = false;
@@ -151,7 +156,7 @@ export async function GET() {
           priority = "0.6";
         }
       } else if (entry._type === "calculator") {
-        const calcSlug = entry.slug?.current;
+        const calcSlug = typeof entry.slug === 'string' ? entry.slug : entry.slug?.current;
         if (!calcSlug) {
           console.warn('Calculator missing slug:', entry);
           isValid = false;
@@ -162,7 +167,7 @@ export async function GET() {
       } else if (entry._type === "affiliate") {
         // For affiliate links, use the pretty link with country
         const countrySlug = entry.countrySlug || 'ng'; // Default to Nigeria if no country
-        const affiliateSlug = entry.slug?.current;
+        const affiliateSlug = typeof entry.slug === 'string' ? entry.slug : entry.slug?.current;
         if (!affiliateSlug) {
           console.warn('Affiliate missing slug:', entry);
           isValid = false;
@@ -171,10 +176,10 @@ export async function GET() {
           priority = "0.8"; // Affiliate links are high priority
         }
       } else if (entry._type === "filter") {
-        // For filter pages, use the filter slug
-        const filterSlug = entry.slug?.current;
-        if (!filterSlug) {
-          console.warn('Filter missing slug:', entry);
+        // For filter pages (bookmaker/bonus-type), use the filter slug directly
+        const filterSlug = typeof entry.slug === 'string' ? entry.slug : entry.slug?.current;
+        if (!filterSlug || filterSlug === 'undefined') {
+          console.warn('Filter missing or invalid slug:', entry);
           isValid = false;
         } else {
           path = `/${filterSlug}`;
@@ -182,7 +187,7 @@ export async function GET() {
         }
       } else if (entry._type === "country") {
         // For country pages
-        const countrySlug = entry.slug?.current;
+        const countrySlug = typeof entry.slug === 'string' ? entry.slug : entry.slug?.current;
         if (!countrySlug) {
           console.warn('Country missing slug:', entry);
           isValid = false;
@@ -190,6 +195,11 @@ export async function GET() {
           path = `/${countrySlug}`;
           priority = "0.9"; // Country pages are very high priority
         }
+      }
+      
+      // Debug logging for _updatedAt field
+      if (!entry._updatedAt) {
+        console.warn(`Entry missing _updatedAt:`, { _type: entry._type, slug: entry.slug, path });
       }
       
       return {
@@ -212,16 +222,22 @@ export async function GET() {
       
       // Check if entry should be excluded from sitemap
       if (url.sitemapInclude === false) {
-        console.log('Excluding from sitemap (sitemapInclude = false):', url.loc);
         return false;
       }
       
       // Additional validation for malformed URLs
-      const isValid = url.loc && 
-        url.loc !== `${baseUrl}/` && 
-        !url.loc.includes('undefined') &&
-        !url.loc.includes('//') &&
-        url.loc.length > baseUrl.length + 1;
+      let isValid = false;
+      try {
+        const parsed = new URL(url.loc);
+        const hasDoubleSlashInPath = parsed.pathname.includes('//');
+        isValid = Boolean(url.loc) && 
+          parsed.href !== `${baseUrl}/` &&
+          !url.loc.includes('undefined') &&
+          !hasDoubleSlashInPath &&
+          parsed.pathname.length > 1;
+      } catch (e) {
+        isValid = false;
+      }
       
       if (!isValid) {
         console.warn('Filtered out malformed URL:', url.loc);
