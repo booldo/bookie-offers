@@ -32,8 +32,8 @@ const fetchOffers = async (countryData) => {
     return [];
   }
   
-  // Query offers by country reference name
-  const query = `*[_type == "offers" && country->country == $countryName && publishingStatus != "hidden" && publishingStatus != "draft"] | order(_createdAt desc) {
+  // Query offers by country reference name, excluding hidden offers
+  const query = `*[_type == "offers" && country->country == $countryName && (noindex != true) && (sitemapInclude != false)] | order(_createdAt desc) {
     _id,
     slug,
     country->{

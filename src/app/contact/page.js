@@ -1,6 +1,7 @@
 import HomeNavbar from "../../components/HomeNavbar";
 import Footer from "../../components/Footer";
 import { client } from "../../sanity/lib/client";
+import ExpiredOfferPage from "../[slug]/[...filters]/ExpiredOfferPage";
 
 // Static data fetching for PPR
 async function getContactData() {
@@ -9,7 +10,14 @@ async function getContactData() {
       title,
       subtitle,
       email,
-      note
+      note,
+      // SEO fields (optional)
+      metaTitle,
+      metaDescription,
+      noindex,
+      nofollow,
+      canonicalUrl,
+      sitemapInclude
     }`);
     
     return doc;
@@ -20,18 +28,32 @@ async function getContactData() {
 }
 
 // Static metadata generation
+export const revalidate = 60;
+
 export async function generateMetadata() {
   const contact = await getContactData();
-  
-  return {
-    title: contact?.title ? `${contact.title} | Booldo` : 'Contact Us | Booldo',
-    description: contact?.subtitle || 'Get in touch with Booldo for questions, suggestions, or partnership inquiries.',
-  };
+  const title = (contact?.metaTitle || (contact?.title ? `${contact.title} | Booldo` : 'Contact Us | Booldo'));
+  const description = contact?.metaDescription || contact?.subtitle || 'Get in touch with Booldo for questions, suggestions, or partnership inquiries.';
+  const robots = [contact?.noindex ? 'noindex' : 'index', contact?.nofollow ? 'nofollow' : 'follow'].join(', ');
+  const alternates = { canonical: contact?.canonicalUrl || undefined };
+
+  return { title, description, robots, alternates };
 }
 
 // Main Contact page component with PPR
 export default async function ContactPage() {
   const contact = await getContactData();
+
+  // Check if the contact page is hidden
+  if (contact?.noindex === true || contact?.sitemapInclude === false) {
+    return (
+      <ExpiredOfferPage 
+        isHidden={true}
+        contentType="contact page"
+        embedded={false}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-[#fafbfc]">

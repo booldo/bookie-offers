@@ -26,16 +26,7 @@ export async function GET() {
         lastmod: new Date().toISOString(),
         priority: "0.8"
       },
-      {
-        loc: `${baseUrl}/about`,
-        lastmod: new Date().toISOString(),
-        priority: "0.7"
-      },
-      {
-        loc: `${baseUrl}/contact`,
-        lastmod: new Date().toISOString(),
-        priority: "0.7"
-      },
+
       {
         loc: `${baseUrl}/faq`,
         lastmod: new Date().toISOString(),
@@ -45,12 +36,50 @@ export async function GET() {
 
     // Fetch additional static pages that should be in sitemap
     try {
+      // Fetch About and Contact pages
+      const [aboutPage, contactPage] = await Promise.all([
+        client.fetch(`*[_type == "about" && !(_id in path("drafts.**"))][0]{ noindex, sitemapInclude, _updatedAt }`),
+        client.fetch(`*[_type == "contact" && !(_id in path("drafts.**"))][0]{ noindex, sitemapInclude, _updatedAt }`)
+      ]);
+
+      // Add About page to sitemap if not hidden
+      if (aboutPage && !aboutPage.noindex && aboutPage.sitemapInclude !== false) {
+        urls.push({
+          loc: `${baseUrl}/about`,
+          lastmod: aboutPage._updatedAt ? new Date(aboutPage._updatedAt).toISOString() : new Date().toISOString(),
+          priority: "0.7"
+        });
+      }
+
+      // Add Contact page to sitemap if not hidden
+      if (contactPage && !contactPage.noindex && contactPage.sitemapInclude !== false) {
+        urls.push({
+          loc: `${baseUrl}/contact`,
+          lastmod: contactPage._updatedAt ? new Date(contactPage._updatedAt).toISOString() : new Date().toISOString(),
+          priority: "0.7"
+        });
+      }
+
+      // Fetch Landing page
+      const landingPage = await client.fetch(`*[_type == "landingPage" && !(_id in path("drafts.**"))][0]{ defaultNoindex, defaultSitemapInclude, _updatedAt }`);
+
+      // Add Landing page to sitemap if not hidden
+      if (landingPage && !landingPage.defaultNoindex && landingPage.defaultSitemapInclude !== false) {
+        urls.push({
+          loc: `${baseUrl}/`,
+          lastmod: landingPage._updatedAt ? new Date(landingPage._updatedAt).toISOString() : new Date().toISOString(),
+          priority: "1.0"
+        });
+      }
+
       // Fetch footer pages
       const footerPages = await client.fetch(`*[_type == "footer" && isActive == true]{
         bottomRowLinks{
           links[]{
             slug,
             isActive,
+            noindex,
+            sitemapInclude,
             _updatedAt,
             updatedAt
           }
@@ -60,7 +89,7 @@ export async function GET() {
       // Add footer pages to sitemap
       footerPages.forEach(footer => {
         footer.bottomRowLinks?.links?.forEach(link => {
-          if (link.isActive && link.slug?.current) {
+          if (link.isActive && link.slug?.current && !link.noindex && link.sitemapInclude !== false) {
             urls.push({
               loc: `${baseUrl}/footer/${link.slug.current}`,
               lastmod: (link.updatedAt || link._updatedAt) ? new Date(link.updatedAt || link._updatedAt).toISOString() : new Date().toISOString(),
@@ -72,9 +101,15 @@ export async function GET() {
 
       // Fetch hamburger menu pages
       const hamburgerPages = await client.fetch(`*[_type == "hamburgerMenu" && isActive == true]{
+        noindex,
+        sitemapInclude,
+        _updatedAt,
+        updatedAt,
         additionalMenuItems[]{
           label,
           isActive,
+          noindex,
+          sitemapInclude,
           _updatedAt,
           updatedAt
         }
@@ -82,8 +117,19 @@ export async function GET() {
 
       // Add hamburger menu pages to sitemap
       hamburgerPages.forEach(menu => {
+        // Check if main menu is hidden
+        if (!menu.noindex && menu.sitemapInclude !== false) {
+          // Add main hamburger menu page
+          urls.push({
+            loc: `${baseUrl}/hamburger-menu/main`,
+            lastmod: (menu.updatedAt || menu._updatedAt) ? new Date(menu.updatedAt || menu._updatedAt).toISOString() : new Date().toISOString(),
+            priority: "0.6"
+          });
+        }
+        
+        // Add additional menu items
         menu.additionalMenuItems?.forEach(item => {
-          if (item.isActive && item.label) {
+          if (item.isActive && item.label && !item.noindex && item.sitemapInclude !== false) {
             const slug = item.label.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
             urls.push({
               loc: `${baseUrl}/hamburger-menu/${slug}`,
@@ -92,13 +138,6 @@ export async function GET() {
             });
           }
         });
-      });
-
-      // Add main hamburger menu page
-      urls.push({
-        loc: `${baseUrl}/hamburger-menu/main`,
-        lastmod: new Date().toISOString(),
-        priority: "0.6"
       });
 
     } catch (error) {
@@ -232,7 +271,7 @@ export async function GET() {
         const hasDoubleSlashInPath = parsed.pathname.includes('//');
         isValid = Boolean(url.loc) && 
           parsed.href !== `${baseUrl}/` &&
-          !url.loc.includes('undefined') &&
+        !url.loc.includes('undefined') &&
           !hasDoubleSlashInPath &&
           parsed.pathname.length > 1;
       } catch (e) {

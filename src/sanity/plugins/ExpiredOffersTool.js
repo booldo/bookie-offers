@@ -34,6 +34,8 @@ export function ExpiredOffersTool() {
   
   const [offers, setOffers] = useState([]);
   const [allOffers, setAllOffers] = useState([]); // Store all offers for accurate counts
+  const [otherPages, setOtherPages] = useState([]);
+  const [allOtherPages, setAllOtherPages] = useState([]);
   const [countries, setCountries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
@@ -45,7 +47,7 @@ export function ExpiredOffersTool() {
   
   const toast = useToast();
 
-  // Fetch all offers and countries
+  // Fetch all offers, countries, and other pages
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
@@ -57,7 +59,9 @@ export function ExpiredOffersTool() {
          slug,
          expires,
          published,
-         publishingStatus,
+         noindex,
+         sitemapInclude,
+         
          bookmaker->{name},
         country->{_id, country, slug},
          bonusType->{name}
@@ -70,16 +74,169 @@ export function ExpiredOffersTool() {
         slug
       }`;
 
-      const [offersResult, countriesResult] = await Promise.all([
+      // Fetch other pages for redirection management
+      const otherPagesQuery = `{
+        "about": *[_type == "about" && !(_id in path("drafts.**"))]{ _id, _type, title, "path": "/about", sitemapInclude, noindex, _updatedAt },
+        "contact": *[_type == "contact" && !(_id in path("drafts.**"))]{ _id, _type, title, "path": "/contact", sitemapInclude, noindex, _updatedAt },
+        "landingPage": *[_type == "landingPage" && !(_id in path("drafts.**"))]{ _id, _type, "title": "Landing Page", "path": "/", "sitemapInclude": defaultSitemapInclude, "noindex": defaultNoindex, _updatedAt },
+        "country": *[_type == "countryPage" && !(_id in path("drafts.**"))]{ _id, _type, country, slug, sitemapInclude, noindex, _updatedAt }{
+          _id, _type, "title": country, "path": "/" + slug.current, sitemapInclude, noindex, _updatedAt
+        },
+        "articles": *[_type == "article" && !(_id in path("drafts.**"))]{ _id, _type, title, slug, sitemapInclude, noindex, _updatedAt }{
+          _id, _type, title, "path": "/briefly/" + slug.current, sitemapInclude, noindex, _updatedAt
+        },
+        "calculators": *[_type == "calculator" && !(_id in path("drafts.**"))]{ _id, _type, title, slug, sitemapInclude, noindex, _updatedAt }{
+          _id, _type, title, "path": "/briefly/calculator/" + slug.current, sitemapInclude, noindex, _updatedAt
+        },
+        "hamburgerMenu": *[_type == "hamburgerMenu" && !(_id in path("drafts.**"))]{ 
+          _id, _type, title, sitemapInclude, noindex, _updatedAt,
+          "additionalMenuItems": additionalMenuItems[]{
+            _id,
+            label,
+            isActive,
+            sitemapInclude,
+            noindex,
+            _updatedAt
+          }
+        },
+        "footer": *[_type == "footer" && !(_id in path("drafts.**"))]{
+          _id, _type, sitemapInclude, noindex, _updatedAt,
+          "bottomRowLinks": bottomRowLinks.links[]{
+            _id,
+            label,
+            slug,
+            sitemapInclude,
+            noindex,
+            _updatedAt
+          }
+        }
+      }`;
+
+      const [offersResult, countriesResult, otherPagesResult] = await Promise.all([
         client.fetch(offersQuery),
-        client.fetch(countriesQuery)
+        client.fetch(countriesQuery),
+        client.fetch(otherPagesQuery)
       ]);
 
       setAllOffers(offersResult);
       setCountries(countriesResult);
       
+      // Process and flatten the other pages data
+      const flattenedPages = [];
+      
+      // Add about pages
+      if (otherPagesResult?.about) {
+        flattenedPages.push(...otherPagesResult.about.map(page => ({
+          ...page,
+          contentType: 'About Page',
+          displayTitle: page.title || 'About Us'
+        })));
+      }
+      
+      // Add contact pages
+      if (otherPagesResult?.contact) {
+        flattenedPages.push(...otherPagesResult.contact.map(page => ({
+          ...page,
+          contentType: 'Contact Page',
+          displayTitle: page.title || 'Contact Us'
+        })));
+      }
+      
+      // Add landing page
+      if (otherPagesResult?.landingPage) {
+        flattenedPages.push(...otherPagesResult.landingPage.map(page => ({
+          ...page,
+          contentType: 'Landing Page',
+          displayTitle: page.title || 'Landing Page'
+        })));
+      }
+      
+      // Add country pages
+      if (otherPagesResult?.country) {
+        flattenedPages.push(...otherPagesResult.country.map(page => ({
+          ...page,
+          contentType: 'Country Page',
+          displayTitle: page.title || 'Country'
+        })));
+      }
+      
+      // Add articles
+      if (otherPagesResult?.articles) {
+        flattenedPages.push(...otherPagesResult.articles.map(page => ({
+          ...page,
+          contentType: 'Article',
+          displayTitle: page.title || 'Article'
+        })));
+      }
+      
+      // Add calculators
+      if (otherPagesResult?.calculators) {
+        flattenedPages.push(...otherPagesResult.calculators.map(page => ({
+          ...page,
+          contentType: 'Calculator',
+          displayTitle: page.title || 'Calculator'
+        })));
+      }
+      
+      // Add hamburger menu items
+      if (otherPagesResult?.hamburgerMenu) {
+        otherPagesResult.hamburgerMenu.forEach(menu => {
+          // Add main menu item
+          flattenedPages.push({
+            _id: menu._id,
+            _type: menu._type,
+            title: menu.title,
+            path: `/hamburger-menu/${menu.title?.toLowerCase().replace(/\s+/g, '-')}`,
+            sitemapInclude: menu.sitemapInclude,
+            noindex: menu.noindex,
+            _updatedAt: menu._updatedAt,
+            contentType: 'Hamburger Menu',
+            displayTitle: menu.title || 'Hamburger Menu'
+          });
+          
+          // Add additional menu items
+          if (menu.additionalMenuItems) {
+            menu.additionalMenuItems.forEach(item => {
+              if (item.isActive) {
+                flattenedPages.push({
+                  _id: item._id,
+                  _type: 'hamburgerMenuItem',
+                  title: item.label,
+                  path: `/hamburger-menu/${item.label?.toLowerCase().replace(/\s+/g, '-')}`,
+                  sitemapInclude: item.sitemapInclude,
+                  noindex: item.noindex,
+                  _updatedAt: item._updatedAt,
+                  contentType: 'Hamburger Menu Item',
+                  displayTitle: item.label || 'Menu Item'
+                });
+              }
+            });
+          }
+        });
+      }
+      
+      // Add footer links
+      if (otherPagesResult?.footer?.bottomRowLinks) {
+        otherPagesResult.footer.bottomRowLinks.forEach(link => {
+          flattenedPages.push({
+            _id: link._id,
+            _type: 'footerLink',
+            title: link.label,
+            path: link.path,
+            sitemapInclude: link.sitemapInclude,
+            noindex: link.noindex,
+            _updatedAt: link._updatedAt,
+            contentType: 'Footer Link',
+            displayTitle: link.label || 'Footer Link'
+          });
+        });
+      }
+      
+      setAllOtherPages(flattenedPages);
+      
       // Apply filters to get displayed offers
       applyFilters(offersResult, filters);
+      applyOtherPagesFilters(flattenedPages, filters);
       
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -99,20 +256,11 @@ export function ExpiredOffersTool() {
     
     if (currentFilters.status !== 'all') {
       if (currentFilters.status === 'active') {
-        // Filter for offers that are published and not expired
-        filteredResults = filteredResults.filter(offer => 
-          offer.publishingStatus === 'published' && 
-          (!offer.expires || new Date(offer.expires) >= new Date())
-        );
+        filteredResults = filteredResults.filter(offer => (!offer.expires || new Date(offer.expires) >= new Date()));
       } else if (currentFilters.status === 'expired') {
-           // Filter for offers that have expired (past expiration date)
-           filteredResults = filteredResults.filter(offer => 
-             offer.expires && new Date(offer.expires) < new Date()
-           );
-         } else if (currentFilters.status === 'hidden') {
-          filteredResults = filteredResults.filter(offer => offer.publishingStatus === 'hidden');
-        }
+        filteredResults = filteredResults.filter(offer => offer.expires && new Date(offer.expires) < new Date());
       }
+    }
     
     if (currentFilters.country !== 'all') {
       filteredResults = filteredResults.filter(offer => 
@@ -137,7 +285,8 @@ export function ExpiredOffersTool() {
     const updatedFilters = { ...filters, ...newFilters };
     setFilters(updatedFilters);
     applyFilters(allOffers, updatedFilters);
-  }, [filters, allOffers, applyFilters]);
+    applyOtherPagesFilters(allOtherPages, updatedFilters);
+  }, [filters, allOffers, allOtherPages, applyFilters]);
 
   useEffect(() => {
     fetchData();
@@ -149,32 +298,70 @@ export function ExpiredOffersTool() {
     return new Date(offer.expires) < new Date();
   };
 
+  // Other pages filter function
+  const applyOtherPagesFilters = useCallback((pagesToFilter, currentFilters) => {
+    let filteredResults = pagesToFilter;
+
+    if (currentFilters.search) {
+      const searchLower = currentFilters.search.toLowerCase();
+      filteredResults = filteredResults.filter(page => 
+        page.title?.toLowerCase().includes(searchLower) ||
+        page.path?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    setOtherPages(filteredResults);
+  }, []);
+
+  const isPageHidden = (page) => page.noindex === true || page.sitemapInclude === false;
+
+  const getPageVisibilityButtonProps = (page) => {
+    if (isPageHidden(page)) {
+      return { text: 'Show', tone: 'positive', title: 'Show this page (indexable, in sitemap)' };
+    }
+    return { text: 'Hide', tone: 'critical', title: 'Hide this page (noindex, exclude from sitemap)' };
+  };
+
+  const togglePageVisibility = async (page) => {
+    setProcessing(true);
+    try {
+      const makeHidden = !isPageHidden(page);
+      await client
+        .patch(page._id)
+        .set({ noindex: makeHidden, sitemapInclude: !makeHidden })
+        .commit();
+
+      toast.push({
+        status: 'success',
+        title: makeHidden ? 'Page hidden' : 'Page visible',
+        description: makeHidden ? 'Set noindex and removed from sitemap.' : 'Unset noindex and included in sitemap.'
+      });
+
+      await fetchData();
+    } catch (error) {
+      console.error('Error toggling page visibility:', error);
+      toast.push({ status: 'error', title: 'Failed to toggle visibility', description: error.message });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   // Get status text for display
   const getStatusText = (offer) => {
-    if (offer.publishingStatus === 'hidden' && isExpired(offer)) return 'Hidden & Expired';
-    if (offer.publishingStatus === 'hidden') return 'Hidden';
     if (isExpired(offer)) return 'Expired';
-    if (offer.publishingStatus === 'published' && (!offer.expires || new Date(offer.expires) >= new Date())) return 'Active';
-    return offer.publishingStatus || 'Unknown';
+    return 'Active';
   };
 
   // Get status badge color
   const getStatusColor = (offer) => {
-    if (offer.publishingStatus === 'hidden' && isExpired(offer)) return 'red';
-    if (offer.publishingStatus === 'hidden') return 'red';
     if (isExpired(offer)) return 'red';
-    if (offer.publishingStatus === 'published' && (!offer.expires || new Date(offer.expires) >= new Date())) return 'green';
-    if (offer.publishingStatus === 'review') return 'yellow';
-    return 'blue';
+    return 'green';
   };
 
   // Get background color for offer cards
   const getCardBackground = (offer) => {
-    if (offer.publishingStatus === 'hidden' && isExpired(offer)) return '#1F2937'; // Dark gray for hidden & expired
-    if (offer.publishingStatus === 'hidden') return '#374151'; // Medium gray for hidden
-    if (isExpired(offer)) return '#4B5563'; // Light gray for expired
-    if (offer.publishingStatus === 'published' && (!offer.expires || new Date(offer.expires) >= new Date())) return '#1F2937'; // Dark gray for active
-    return '#1F2937'; // Default dark gray background
+    if (isExpired(offer)) return '#4B5563';
+    return '#1F2937';
   };
 
   // Format date
@@ -186,16 +373,9 @@ export function ExpiredOffersTool() {
   // Get accurate counts for each filter
   const getFilterCounts = () => {
     const total = allOffers.length;
-    const active = allOffers.filter(o => 
-      o.publishingStatus === 'published' && 
-      (!o.expires || new Date(o.expires) >= new Date())
-    ).length;
-    const expired = allOffers.filter(o => 
-      o.expires && new Date(o.expires) < new Date()
-    ).length;
-    const hidden = allOffers.filter(o => o.publishingStatus === 'hidden').length;
-    
-    return { total, active, expired, hidden };
+    const active = allOffers.filter(o => (!o.expires || new Date(o.expires) >= new Date())).length;
+    const expired = allOffers.filter(o => o.expires && new Date(o.expires) < new Date()).length;
+    return { total, active, expired };
   };
 
   // Get count for specific country
@@ -204,38 +384,24 @@ export function ExpiredOffersTool() {
     return allOffers.filter(o => o.country?._id === countryId).length;
   };
 
-  // Toggle offer visibility (show/hide)
-  const toggleOfferVisibility = async (offerId, currentStatus) => {
+  const isOfferHidden = (offer) => offer?.noindex === true || offer?.sitemapInclude === false;
+
+  // Toggle offer visibility (show/hide) using noindex/sitemapInclude
+  const toggleOfferVisibility = async (offer) => {
     setProcessing(true);
     try {
-      // Determine the new status based on current status
-      let newStatus;
-      let newVisibility;
-      
-      if (currentStatus === 'hidden') {
-        // If hidden, make it published and visible
-        newStatus = 'published';
-        newVisibility = true;
-      } else {
-        // If published/any other status, make it hidden
-        newStatus = 'hidden';
-        newVisibility = false;
-      }
-      
-      console.log(`Toggling offer ${offerId} from ${currentStatus} to ${newStatus}`);
-      
+      const makeHidden = !isOfferHidden(offer);
       await client
-        .patch(offerId)
-        .set({
-          publishingStatus: newStatus,
-          isVisible: newVisibility
-        })
+        .patch(offer._id)
+        .set({ noindex: makeHidden, sitemapInclude: !makeHidden })
         .commit();
       
       toast.push({
         status: 'success',
-        title: `Offer ${newStatus === 'published' ? 'shown' : 'hidden'}`,
-        description: `Offer is now ${newStatus === 'published' ? 'visible' : 'hidden'} in offer cards. Refresh your frontend to see changes.`
+        title: makeHidden ? 'Offer hidden' : 'Offer visible',
+        description: makeHidden
+          ? 'Set noindex and removed from sitemap.'
+          : 'Unset noindex and included in sitemap.'
       });
       
       // Refresh the data
@@ -255,17 +421,17 @@ export function ExpiredOffersTool() {
 
   // Get button text and tone for hide/show button
   const getVisibilityButtonProps = (offer) => {
-    if (offer.publishingStatus === 'hidden') {
+    if (isOfferHidden(offer)) {
       return {
         text: 'Show',
         tone: 'positive',
-        title: 'Show this offer in offer cards'
+        title: 'Show this offer in offer cards and sitemap'
       };
     } else {
       return {
         text: 'Hide',
         tone: 'critical',
-        title: 'Hide this offer from offer cards (will show 410 error)'
+        title: 'Hide this offer from offer cards and sitemap (noindex)'
       };
     }
   };
@@ -279,9 +445,7 @@ export function ExpiredOffersTool() {
           {/* Header */}
           <Card padding={4} radius={2} shadow={1}>
             <Stack space={3}>
-              <Text size={4} weight="bold">
-                Expired Offers Manager
-              </Text>
+              <Text size={4} weight="bold">Redirection Tool</Text>
                              <Text size={2} muted>
                  Manage offer lifecycle, expiration status, and visibility control
                </Text>
@@ -307,7 +471,6 @@ export function ExpiredOffersTool() {
                    <option value="all">All ({counts.total})</option>
                    <option value="active">Active ({counts.active})</option>
                    <option value="expired">Expired ({counts.expired})</option>
-                   <option value="hidden">Hidden ({counts.hidden})</option>
                  </Select>
                 </Box>
                 <Box>
@@ -328,7 +491,7 @@ export function ExpiredOffersTool() {
                 </Box>
                 <Box>
                  <TextInput
-                  placeholder="Search offers..."
+                  placeholder="Search offers & pages..."
                   value={filters.search}
                   onChange={(event) => updateFilters({ search: event.target.value })}
                   fontSize={1}
@@ -373,7 +536,7 @@ export function ExpiredOffersTool() {
                            size={1}
                           text={getVisibilityButtonProps(offer).text}
                           tone={getVisibilityButtonProps(offer).tone}
-                           onClick={() => toggleOfferVisibility(offer._id, offer.publishingStatus)}
+                           onClick={() => toggleOfferVisibility(offer)}
                            disabled={processing}
                           title={getVisibilityButtonProps(offer).title}
                          />
@@ -418,11 +581,11 @@ export function ExpiredOffersTool() {
                         </Box>
                         
                         <Flex gap={1}>
-                          {offer.publishingStatus === 'hidden' && isExpired(offer) ? (
+                          {isOfferHidden(offer) && isExpired(offer) ? (
                             <Badge tone="critical" icon={EyeClosedIcon}>
                               HIDDEN & EXPIRED
                             </Badge>
-                          ) : offer.publishingStatus === 'hidden' ? (
+                          ) : isOfferHidden(offer) ? (
                             <Badge tone="caution" icon={EyeClosedIcon}>
                               HIDDEN
                             </Badge>
@@ -434,6 +597,54 @@ export function ExpiredOffersTool() {
                             <Badge tone="positive" icon={EyeOpenIcon}>
                               VISIBLE
                             </Badge>
+                          )}
+                        </Flex>
+                      </Flex>
+                    </Card>
+                  ))
+                )}
+              </Stack>
+            )}
+          </Card>
+          {/* Other Pages List */}
+          <Card padding={4} radius={2} shadow={1}>
+            {loading ? (
+              <Flex justify="center" padding={4}>
+                <Spinner />
+              </Flex>
+            ) : (
+              <Stack space={3}>
+                <Text size={3} weight="semibold">Other Pages</Text>
+                {otherPages.length === 0 ? (
+                  <Text align="center" muted>
+                    No pages found matching the current filters
+                  </Text>
+                ) : (
+                  otherPages.map((page) => (
+                    <Card key={page._id} padding={3} radius={2} shadow={1}>
+                      <Flex align="center" gap={3}>
+                        <Button
+                          size={1}
+                          text={getPageVisibilityButtonProps(page).text}
+                          tone={getPageVisibilityButtonProps(page).tone}
+                          onClick={() => togglePageVisibility(page)}
+                          disabled={processing}
+                          title={getPageVisibilityButtonProps(page).title}
+                        />
+
+                        <Box flex={1}>
+                          <Stack space={1}>
+                            <Text weight="semibold">{page.displayTitle || page.title || page.path}</Text>
+                            <Text size={1} muted>{page.path}</Text>
+                            <Text size={1} muted style={{ color: '#6B7280' }}>{page.contentType}</Text>
+        </Stack>
+                        </Box>
+
+                        <Flex gap={1}>
+                          {isPageHidden(page) ? (
+                            <Badge tone="caution" icon={EyeClosedIcon}>HIDDEN</Badge>
+                          ) : (
+                            <Badge tone="positive" icon={EyeOpenIcon}>VISIBLE</Badge>
                           )}
                         </Flex>
                       </Flex>

@@ -4,11 +4,12 @@ import Image from "next/image";
 import { client } from "../sanity/lib/client";
 import { urlFor } from "../sanity/lib/image";
 import { Suspense } from "react";
+import ExpiredOfferPage from "./[slug]/[...filters]/ExpiredOfferPage";
 
 // Static data fetching for PPR
 async function getCountries() {
   try {
-    const query = `*[_type == "countryPage" && isActive == true] | order(country asc) {
+    const query = `*[_type == "countryPage" && isActive == true && (noindex != true) && (sitemapInclude != false)] | order(country asc) {
       country,
       countryCode,
       slug,
@@ -19,6 +20,24 @@ async function getCountries() {
   } catch (error) {
     console.error('Error fetching countries:', error);
     return [];
+  }
+}
+
+// Check if landing page is hidden
+async function checkLandingPageVisibility() {
+  try {
+    const landingPageData = await client.fetch(`*[_type == "landingPage"][0]{
+      defaultNoindex,
+      defaultSitemapInclude
+    }`);
+    
+    if (landingPageData?.defaultNoindex === true || landingPageData?.defaultSitemapInclude === false) {
+      return true; // Page is hidden
+    }
+    return false; // Page is visible
+  } catch (error) {
+    console.error('Error checking landing page visibility:', error);
+    return false; // Default to visible on error
   }
 }
 
@@ -162,7 +181,20 @@ function MostSearchesLoading() {
 }
 
 // Main page component with PPR structure
-export default function Home() {
+export default async function Home() {
+  // Check if landing page is hidden
+  const isLandingPageHidden = await checkLandingPageVisibility();
+  
+  if (isLandingPageHidden) {
+    return (
+      <ExpiredOfferPage 
+        isHidden={true}
+        contentType="landing page"
+        embedded={false}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#fafbfc] flex flex-col">
       <HomeNavbar />

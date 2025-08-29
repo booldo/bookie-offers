@@ -82,8 +82,7 @@ export const useDraftPreview = () => {
           offerSummary,
           metaTitle,
           metaDescription,
-          draftPreview,
-          publishingStatus
+          draftPreview
         }
       `, { draftId });
 
@@ -150,7 +149,7 @@ export const useDraftPreview = () => {
     return {
       isPreview,
       previewMode,
-      publishingStatus: draftData?.publishingStatus || 'draft',
+      publishingStatus: 'draft',
       previewNotes: draftData?.draftPreview?.previewNotes,
       previewExpiry: draftData?.draftPreview?.previewExpiry,
       isExpired: isPreviewExpired()

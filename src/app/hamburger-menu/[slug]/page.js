@@ -10,6 +10,7 @@ import HomeNavbar from "../../../components/HomeNavbar";
 import Footer from "../../../components/Footer";
 import Image from "next/image";
 import imageUrlBuilder from "@sanity/image-url";
+import ExpiredOfferPage from "../../[slug]/[...filters]/ExpiredOfferPage";
 
 const builder = imageUrlBuilder(client);
 function urlFor(source) {
@@ -21,6 +22,7 @@ export default function HamburgerMenuPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [articles, setArticles] = useState([]);
+  const [isContentHidden, setIsContentHidden] = useState(false);
   const params = useParams();
   const { slug } = params;
 
@@ -34,7 +36,9 @@ export default function HamburgerMenuPage() {
           additionalMenuItems[]{
             label,
             content,
-            _key
+            _key,
+            noindex,
+            sitemapInclude
           }
         }[0]`;
         
@@ -48,6 +52,12 @@ export default function HamburgerMenuPage() {
           });
           
           if (menuItem) {
+            // Check if content is hidden
+            if (menuItem.noindex === true || menuItem.sitemapInclude === false) {
+              setIsContentHidden(true);
+              return;
+            }
+            
             setContent({
               title: menuItem.label,
               content: menuItem.content,
@@ -62,11 +72,19 @@ export default function HamburgerMenuPage() {
         if (slug === 'main') {
           query = `*[_type == "hamburgerMenu" && isActive == true][0]{
             title,
-            content
+            content,
+            noindex,
+            sitemapInclude
           }`;
           
           const mainResult = await client.fetch(query);
           if (mainResult) {
+            // Check if content is hidden
+            if (mainResult.noindex === true || mainResult.sitemapInclude === false) {
+              setIsContentHidden(true);
+              return;
+            }
+            
             setContent({
               title: mainResult.title,
               content: mainResult.content,
@@ -148,6 +166,17 @@ export default function HamburgerMenuPage() {
 
   if (!content) {
     return null;
+  }
+
+  // Check if content is hidden and show expired offer page
+  if (isContentHidden) {
+    return (
+      <ExpiredOfferPage 
+        isHidden={true}
+        contentType="hamburger menu item"
+        embedded={false}
+      />
+    );
   }
 
   return (

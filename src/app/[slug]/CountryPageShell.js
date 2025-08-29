@@ -6,12 +6,13 @@ import Image from "next/image";
 import BannerCarousel from "../../components/BannerCarousel";
 import { PortableText } from '@portabletext/react';
 import { Suspense } from "react";
+import ExpiredOfferPage from "./[...filters]/ExpiredOfferPage";
 
 // Generate static params for all active countries
 export async function generateStaticParams() {
   try {
     const countries = await client.fetch(`
-      *[_type == "countryPage" && isActive == true]{
+      *[_type == "countryPage" && isActive == true && (noindex != true) && (sitemapInclude != false)]{
         slug,
         country,
         "bonusTypes": *[_type == "bonusType" && country._ref == ^._id]{
@@ -194,6 +195,11 @@ async function getCountryPageData(slug) {
     
     if (!countryData) return null;
     
+    // Check if country is hidden and return special flag
+    if (countryData.noindex === true || countryData.sitemapInclude === false) {
+      return { isHidden: true, countryData };
+    }
+    
     // Get banners for this country
     const bannersQuery = `*[_type == "banner" && country->country == $country && isActive == true] | order(order asc) {
       _id,
@@ -286,6 +292,19 @@ export default async function CountryPageShell({ params, children, isOfferDetail
         </main>
         <Footer />
       </div>
+    );
+  }
+
+  // Check if country is hidden and show expired offer page
+  if (data.isHidden) {
+    return (
+      <ExpiredOfferPage 
+        isHidden={true}
+        contentType="country"
+        countrySlug={awaitedParams.slug}
+        countryName={data.countryData.country}
+        embedded={false}
+      />
     );
   }
 

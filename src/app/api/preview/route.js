@@ -68,8 +68,7 @@ export async function GET(request) {
         offerSummary,
         metaTitle,
         metaDescription,
-        draftPreview,
-        publishingStatus
+        draftPreview
       }
     `, { draftId });
 

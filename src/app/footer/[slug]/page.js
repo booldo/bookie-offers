@@ -9,6 +9,7 @@ import { client } from "../../../sanity/lib/client";
 import { PortableText } from "@portabletext/react";
 import Image from "next/image";
 import Head from "next/head";
+import ExpiredOfferPage from "../../[slug]/[...filters]/ExpiredOfferPage";
 
 export default function FooterPage() {
   const { slug } = useParams();
@@ -29,7 +30,9 @@ export default function FooterPage() {
               content,
               metaTitle,
               metaDescription,
-              keywords
+              keywords,
+              noindex,
+              sitemapInclude
             }
           }
         }`);
@@ -76,6 +79,17 @@ export default function FooterPage() {
         <main className="flex-1 max-w-4xl mx-auto py-12 sm:py-16 px-4 sm:px-6 font-['General_Sans']">Page not found</main>
         <Footer />
       </div>
+    );
+  }
+
+  // Check if the footer link is hidden
+  if (page.noindex === true || page.sitemapInclude === false) {
+    return (
+      <ExpiredOfferPage 
+        isHidden={true}
+        contentType="footer link"
+        embedded={false}
+      />
     );
   }
 

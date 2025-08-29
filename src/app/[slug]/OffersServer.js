@@ -14,7 +14,7 @@ async function getOffersData(countryName) {
   
   console.log('Fetching offers for country:', countryName);
   
-  const query = `*[_type == "offers" && country->country == $countryName && publishingStatus != "hidden" && publishingStatus != "draft"] | order(_createdAt desc) {
+  const query = `*[_type == "offers" && country->country == $countryName && (noindex != true) && (sitemapInclude != false)] | order(_createdAt desc) {
     _id,
     slug,
     country->{

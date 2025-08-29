@@ -17,13 +17,24 @@ export async function generateMetadata({ params }) {
       briefDescription,
       metaTitle,
       metaDescription,
-      calculatorImage
+      calculatorImage,
+      noindex,
+      sitemapInclude
     }`, { slug });
 
     if (!calculator) {
       return {
         title: 'Calculator Not Found | Booldo',
         description: 'The requested calculator could not be found.'
+      };
+    }
+
+    // Check if calculator is hidden and return noindex metadata
+    if (calculator.noindex === true || calculator.sitemapInclude === false) {
+      return {
+        title: 'Calculator No Longer Available | Booldo',
+        description: 'This calculator has been removed or is no longer available.',
+        robots: 'noindex, nofollow'
       };
     }
 
@@ -186,10 +197,18 @@ export default async function CalculatorPage({ params }) {
     briefDescription,
     codeOutput,
     metaTitle,
-    metaDescription
+    metaDescription,
+    noindex,
+    sitemapInclude
   }`, { slug });
 
   if (!calculator) {
+    notFound();
+  }
+
+  // Check if calculator is hidden and return notFound
+  if (calculator.noindex === true || calculator.sitemapInclude === false) {
+    // For server components, we'll return notFound which will show a 404 page
     notFound();
   }
 

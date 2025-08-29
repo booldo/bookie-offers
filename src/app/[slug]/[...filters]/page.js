@@ -271,6 +271,8 @@ export async function generateMetadata({ params }) {
   };
 }
 
+export const revalidate = 60;
+
 export default async function CountryFiltersPage({ params }) {
   const awaitedParams = await params;
   
@@ -401,35 +403,35 @@ export default async function CountryFiltersPage({ params }) {
   if (isSingleFilterPage && singleFilter) {
     console.log('🔍 DEBUG - Checking single filter for pretty link:', singleFilter);
     
-    // Check if this is a pretty link for an affiliate
-    const affiliateLink = await client.fetch(`
+      // Check if this is a pretty link for an affiliate
+      const affiliateLink = await client.fetch(`
       *[_type == "affiliate" && isActive == true && prettyLink.current == $prettyLink][0]{
-        _id,
-        affiliateUrl,
-        bookmaker->{
           _id,
-          name,
-          logo,
-          logoAlt,
-          description,
-          country->{
-            country,
-            slug
+          affiliateUrl,
+          bookmaker->{
+            _id,
+            name,
+            logo,
+            logoAlt,
+            description,
+            country->{
+              country,
+              slug
+            }
+          },
+          bonusType->{
+            name,
+            description
           }
-        },
-        bonusType->{
-          name,
-          description
         }
-      }
-    `, { prettyLink: singleFilter });
+      `, { prettyLink: singleFilter });
 
     console.log('🔍 DEBUG - Single filter affiliate link found:', affiliateLink);
 
-    if (affiliateLink && affiliateLink.affiliateUrl) {
+      if (affiliateLink && affiliateLink.affiliateUrl) {
       console.log('🔍 DEBUG - Redirecting single filter to affiliate URL:', affiliateLink.affiliateUrl);
       // Redirect to the affiliate URL - this will throw NEXT_REDIRECT and exit the function
-      redirect(affiliateLink.affiliateUrl);
+        redirect(affiliateLink.affiliateUrl);
     }
   }
   
@@ -512,7 +514,7 @@ export default async function CountryFiltersPage({ params }) {
               <div className="h-6 bg-gray-200 rounded w-20 animate-pulse"></div>
             </div>
             <div className="sm:max-w-md">
-              <div className="grid grid-cols-3 gap-2 mb-6">
+                              <div className="grid grid-cols-3 gap-2 mb-6">
                 {[1, 2, 3].map(i => (
                   <div key={i} className="h-10 bg-gray-200 rounded animate-pulse"></div>
                 ))}

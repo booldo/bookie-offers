@@ -6,8 +6,44 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
-function ExpiredOfferPage({ offer, embedded = false, countrySlug = "", isCountryEmpty = false, countryName = "" }) {
+function ExpiredOfferPage({ offer, embedded = false, countrySlug = "", isCountryEmpty = false, countryName = "", isHidden = false, contentType = "offer" }) {
   const router = useRouter();
+  
+  // Determine the appropriate message based on the content state
+  const getMessage = () => {
+    if (isHidden) {
+      return {
+        title: "Content No Longer Available",
+        description: `This ${contentType} has been intentionally removed or hidden and is no longer accessible.`,
+        buttonText: "Go Home",
+        buttonLink: "/"
+      };
+    } else if (isCountryEmpty) {
+      return {
+        title: `No Offers Available ${countryName ? `in ${countryName}` : ''}`,
+        description: `We currently don't have any active offers${countryName ? ` in ${countryName}` : ''}. Please check back later or explore other countries.`,
+        buttonText: "Go Home",
+        buttonLink: "/"
+      };
+    } else if (!offer) {
+      return {
+        title: "Content Does Not Exist",
+        description: `The ${contentType} you're looking for doesn't exist or may have been removed. Please check the URL or browse our available content.`,
+        buttonText: "Browse Available Content",
+        buttonLink: `/${countrySlug || 'ng'}`
+      };
+    } else {
+      return {
+        title: "Content Has Expired",
+        description: `This ${contentType} is no longer available. The promotion has ended and cannot be claimed.`,
+        buttonText: "View Active Content",
+        buttonLink: `/${countrySlug || 'ng'}`
+      };
+    }
+  };
+
+  const message = getMessage();
+  
   return (
     <div className={`min-h-screen bg-[#fafbfc] flex flex-col ${embedded ? '' : ''}`}>
       {!embedded && <Navbar />}
@@ -46,22 +82,12 @@ function ExpiredOfferPage({ offer, embedded = false, countrySlug = "", isCountry
           <h1 className="text-6xl font-bold text-red-600 mb-4">410</h1>
           
           {/* Main Message */}
-          {isCountryEmpty ? (
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-              No Offers Available {countryName ? `in ${countryName}` : ''}
-            </h2>
-          ) : !offer ? (
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-              Offer Does Not Exist
-            </h2>
-          ) : (
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-              Offer Has Expired
-            </h2>
-          )}
+          <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+            {message.title}
+          </h2>
           
-          {/* Offer Details */}
-          {!isCountryEmpty && offer && (
+          {/* Content Details - only show for expired offers, not hidden content */}
+          {!isHidden && !isCountryEmpty && offer && (
             <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8 max-w-md mx-auto">
               <h3 className="font-semibold text-gray-900 mb-2">
                 {offer.title}
@@ -75,74 +101,37 @@ function ExpiredOfferPage({ offer, embedded = false, countrySlug = "", isCountry
             </div>
           )}
           
-          {/* Non-existent offer message */}
-          {!isCountryEmpty && !offer && (
+          {/* Non-existent content message */}
+          {!isHidden && !isCountryEmpty && !offer && (
             <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8 max-w-md mx-auto">
               <h3 className="font-semibold text-gray-900 mb-2">
-                The requested offer could not be found
+                The requested content could not be found
               </h3>
               <p className="text-gray-600 text-sm mb-2">
-                This offer may have been removed or the URL may be incorrect
+                This content may have been removed or the URL may be incorrect
               </p>
             </div>
           )}
           
           {/* Description */}
-          {isCountryEmpty ? (
-            <p className="text-gray-600 mb-8 max-w-md mx-auto">
-              We currently don't have any active offers{countryName ? ` in ${countryName}` : ''}. Please check back later or explore other countries.
-            </p>
-          ) : !offer ? (
-            <p className="text-gray-600 mb-8 max-w-md mx-auto">
-              The offer you're looking for doesn't exist or may have been removed. Please check the URL or browse our available offers.
-            </p>
-          ) : (
-            <p className="text-gray-600 mb-8 max-w-md mx-auto">
-              This offer is no longer available. The promotion has ended and cannot be claimed.
-            </p>
-          )}
+          <p className="text-gray-600 mb-8 max-w-md mx-auto">
+            {message.description}
+          </p>
           
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            {isCountryEmpty ? (
-              <>
-                <Link 
-                  href={`/`} 
-                  className="bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg px-6 py-3 transition flex items-center justify-center gap-2"
-                >
-                  <Image src="/assets/back-arrow.png" alt="Back" width={20} height={20} />
-                  Go Home
-                </Link>
-
-              </>
-            ) : !offer ? (
-              <>
-                <Link 
-                  href={`/${countrySlug || 'ng'}`} 
-                  className="bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg px-6 py-3 transition flex items-center justify-center gap-2"
-                >
-                  <Image src="/assets/back-arrow.png" alt="Back" width={20} height={20} />
-                  Browse Available Offers
-                </Link>
-
-              </>
-            ) : (
-              <>
-                <Link 
-                  href={`/${countrySlug || 'ng'}`} 
-                  className="bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg px-6 py-3 transition flex items-center justify-center gap-2"
-                >
-                  <Image src="/assets/back-arrow.png" alt="Back" width={20} height={20} />
-                  View Active Offers
-                </Link>
-
-              </>
-            )}
+            <Link 
+              href={message.buttonLink} 
+              className="bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg px-6 py-3 transition flex items-center justify-center gap-2"
+            >
+              <Image src="/assets/back-arrow.png" alt="Back" width={20} height={20} />
+              {message.buttonText}
+            </Link>
           </div>
           
           {/* Additional Info */}
           <div className="mt-8 text-sm text-gray-500">
-            <p>Looking for similar offers? Check out our latest promotions!</p>
+            <p>Looking for similar content? Check out our latest offerings!</p>
           </div>
         </div>
         </div>

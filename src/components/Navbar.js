@@ -134,10 +134,14 @@ export default function Navbar() {
         const menuData = await client.fetch(`*[_type == "hamburgerMenu" && isActive == true][0]{
           title,
           content,
+          noindex,
+          sitemapInclude,
           additionalMenuItems[]{
             label,
             content,
-            isActive
+            isActive,
+            noindex,
+            sitemapInclude
           }
         }`);
         setHamburgerMenu(menuData);
@@ -587,7 +591,7 @@ export default function Navbar() {
             
             {/* Additional Dynamic Menu Items */}
             {hamburgerMenu?.additionalMenuItems?.map((item, index) => (
-              item.isActive && (
+              item.isActive && !item.noindex && item.sitemapInclude !== false && (
                 <Link
                   key={index}
                   href={`/hamburger-menu/${item.label.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`}
@@ -599,7 +603,7 @@ export default function Navbar() {
             ))}
           </div>
           {/* Hamburger Menu Title - Clickable to show content */}
-          {hamburgerMenu?.title && (
+          {hamburgerMenu?.title && !hamburgerMenu.noindex && hamburgerMenu.sitemapInclude !== false && (
             <div className="border-t border-gray-200 px-10 py-4">
               <Link 
                 href="/hamburger-menu/main"

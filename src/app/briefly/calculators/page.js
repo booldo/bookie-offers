@@ -23,13 +23,13 @@ export default function CalculatorsPage() {
     async function fetchData() {
       try {
         const [articlesData, calculatorsData] = await Promise.all([
-          client.fetch(`*[_type == "article"]|order(_createdAt desc)[0...5]{
+          client.fetch(`*[_type == "article" && (noindex != true) && (sitemapInclude != false)]|order(_createdAt desc)[0...5]{
             _id,
             title,
             "slug": slug.current,
             mainImage
           }`),
-          client.fetch(`*[_type == "calculator" && isActive == true]|order(_createdAt desc){
+          client.fetch(`*[_type == "calculator" && isActive == true && (noindex != true) && (sitemapInclude != false)]|order(_createdAt desc){
             _id,
             title,
             "slug": slug.current,

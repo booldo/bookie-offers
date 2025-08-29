@@ -21,7 +21,7 @@ export default function BrieflyPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const articlesData = await client.fetch(`*[_type == "article"]|order(_createdAt desc){
+        const articlesData = await client.fetch(`*[_type == "article" && (noindex != true) && (sitemapInclude != false)]|order(_createdAt desc){
             _id,
             title,
             "slug": slug.current,

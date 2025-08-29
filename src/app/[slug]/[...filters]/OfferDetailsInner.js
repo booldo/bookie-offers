@@ -96,7 +96,20 @@ function OfferDetailsInner({ slug }) {
   const [shouldRestoreScroll, setShouldRestoreScroll] = useState(false);
   const [totalOffers, setTotalOffers] = useState(0);
   const [openFAQIndex, setOpenFAQIndex] = useState(null);
+  const [isContentHidden, setIsContentHidden] = useState(false);
   const scrollPositionRef = useRef(0);
+
+  // If content is hidden, show expired offer page
+  if (isContentHidden) {
+    return (
+      <ExpiredOfferPage 
+        isHidden={true}
+        contentType="offer"
+        countrySlug={getCountrySlug()}
+        embedded={true}
+      />
+    );
+  }
 
   useEffect(() => {
     if (!slug) return;
@@ -110,7 +123,7 @@ function OfferDetailsInner({ slug }) {
     const fetchData = async () => {
       try {
         
-        const mainOfferQuery = `*[_type == "offers" && country->country == $countryName && slug.current == $slug && publishingStatus != "hidden" && publishingStatus != "draft"][0]{
+        const mainOfferQuery = `*[_type == "offers" && country->country == $countryName && slug.current == $slug][0]{
           _id,
           title,
           bonusType->{name},
@@ -154,10 +167,19 @@ function OfferDetailsInner({ slug }) {
           offerSummary
         }`;
         const mainOffer = await client.fetch(mainOfferQuery, { slug, countryName });
+        
+        // Check if offer is hidden and set state
+        if (mainOffer && (mainOffer.noindex === true || mainOffer.sitemapInclude === false)) {
+          console.log('Offer is hidden, setting hidden state');
+          setIsContentHidden(true);
+          setLoading(false);
+          return;
+        }
+        
         setOffer(mainOffer);
 
-        // Fetch more offers (excluding the current one) - now dynamic
-        const moreOffersQuery = `*[_type == "offers" && country->country == $countryName && slug.current != $slug && publishingStatus != "hidden" && publishingStatus != "draft"] | order(_createdAt desc) [0...$count] {
+        // Fetch more offers (excluding the current one and hidden ones) - now dynamic
+        const moreOffersQuery = `*[_type == "offers" && country->country == $countryName && slug.current != $slug && (noindex != true) && (sitemapInclude != false)] | order(_createdAt desc) [0...$count] {
           _id,
           bonusType->{name},
           slug,
@@ -175,8 +197,8 @@ function OfferDetailsInner({ slug }) {
         const moreOffersData = await client.fetch(moreOffersQuery, { slug, count: loadMoreCount, countryName });
         setMoreOffers(moreOffersData);
 
-        // Get total count for pagination - now dynamic
-        const totalQuery = `count(*[_type == "offers" && country->country == $countryName && slug.current != $slug && publishingStatus != "hidden" && publishingStatus != "draft"])`;
+        // Get total count for pagination - now dynamic (excluding hidden offers)
+        const totalQuery = `count(*[_type == "offers" && country->country == $countryName && slug.current != $slug && (noindex != true) && (sitemapInclude != false)])`;
         const total = await client.fetch(totalQuery, { slug, countryName });
         setTotalOffers(total);
 
@@ -218,7 +240,7 @@ function OfferDetailsInner({ slug }) {
 
     setIsLoadingMore(true);
     try {
-      const moreOffersQuery = `*[_type == "offers" && country == $countryName && slug.current != $slug && publishingStatus != "hidden"] | order(_createdAt desc) [0...$count] {
+      const moreOffersQuery = `*[_type == "offers" && country == $countryName && slug.current != $slug] | order(_createdAt desc) [0...$count] {
         _id,
         bonusType->{name},
         slug,

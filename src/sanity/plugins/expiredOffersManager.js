@@ -2,7 +2,7 @@ import { definePlugin } from 'sanity';
 import { ExpiredOffersTool } from './ExpiredOffersTool';
 
 export const expiredOffersManager = definePlugin({
-  name: 'expired-offers-manager',
+  name: 'redirection-tool',
   studio: {
     components: {
       tool: ExpiredOffersTool,
@@ -10,8 +10,8 @@ export const expiredOffersManager = definePlugin({
   },
   tools: [
     {
-      name: 'expired-offers',
-      title: 'Expired Offers Manager',
+      name: 'redirection',
+      title: 'Redirection Tool',
       component: ExpiredOffersTool,
       icon: () => '��',
     },

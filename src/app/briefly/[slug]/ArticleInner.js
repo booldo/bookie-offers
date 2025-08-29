@@ -157,15 +157,26 @@ function ArticleInner({ slug }) {
             title,
             slug,
             mainImage,
-            content
+            content,
+            noindex,
+            sitemapInclude
           }`, { slug }),
-          client.fetch(`*[_type == "article"]|order(_createdAt desc){
+          client.fetch(`*[_type == "article" && (noindex != true) && (sitemapInclude != false)]|order(_createdAt desc){
             _id,
             title,
             slug,
             mainImage
           }`)
         ]);
+        
+        // Check if article is hidden and set state
+        if (articleData && (articleData.noindex === true || articleData.sitemapInclude === false)) {
+          console.log('Article is hidden, setting hidden state');
+          setError('This article has been removed or is no longer available.');
+          setLoading(false);
+          return;
+        }
+        
         setArticle(articleData);
         setArticles(allArticles);
         setLoading(false);
@@ -175,7 +186,7 @@ function ArticleInner({ slug }) {
       }
     }
     fetchData();
-  }, [slug]);
+  }, [slug, router]);
 
   if (loading) {
     return (
@@ -215,7 +226,26 @@ function ArticleInner({ slug }) {
     );
   }
   if (error || !article) {
-    return <div className="min-h-screen flex flex-col bg-[#fafbfc]"><HomeNavbar /><main className="flex-1 max-w-4xl mx-auto py-16 px-4">Article not found</main><Footer /></div>;
+    return (
+      <div className="min-h-screen flex flex-col bg-[#fafbfc]">
+        <HomeNavbar />
+        <main className="flex-1 max-w-4xl mx-auto py-16 px-4">
+          <div className="text-center">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">Content No Longer Available</h1>
+            <p className="text-gray-600 mb-8">
+              {error || 'This article has been removed or is no longer available.'}
+            </p>
+            <button
+              onClick={() => router.push('/briefly')}
+              className="bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg px-6 py-3 transition"
+            >
+              Back to Blog
+            </button>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
   }
 
   // Sidebar and Read More

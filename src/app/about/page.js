@@ -6,6 +6,7 @@ import imageUrlBuilder from '@sanity/image-url';
 import Image from "next/image";
 import { PortableText } from '@portabletext/react';
 import { Suspense } from "react";
+import ExpiredOfferPage from "../[slug]/[...filters]/ExpiredOfferPage";
 
 const builder = imageUrlBuilder(client);
 function urlFor(source) {
@@ -20,9 +21,16 @@ async function getAboutData() {
         _id,
         title,
         mainImage,
-        content
+        content,
+        // SEO fields (optional)
+        metaTitle,
+        metaDescription,
+        noindex,
+        nofollow,
+        canonicalUrl,
+        sitemapInclude
       }`),
-      client.fetch(`*[_type == "article"]|order(_createdAt desc)[0...5]{
+      client.fetch(`*[_type == "article" && (noindex != true) && (sitemapInclude != false)]|order(_createdAt desc)[0...5]{
           _id,
           title,
           slug,
@@ -38,13 +46,16 @@ async function getAboutData() {
 }
 
 // Static metadata generation
+export const revalidate = 60;
+
 export async function generateMetadata() {
   const { about } = await getAboutData();
-  
-  return {
-    title: about?.title ? `${about.title} | Booldo` : 'About Us | Booldo',
-    description: 'Learn more about Booldo and our mission to provide unbiased betting information.',
-  };
+  const title = (about?.metaTitle || (about?.title ? `${about.title} | Booldo` : 'About Us | Booldo'));
+  const description = about?.metaDescription || 'Learn more about Booldo and our mission to provide unbiased betting information.';
+  const robots = [about?.noindex ? 'noindex' : 'index', about?.nofollow ? 'nofollow' : 'follow'].join(', ');
+  const alternates = { canonical: about?.canonicalUrl || undefined };
+
+  return { title, description, robots, alternates };
 }
 
 // Loading fallback for articles sidebar
@@ -96,6 +107,17 @@ import BackButton from './BackButton';
 // Main About page component with PPR
 export default async function AboutPage() {
   const { about, articles } = await getAboutData();
+
+  // Check if the about page is hidden
+  if (about?.noindex === true || about?.sitemapInclude === false) {
+    return (
+      <ExpiredOfferPage 
+        isHidden={true}
+        contentType="about page"
+        embedded={false}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-[#fafbfc]">

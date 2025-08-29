@@ -208,14 +208,12 @@ export async function generateMetadata({ params }) {
       description = `Discover the best ${filterName.toLowerCase()} betting offers in ${data.country}. Compare bonuses, find exclusive deals, and get started today.`;
     }
     
-    return {
-      title,
-      description,
-      robots: 'index, follow',
-      alternates: {
-        canonical: `https://yourdomain.com/${countrySlug}/${filterSlug}`,
-      },
-    };
+    const countrySeo = await client.fetch(`*[_type == "countryPage" && slug.current == $countrySlug][0]{
+      metaTitle, metaDescription, noindex, nofollow, canonicalUrl
+    }`, { countrySlug });
+    const robots = [countrySeo?.noindex ? 'noindex' : 'index', countrySeo?.nofollow ? 'nofollow' : 'follow'].join(', ');
+    const alternates = { canonical: countrySeo?.canonicalUrl || `https://booldo.com/${countrySlug}/${filterSlug}` };
+    return { title, description, robots, alternates };
     
   } catch (error) {
     console.error('Error generating filter metadata:', error);
@@ -225,6 +223,8 @@ export async function generateMetadata({ params }) {
     };
   }
 }
+
+export const revalidate = 60;
 
 export default function FilterLayout({ children }) {
   return children;

@@ -299,45 +299,7 @@ export default {
       ]
     },
 
-    // Publishing workflow
-    {
-      name: "publishingStatus",
-      title: "Publishing Status",
-      type: "string",
-      options: {
-        list: [
-          { title: "Draft", value: "draft" },
-          { title: "Ready for Review", value: "review" },
-          { title: "Approved", value: "approved" },
-          { title: "Published", value: "published" },
-          { title: "Hidden", value: "hidden" },
-          { title: "Expired", value: "expired" },
-          { title: "Archived", value: "archived" }
-        ],
-        layout: "dropdown"
-      },
-      initialValue: "draft",
-      description: "Current status of this offer in the publishing workflow"
-    },
-    {
-      name: "isVisible",
-      title: "Is Visible",
-      type: "boolean",
-      initialValue: true,
-      description: "Whether this offer is visible in offer cards (hidden offers show 410 errors)"
-    },
-    {
-      name: "reviewerNotes",
-      title: "Reviewer Notes",
-      type: "text",
-      description: "Notes from content reviewers"
-    },
-    {
-      name: "scheduledPublish",
-      title: "Scheduled Publish Date",
-      type: "datetime",
-      description: "When this offer should be automatically published"
-    },
+    // Removed custom publishing workflow fields; publish via Sanity's built-in workflow
     {
       name: "metaTitle",
       title: "Meta Title",

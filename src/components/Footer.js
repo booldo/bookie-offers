@@ -120,7 +120,17 @@ export default function Footer() {
           affiliateDisclosure,
           responsibleGambling,
           gamblingResources,
-          bottomRowLinks
+          bottomRowLinks{
+            links[]{
+              label,
+              slug,
+              url,
+              isActive,
+              noindex,
+              sitemapInclude
+            },
+            copyrightText
+          }
         }`);
         
         setFooterData(data);
@@ -250,22 +260,22 @@ export default function Footer() {
           <div className="md:text-center">
             <div className="mb-1 font-['General_Sans']">{footerData.gamblingResources.title || 'Need help? Visit these responsible gambling resources'}</div>
             {footerData.gamblingResources.resources && footerData.gamblingResources.resources.length > 0 ? (
-              <ul className="flex flex-col gap-1 md:items-center">
+            <ul className="flex flex-col gap-1 md:items-center">
                 {footerData.gamblingResources.resources.map((resource, index) => (
                   resource && resource.isActive && (
-                    <li key={index}>
+                  <li key={index}>
                       <a 
                         href={resource.url} 
                         className="font-['General_Sans'] font-medium text-[14px] leading-[100%] tracking-[1%] text-[#272932] underline decoration-solid decoration-0 decoration-auto" 
                         target="_blank" 
                         rel="noopener noreferrer"
                       >
-                        {resource.name}
-                      </a>
-                    </li>
-                  )
-                ))}
-              </ul>
+                      {resource.name}
+                    </a>
+                  </li>
+                )
+              ))}
+            </ul>
             ) : (
               <div className="text-xs text-gray-600 font-['General_Sans']">
                 <a 
@@ -302,7 +312,7 @@ export default function Footer() {
         {/* Bottom row */}
         <div className="flex flex-wrap justify-center items-center text-xs text-gray-400 mt-4 gap-4">
           {footerData?.bottomRowLinks?.links?.map((link, index) => {
-            if (!link.isActive) return null;
+            if (!link.isActive || link.noindex === true || link.sitemapInclude === false) return null;
             const hasInternalContent = link?.slug?.current && link?.content && link.content.length > 0;
             if (hasInternalContent) {
               return (
