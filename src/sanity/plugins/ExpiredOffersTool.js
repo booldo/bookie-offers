@@ -78,7 +78,6 @@ export function ExpiredOffersTool() {
       const otherPagesQuery = `{
         "about": *[_type == "about" && !(_id in path("drafts.**"))]{ _id, _type, title, "path": "/about", sitemapInclude, noindex, _updatedAt },
         "contact": *[_type == "contact" && !(_id in path("drafts.**"))]{ _id, _type, title, "path": "/contact", sitemapInclude, noindex, _updatedAt },
-        "landingPage": *[_type == "landingPage" && !(_id in path("drafts.**"))]{ _id, _type, "title": "Landing Page", "path": "/", "sitemapInclude": defaultSitemapInclude, "noindex": defaultNoindex, _updatedAt },
         "country": *[_type == "countryPage" && !(_id in path("drafts.**"))]{ _id, _type, country, slug, sitemapInclude, noindex, _updatedAt }{
           _id, _type, "title": country, "path": "/" + slug.current, sitemapInclude, noindex, _updatedAt
         },
@@ -125,30 +124,47 @@ export function ExpiredOffersTool() {
       const flattenedPages = [];
       
       // Add about pages
-      if (otherPagesResult?.about) {
+      if (otherPagesResult?.about && otherPagesResult.about.length > 0) {
         flattenedPages.push(...otherPagesResult.about.map(page => ({
           ...page,
           contentType: 'About Page',
           displayTitle: page.title || 'About Us'
         })));
+      } else {
+        // Add placeholder for missing About document
+        flattenedPages.push({
+          _id: 'about-placeholder',
+          _type: 'about',
+          title: 'About Us',
+          path: '/about',
+          contentType: 'About Page',
+          displayTitle: 'About Us',
+          isMissing: true,
+          noindex: false,
+          sitemapInclude: true
+        });
       }
       
       // Add contact pages
-      if (otherPagesResult?.contact) {
+      if (otherPagesResult?.contact && otherPagesResult.contact.length > 0) {
         flattenedPages.push(...otherPagesResult.contact.map(page => ({
           ...page,
           contentType: 'Contact Page',
           displayTitle: page.title || 'Contact Us'
         })));
-      }
-      
-      // Add landing page
-      if (otherPagesResult?.landingPage) {
-        flattenedPages.push(...otherPagesResult.landingPage.map(page => ({
-          ...page,
-          contentType: 'Landing Page',
-          displayTitle: page.title || 'Landing Page'
-        })));
+      } else {
+        // Add placeholder for missing Contact document
+        flattenedPages.push({
+          _id: 'contact-placeholder',
+          _type: 'contact',
+          title: 'Contact Us',
+          path: '/contact',
+          contentType: 'Contact Page',
+          displayTitle: 'Contact Us',
+          isMissing: true,
+          noindex: false,
+          sitemapInclude: true
+        });
       }
       
       // Add country pages
@@ -313,7 +329,14 @@ export function ExpiredOffersTool() {
     setOtherPages(filteredResults);
   }, []);
 
-  const isPageHidden = (page) => page.noindex === true || page.sitemapInclude === false;
+  const isPageHidden = (page) => {
+    // Handle placeholder pages (missing documents)
+    if (page.isMissing) {
+      return false; // Placeholder pages are always visible
+    }
+    
+    return page.noindex === true || page.sitemapInclude === false;
+  };
 
   const getPageVisibilityButtonProps = (page) => {
     if (isPageHidden(page)) {
@@ -325,6 +348,17 @@ export function ExpiredOffersTool() {
   const togglePageVisibility = async (page) => {
     setProcessing(true);
     try {
+      // Handle placeholder pages (missing documents)
+      if (page.isMissing) {
+        toast.push({
+          status: 'info',
+          title: 'Document not found',
+          description: `Please create a ${page.contentType} document in Sanity Studio first.`
+        });
+        setProcessing(false);
+        return;
+      }
+      
       const makeHidden = !isPageHidden(page);
       await client
         .patch(page._id)
@@ -623,14 +657,25 @@ export function ExpiredOffersTool() {
                   otherPages.map((page) => (
                     <Card key={page._id} padding={3} radius={2} shadow={1}>
                       <Flex align="center" gap={3}>
-                        <Button
-                          size={1}
-                          text={getPageVisibilityButtonProps(page).text}
-                          tone={getPageVisibilityButtonProps(page).tone}
-                          onClick={() => togglePageVisibility(page)}
-                          disabled={processing}
-                          title={getPageVisibilityButtonProps(page).title}
-                        />
+                        {page.isMissing ? (
+                          <Button
+                            size={1}
+                            text="Create Document"
+                            tone="caution"
+                            onClick={() => togglePageVisibility(page)}
+                            disabled={processing}
+                            title="Document not found - click to see instructions"
+                          />
+                        ) : (
+                          <Button
+                            size={1}
+                            text={getPageVisibilityButtonProps(page).text}
+                            tone={getPageVisibilityButtonProps(page).tone}
+                            onClick={() => togglePageVisibility(page)}
+                            disabled={processing}
+                            title={getPageVisibilityButtonProps(page).title}
+                          />
+                        )}
 
                         <Box flex={1}>
                           <Stack space={1}>
@@ -641,7 +686,9 @@ export function ExpiredOffersTool() {
                         </Box>
 
                         <Flex gap={1}>
-                          {isPageHidden(page) ? (
+                          {page.isMissing ? (
+                            <Badge tone="caution" icon={EyeClosedIcon}>MISSING</Badge>
+                          ) : isPageHidden(page) ? (
                             <Badge tone="caution" icon={EyeClosedIcon}>HIDDEN</Badge>
                           ) : (
                             <Badge tone="positive" icon={EyeOpenIcon}>VISIBLE</Badge>

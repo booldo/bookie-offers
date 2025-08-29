@@ -108,8 +108,8 @@ import BackButton from './BackButton';
 export default async function AboutPage() {
   const { about, articles } = await getAboutData();
 
-  // Check if the about page is hidden
-  if (about?.noindex === true || about?.sitemapInclude === false) {
+  // Check if the About page is hidden
+  if (about && (about.noindex === true || about.sitemapInclude === false)) {
     return (
       <ExpiredOfferPage 
         isHidden={true}

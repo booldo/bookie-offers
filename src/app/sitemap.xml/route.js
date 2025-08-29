@@ -60,18 +60,6 @@ export async function GET() {
         });
       }
 
-      // Fetch Landing page
-      const landingPage = await client.fetch(`*[_type == "landingPage" && !(_id in path("drafts.**"))][0]{ defaultNoindex, defaultSitemapInclude, _updatedAt }`);
-
-      // Add Landing page to sitemap if not hidden
-      if (landingPage && !landingPage.defaultNoindex && landingPage.defaultSitemapInclude !== false) {
-        urls.push({
-          loc: `${baseUrl}/`,
-          lastmod: landingPage._updatedAt ? new Date(landingPage._updatedAt).toISOString() : new Date().toISOString(),
-          priority: "1.0"
-        });
-      }
-
       // Fetch footer pages
       const footerPages = await client.fetch(`*[_type == "footer" && isActive == true]{
         bottomRowLinks{

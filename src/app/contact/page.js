@@ -44,8 +44,8 @@ export async function generateMetadata() {
 export default async function ContactPage() {
   const contact = await getContactData();
 
-  // Check if the contact page is hidden
-  if (contact?.noindex === true || contact?.sitemapInclude === false) {
+  // Check if the Contact page is hidden
+  if (contact && (contact.noindex === true || contact.sitemapInclude === false)) {
     return (
       <ExpiredOfferPage 
         isHidden={true}
