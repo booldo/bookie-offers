@@ -184,10 +184,11 @@ export default function OfferDetailsClient({ offer, moreOffers, totalOffers, cou
       <div className="min-h-screen bg-[#fafbfc] flex flex-col">
         <main className="max-w-7xl mx-auto w-full px-4 flex-1">
           {/* Back Button */}
-          <div className="mt-6 mb-4 flex items-center gap-2 text-sm text-gray-500">
-            <Link href={`/${countryName.toLowerCase().replace(/\s+/g, '-')}`} className="hover:underline flex items-center gap-1">
-              <img src="/assets/back-arrow.png" alt="Back" width={24} height={24} />
-              Home
+          <div className="mt-6 mb-4 flex items-center gap-2 text-sm text-gray-500 overflow-hidden">
+            <Link href={`/${countryName.toLowerCase().replace(/\s+/g, '-')}`} className="hover:underline flex items-center gap-1 flex-shrink-0">
+              <img src="/assets/back-arrow.png" alt="Back" width="24" height="24" />
+              <span className="hidden sm:inline">Home</span>
+              <span className="sm:hidden">H</span>
             </Link>
           </div>
           
@@ -251,19 +252,24 @@ export default function OfferDetailsClient({ offer, moreOffers, totalOffers, cou
   return (
     <div className="max-w-7xl mx-auto pb-24 sm:pb-0 bg-[#FFFFFF]">
       {/* Breadcrumb */}
-      <nav className="text-sm text-gray-500 mb-6">
-        <Link href={`/${countryName.toLowerCase().replace(/\s+/g, '-')}`} className="hover:text-gray-700">
-          {countryName} Offers
-        </Link>
-        <span className="mx-2">/</span>
-        <Link 
-          href={`/${countryName.toLowerCase().replace(/\s+/g, '-')}/${offer.bonusType?.name?.toLowerCase().replace(/\s+/g, '-')}`} 
-          className="hover:text-gray-700 text-gray-700 font-medium"
-        >
-          {offer.bonusType?.name || "Bonus"}
-        </Link>
-        <span className="mx-2">/</span>
-        <span className="text-gray-900">{offer.title}</span>
+      <nav className="text-sm text-gray-500 mb-6 overflow-hidden">
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+          <Link href={`/${countryName.toLowerCase().replace(/\s+/g, '-')}`} className="hover:text-gray-700 flex-shrink-0">
+            <span className="hidden sm:inline">{countryName} Offers</span>
+            <span className="sm:hidden">{countryName}</span>
+          </Link>
+          <span className="mx-1 flex-shrink-0">/</span>
+          <Link 
+            href={`/${countryName.toLowerCase().replace(/\s+/g, '-')}/${offer.bonusType?.name?.toLowerCase().replace(/\s+/g, '-')}`} 
+            className="hover:text-gray-700 text-gray-700 font-medium flex-shrink-0 min-w-0"
+          >
+            <span className="truncate">{offer.bonusType?.name || "Bonus"}</span>
+          </Link>
+          <span className="mx-1 flex-shrink-0">/</span>
+          <span className="text-gray-900 flex-shrink-0 min-w-0">
+            <span className="truncate">{offer.title}</span>
+          </span>
+        </div>
       </nav>
 
       {/* Main Offer Content */}

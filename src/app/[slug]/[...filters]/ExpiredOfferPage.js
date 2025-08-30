@@ -4,10 +4,17 @@ import Navbar from "../../../components/Navbar";
 import Footer from "../../../components/Footer";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+
 
 function ExpiredOfferPage({ offer, embedded = false, countrySlug = "", isCountryEmpty = false, countryName = "", isHidden = false, contentType = "offer" }) {
-  const router = useRouter();
+  // Handle back button click without router dependency
+  const handleBackClick = () => {
+    if (countrySlug) {
+      window.location.href = `/${countrySlug}`;
+    } else {
+      window.location.href = '/';
+    }
+  };
   
   // Determine the appropriate message based on the content state
   const getMessage = () => {
@@ -49,10 +56,11 @@ function ExpiredOfferPage({ offer, embedded = false, countrySlug = "", isCountry
       {!embedded && <Navbar />}
       <main className="max-w-7xl mx-auto w-full px-4 flex-1">
         {/* Back Button - positioned like breadcrumb */}
-        <div className="mt-6 mb-4 flex items-center gap-2 text-sm text-gray-500">
-          <button onClick={() => router.push(`/${countrySlug || ''}`)} className="hover:underline flex items-center gap-1">
+        <div className="mt-6 mb-4 flex items-center gap-2 text-sm text-gray-500 overflow-hidden">
+          <button onClick={handleBackClick} className="hover:underline flex items-center gap-1 flex-shrink-0">
             <Image src="/assets/back-arrow.png" alt="Back" width={24} height={24} />
-            Home
+            <span className="hidden sm:inline">Home</span>
+            <span className="sm:hidden">H</span>
           </button>
         </div>
         

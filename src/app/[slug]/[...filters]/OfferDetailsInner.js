@@ -99,17 +99,7 @@ function OfferDetailsInner({ slug }) {
   const [isContentHidden, setIsContentHidden] = useState(false);
   const scrollPositionRef = useRef(0);
 
-  // If content is hidden, show expired offer page
-  if (isContentHidden) {
-    return (
-      <ExpiredOfferPage 
-        isHidden={true}
-        contentType="offer"
-        countrySlug={getCountrySlug()}
-        embedded={true}
-      />
-    );
-  }
+
 
   useEffect(() => {
     if (!slug) return;
@@ -172,8 +162,6 @@ function OfferDetailsInner({ slug }) {
         if (mainOffer && (mainOffer.noindex === true || mainOffer.sitemapInclude === false)) {
           console.log('Offer is hidden, setting hidden state');
           setIsContentHidden(true);
-          setLoading(false);
-          return;
         }
         
         setOffer(mainOffer);
@@ -303,6 +291,21 @@ function OfferDetailsInner({ slug }) {
     );
   }
 
+  // If offer is hidden (noindex or sitemapInclude false), show ExpiredOfferPage
+  if (!loading && isContentHidden) {
+    return (
+      <ExpiredOfferPage 
+        offer={null}
+        embedded={true}
+        countrySlug={getCountrySlug()}
+        isCountryEmpty={false}
+        countryName={getCountryName()}
+        isHidden={true}
+        contentType="offer"
+      />
+    );
+  }
+
   // If offer doesn't exist, show 410 error page
   if (!loading && !offer && !error) {
     return (
@@ -342,21 +345,24 @@ function OfferDetailsInner({ slug }) {
     <div className="min-h-screen bg-[#FFFFFF] flex flex-col">
       <main className="max-w-7xl mx-auto w-full px-2 sm:px-4 flex-1 pb-24 sm:pb-0">
         {/* Updated Breadcrumb */}
-        <div className="mt-6 mb-4 flex items-center gap-2 text-sm text-gray-500 ml-2">
-          <button type="button" onClick={() => router.push(`/${getCountrySlug()}`)} className="hover:underline flex items-center gap-1">
+        <div className="mt-6 mb-4 flex items-center gap-2 text-sm text-gray-500 ml-2 overflow-hidden">
+          <button type="button" onClick={() => router.push(`/${getCountrySlug()}`)} className="hover:underline flex items-center gap-1 flex-shrink-0">
             <img src="/assets/back-arrow.png" alt="Back" width="16" height="16" />
-            Home
+            <span className="hidden sm:inline">Home</span>
+            <span className="sm:hidden">H</span>
           </button>
-          <span className="mx-1">/</span>
+          <span className="mx-1 flex-shrink-0">/</span>
           <button 
             type="button" 
             onClick={() => router.push(`/${getCountrySlug()}/${offer?.bonusType?.name?.toLowerCase().replace(/\s+/g, '-')}`)} 
-            className="hover:underline text-gray-700 font-medium"
+            className="hover:underline text-gray-700 font-medium flex-shrink-0 min-w-0"
           >
-            {offer?.bonusType?.name || "Bonus"}
+            <span className="truncate">{offer?.bonusType?.name || "Bonus"}</span>
           </button>
-          <span className="mx-1">/</span>
-          <span className="text-gray-900 font-medium">{offer?.title || "Offer"}</span>
+          <span className="mx-1 flex-shrink-0">/</span>
+          <span className="text-gray-900 font-medium flex-shrink-0 min-w-0">
+            <span className="truncate">{offer?.title || "Offer"}</span>
+          </span>
         </div>
         
         {loading && (
