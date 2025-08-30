@@ -480,33 +480,13 @@ export default function Navbar() {
             readOnly={!searchOpen}
           />
         </div>
-        {/* Search icon - mobile only */}
-        {!searchOpen && (
-          <button className="flex sm:hidden p-2" onClick={() => setSearchOpen(true)}>
-            <svg className="text-gray-400" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-          </button>
-        )}
-        {/* Search input - mobile only, expanded when open */}
-        {searchOpen && (
-          <div className="flex sm:hidden items-center bg-[#F5F5F7] border border-[#E3E3E3] rounded-lg px-3 py-0.5 w-full max-w-xs flex-1 gap-1">
-            <svg className="text-gray-400 mr-2" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-            <input
-              type="text"
-              placeholder="Search..."
-              className="bg-transparent outline-none text-gray-700 w-full font-['General_Sans'] font-medium text-[14px] leading-[100%] tracking-[1%] align-middle placeholder-[#696969]"
-              value={searchValue}
-              onChange={e => setSearchValue(e.target.value)}
-              autoFocus
-            />
-            <button className="ml-2 text-gray-500 text-base font-medium hover:underline" onClick={() => setSearchOpen(false)}>Cancel</button>
-          </div>
-        )}
+        {/* Search icon - mobile only, always visible */}
+        <button className="flex sm:hidden p-2" onClick={() => setSearchOpen(true)}>
+          <svg className="text-gray-800" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+        </button>
         {/* Flag dropdown */}
         <div className="relative flag-dropdown">
           <button

@@ -894,7 +894,7 @@ export default function DynamicOffers({ countrySlug, initialFilter = null, filte
             {currentOffers.map((offer) => (
               <div
                 key={offer._id}
-                                        className="group relative bg-white rounded-xl border border-gray-100 shadow-sm p-3 flex flex-col transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:border-gray-200 hover:bg-[#F5F5F7] cursor-pointer w-[1200px] h-[174px] gap-[12px] opacity-100 border-radius-[12px] border-width-[1px]"
+                className="group relative bg-white rounded-xl border border-gray-100 shadow-sm p-3 flex flex-col transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:border-gray-200 hover:bg-[#F5F5F7] cursor-pointer w-full h-auto min-h-[174px] gap-[12px] opacity-100 border-radius-[12px] border-width-[1px]"
               >
                 {countrySlug && offer.bonusType?.name && offer.slug?.current && (
                   <Link

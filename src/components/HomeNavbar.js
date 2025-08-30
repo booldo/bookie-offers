@@ -428,33 +428,13 @@ export default function HomeNavbar() {
             readOnly={!searchOpen}
           />
         </div>
-        {/* Search icon - mobile only */}
-        {!searchOpen && (
-          <button className="flex sm:hidden p-2" onClick={() => setSearchOpen(true)}>
-            <svg className="text-gray-400" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-          </button>
-        )}
-        {/* Search input - mobile only, expanded when open */}
-        {searchOpen && (
-          <div className="flex sm:hidden items-center bg-[#F5F5F7] border border-[#E3E3E3] rounded-lg px-3 py-1 w-full max-w-xs flex-1">
-            <svg className="text-gray-400 mr-2" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-            <input
-              type="text"
-              placeholder="Search..."
-              className="bg-transparent outline-none text-gray-700 w-full placeholder-gray-400 font-['General_Sans']"
-              value={searchValue}
-              onChange={e => setSearchValue(e.target.value)}
-              autoFocus
-            />
-            <button className="ml-2 text-gray-500 text-base font-medium hover:underline font-['General_Sans']" onClick={() => setSearchOpen(false)}>Cancel</button>
-          </div>
-        )}
+        {/* Search icon - mobile only, always visible */}
+        <button className="flex sm:hidden p-2" onClick={() => setSearchOpen(true)}>
+          <svg className="text-gray-800" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+        </button>
         {/* Flag dropdown */}
         <div className="relative flag-dropdown">
           <button
@@ -574,24 +554,24 @@ export default function HomeNavbar() {
             }
           }}
         >
-          <div className="max-w-5xl mx-auto px-4 pb-8">
-            <div className="flex items-center gap-4 mb-6">
+          <div className="w-full max-w-5xl mx-auto px-4 sm:px-4 pb-8">
+            <div className="flex items-center gap-2 sm:gap-4 mb-6">
                               <img src="/assets/logo.png" alt="Booldo Logo" className="hidden sm:block w-[120px] h-[41px]" />
-              <div className="flex-1 flex items-center bg-[#f6f7f9] border border-gray-200 rounded-lg px-3 py-2">
-                <svg className="text-gray-400 mr-2" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <div className="flex-1 flex items-center bg-[#f6f7f9] border border-gray-200 rounded-lg px-3 py-2 min-w-0">
+                <svg className="text-gray-400 mr-2 flex-shrink-0" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <circle cx="11" cy="11" r="8" />
                   <line x1="21" y1="21" x2="16.65" y2="16.65" />
                 </svg>
                 <input
                   type="text"
                   placeholder="search"
-                  className="bg-transparent outline-none text-gray-700 w-full placeholder-gray-400"
+                  className="bg-transparent outline-none text-gray-700 w-full placeholder-gray-400 min-w-0"
                   value={searchValue}
                   onChange={e => setSearchValue(e.target.value)}
                   autoFocus
                 />
               </div>
-              <button className="ml-4 text-gray-500 text-base font-medium hover:underline font-['General_Sans']" onClick={() => setSearchOpen(false)}>Cancel</button>
+              <button className="ml-2 sm:ml-4 text-gray-500 text-sm sm:text-base font-medium hover:underline font-['General_Sans'] flex-shrink-0" onClick={() => setSearchOpen(false)}>Cancel</button>
             </div>
             {/* Search Results */}
             <div>
@@ -796,7 +776,7 @@ export default function HomeNavbar() {
                     return (
                       <div
                         key={item._id}
-                        className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex flex-col sm:flex-row sm:items-center justify-between transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:border-gray-200 cursor-pointer group"
+                        className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:border-gray-200 cursor-pointer group"
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
