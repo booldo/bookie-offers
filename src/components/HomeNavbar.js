@@ -411,9 +411,9 @@ export default function HomeNavbar() {
         </Link>
       </div>
       {/* Search & Flag */}
-      <div className="flex items-center gap-0 sm:gap-4 flex-1 justify-end">
+      <div className="flex items-center gap-0 md:gap-4 flex-1 justify-end">
         {/* Search input - desktop only */}
-        <div className="hidden sm:flex items-center bg-[#F5F5F7] border border-[#E3E3E3] rounded-lg px-3 py-1 w-48 cursor-pointer" onClick={() => setSearchOpen(true)}>
+        <div className="hidden md:flex items-center bg-[#F5F5F7] border border-[#E3E3E3] rounded-lg px-3 py-1 w-48 cursor-pointer" onClick={() => setSearchOpen(true)}>
           <svg className="text-gray-400 mr-2" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <circle cx="11" cy="11" r="8" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -429,7 +429,7 @@ export default function HomeNavbar() {
           />
         </div>
         {/* Search icon - mobile only, always visible */}
-        <button className="flex sm:hidden p-2" onClick={() => setSearchOpen(true)}>
+        <button className="flex md:hidden p-2" onClick={() => setSearchOpen(true)}>
           <svg className="text-gray-800" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <circle cx="11" cy="11" r="8" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -555,8 +555,8 @@ export default function HomeNavbar() {
           }}
         >
           <div className="w-full max-w-5xl mx-auto px-4 sm:px-4 pb-8">
-            <div className="flex items-center gap-2 sm:gap-4 mb-6">
-                              <img src="/assets/logo.png" alt="Booldo Logo" className="hidden sm:block w-[120px] h-[41px]" />
+            <div className="flex items-center gap-2 md:gap-4 mb-6">
+                              <img src="/assets/logo.png" alt="Booldo Logo" className="hidden md:block w-[120px] h-[41px]" />
               <div className="flex-1 flex items-center bg-[#f6f7f9] border border-gray-200 rounded-lg px-3 py-2 min-w-0">
                 <svg className="text-gray-400 mr-2 flex-shrink-0" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <circle cx="11" cy="11" r="8" />
@@ -571,7 +571,7 @@ export default function HomeNavbar() {
                   autoFocus
                 />
               </div>
-              <button className="ml-2 sm:ml-4 text-gray-500 text-sm sm:text-base font-medium hover:underline font-['General_Sans'] flex-shrink-0" onClick={() => setSearchOpen(false)}>Cancel</button>
+              <button className="ml-2 md:ml-4 text-gray-500 text-sm md:text-base font-medium hover:underline font-['General_Sans'] flex-shrink-0" onClick={() => setSearchOpen(false)}>Cancel</button>
             </div>
             {/* Search Results */}
             <div>
@@ -776,7 +776,7 @@ export default function HomeNavbar() {
                     return (
                       <div
                         key={item._id}
-                        className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:border-gray-200 cursor-pointer group"
+                        className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 md:p-5 flex flex-col md:flex-row md:items-center justify-between transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:border-gray-200 cursor-pointer group"
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
@@ -795,7 +795,7 @@ export default function HomeNavbar() {
                           }
                         }}
                       >
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2 md:gap-4">
                           {getItemImage() ? (
                             <Image src={urlFor(getItemImage()).width(48).height(48).url()} alt={getItemTitle()} width={48} height={48} className="rounded-md" />
                           ) : (
@@ -825,7 +825,7 @@ export default function HomeNavbar() {
                             )}
                           </div>
                         </div>
-                        <div className="flex flex-col items-end mt-4 sm:mt-0">
+                        <div className="flex flex-col items-end mt-4 md:mt-0">
                           <span className="text-xs text-gray-400 mb-2 font-['General_Sans']">
                             {getItemDate() && `Published: ${formatDate(getItemDate())}`}
                           </span>

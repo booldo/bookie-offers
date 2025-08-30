@@ -85,7 +85,7 @@ async function CountryCards() {
           </div>
           
           {/* View Offers Button */}
-          <div className="inline-flex items-center text-sm font-semibold text-gray-900 font-['General_Sans'] ml-11 sm:ml-12">
+          <div className="inline-flex items-center text-sm font-semibold text-gray-900 font-['General_Sans']">
             View Offers
             <svg className="ml-2" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path d="M5 12h14M12 5l7 7-7 7" />
@@ -147,7 +147,7 @@ function CountryCardsLoading() {
           <div className="h-4 bg-gray-300 rounded w-32 mb-4 ml-11 sm:ml-12"></div>
           
           {/* View Offers Button */}
-          <div className="h-4 bg-gray-300 rounded w-20 ml-11 sm:ml-12"></div>
+          <div className="h-4 bg-gray-300 rounded w-20"></div>
         </div>
       ))}
     </div>
