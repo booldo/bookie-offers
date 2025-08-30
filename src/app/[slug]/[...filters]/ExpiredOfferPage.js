@@ -56,11 +56,10 @@ function ExpiredOfferPage({ offer, embedded = false, countrySlug = "", isCountry
       {!embedded && <Navbar />}
       <main className="max-w-7xl mx-auto w-full px-4 flex-1">
         {/* Back Button - positioned like breadcrumb */}
-        <div className="mt-6 mb-4 flex items-center gap-2 text-sm text-gray-500 overflow-hidden">
+        <div className="mt-6 mb-4 flex items-center gap-2 text-sm text-gray-500 flex-wrap">
           <button onClick={handleBackClick} className="hover:underline flex items-center gap-1 flex-shrink-0">
             <Image src="/assets/back-arrow.png" alt="Back" width={24} height={24} />
-            <span className="hidden sm:inline">Home</span>
-            <span className="sm:hidden">H</span>
+            Home
           </button>
         </div>
         

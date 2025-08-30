@@ -345,23 +345,22 @@ function OfferDetailsInner({ slug }) {
     <div className="min-h-screen bg-[#FFFFFF] flex flex-col">
       <main className="max-w-7xl mx-auto w-full px-2 sm:px-4 flex-1 pb-24 sm:pb-0">
         {/* Updated Breadcrumb */}
-        <div className="mt-6 mb-4 flex items-center gap-2 text-sm text-gray-500 ml-2 overflow-hidden">
+        <div className="mt-6 mb-4 flex items-center gap-2 text-sm text-gray-500 ml-2 flex-wrap">
           <button type="button" onClick={() => router.push(`/${getCountrySlug()}`)} className="hover:underline flex items-center gap-1 flex-shrink-0">
             <img src="/assets/back-arrow.png" alt="Back" width="16" height="16" />
-            <span className="hidden sm:inline">Home</span>
-            <span className="sm:hidden">H</span>
+            Home
           </button>
           <span className="mx-1 flex-shrink-0">/</span>
           <button 
             type="button" 
             onClick={() => router.push(`/${getCountrySlug()}/${offer?.bonusType?.name?.toLowerCase().replace(/\s+/g, '-')}`)} 
-            className="hover:underline text-gray-700 font-medium flex-shrink-0 min-w-0"
+            className="hover:underline text-gray-700 font-medium"
           >
-            <span className="truncate">{offer?.bonusType?.name || "Bonus"}</span>
+            {offer?.bonusType?.name || "Bonus"}
           </button>
           <span className="mx-1 flex-shrink-0">/</span>
-          <span className="text-gray-900 font-medium flex-shrink-0 min-w-0">
-            <span className="truncate">{offer?.title || "Offer"}</span>
+          <span className="text-gray-900 font-medium">
+            {offer?.title || "Offer"}
           </span>
         </div>
         

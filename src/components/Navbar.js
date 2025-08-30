@@ -481,12 +481,12 @@ export default function Navbar() {
           />
         </div>
         {/* Search icon - mobile only, always visible */}
-        <button className="flex sm:hidden p-2" onClick={() => setSearchOpen(true)}>
+          <button className="flex sm:hidden p-2" onClick={() => setSearchOpen(true)}>
           <svg className="text-gray-800" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-        </button>
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </button>
         {/* Flag dropdown */}
         <div className="relative flag-dropdown">
           <button
