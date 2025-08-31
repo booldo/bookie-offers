@@ -152,7 +152,7 @@ export function ExpiredOffersTool() {
           contentType: 'Contact Page',
           displayTitle: page.title || 'Contact Us'
         })));
-      } else {
+         } else {
         // Add placeholder for missing Contact document
         flattenedPages.push({
           _id: 'contact-placeholder',

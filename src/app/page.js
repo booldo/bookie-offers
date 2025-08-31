@@ -57,10 +57,10 @@ async function CountryCards() {
         <a
           key={country.slug.current}
           href={`/${country.slug.current}`}
-          className="flex flex-col bg-[#F5F5F7] rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 transition-all duration-300 hover:scale-[1.01] hover:shadow-md hover:border-gray-200 cursor-pointer block sm:h-[92px] sm:w-[758px] sm:mx-auto"
+          className="flex flex-col bg-[#F5F5F7] rounded-xl p-3 sm:p-4 shadow-sm border border-gray-100 transition-all duration-300 hover:scale-[1.01] hover:shadow-md hover:border-gray-200 cursor-pointer block sm:h-[92px] sm:w-[758px] sm:mx-auto"
         >
           {/* Flag and Country Name Row */}
-          <div className="flex items-center gap-3 mb-3">
+          <div className="flex items-center gap-3 mb-2">
             {country.pageFlag ? (
               <img
                 src={urlFor(country.pageFlag).width(32).height(32).url()}
@@ -79,17 +79,19 @@ async function CountryCards() {
             </div>
           </div>
           
-          {/* Description */}
-          <div className="text-sm text-gray-500 font-['General_Sans'] mb-4 ml-11 sm:ml-12">
-            Discover local offers and bookies
-          </div>
-          
-          {/* View Offers Button - positioned on far right for desktop only */}
-          <div className="inline-flex items-center text-sm font-semibold text-gray-900 font-['General_Sans'] ml-0 sm:ml-auto">
-            View Offers
-            <svg className="ml-2" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path d="M5 12h14M12 5l7 7-7 7" />
-            </svg>
+          {/* Description and View Offers Button Row */}
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-500 font-['General_Sans'] ml-11 sm:ml-12">
+              Discover local offers and bookies
+            </div>
+            
+            {/* View Offers Button - positioned on far right for desktop only */}
+            <div className="inline-flex items-center text-sm font-semibold text-gray-900 font-['General_Sans'] ml-0 sm:ml-auto">
+              View Offers
+              <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+            </div>
           </div>
         </a>
       ))}
@@ -136,18 +138,18 @@ function CountryCardsLoading() {
   return (
     <div className="flex flex-col gap-3 sm:gap-4 w-full max-w-4xl mx-auto px-2 sm:px-0">
       {[1, 2, 3, 4, 5, 6].map((i) => (
-        <div key={i} className="flex flex-col bg-[#F5F5F7] rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 animate-pulse">
+        <div key={i} className="flex flex-col bg-[#F5F5F7] rounded-xl p-3 sm:p-4 shadow-sm border border-gray-100 animate-pulse">
           {/* Flag and Country Name Row */}
-          <div className="flex items-center gap-3 mb-3">
+          <div className="flex items-center gap-3 mb-2">
             <div className="w-8 h-8 sm:w-9 sm:h-9 bg-gray-300 rounded"></div>
             <div className="h-5 sm:h-6 bg-gray-300 rounded w-24"></div>
           </div>
           
-          {/* Description */}
-          <div className="h-4 bg-gray-300 rounded w-32 mb-4 ml-11 sm:ml-12"></div>
-          
-          {/* View Offers Button */}
-          <div className="h-4 bg-gray-300 rounded w-20"></div>
+          {/* Description and View Offers Button Row */}
+          <div className="flex items-center justify-between">
+            <div className="h-4 bg-gray-300 rounded w-32 ml-11 sm:ml-12"></div>
+            <div className="h-4 bg-gray-300 rounded w-20 ml-0 sm:ml-auto"></div>
+          </div>
         </div>
       ))}
     </div>
