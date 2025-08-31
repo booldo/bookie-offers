@@ -57,7 +57,7 @@ async function CountryCards() {
         <a
           key={country.slug.current}
           href={`/${country.slug.current}`}
-          className="flex flex-col bg-[#F5F5F7] rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 transition-all duration-300 hover:scale-[1.01] hover:shadow-md hover:border-gray-200 cursor-pointer block"
+          className="flex flex-col bg-[#F5F5F7] rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 transition-all duration-300 hover:scale-[1.01] hover:shadow-md hover:border-gray-200 cursor-pointer block sm:h-[92px] sm:w-[758px] sm:mx-auto"
         >
           {/* Flag and Country Name Row */}
           <div className="flex items-center gap-3 mb-3">
@@ -84,8 +84,8 @@ async function CountryCards() {
             Discover local offers and bookies
           </div>
           
-          {/* View Offers Button */}
-          <div className="inline-flex items-center text-sm font-semibold text-gray-900 font-['General_Sans']">
+          {/* View Offers Button - positioned on far right for desktop only */}
+          <div className="inline-flex items-center text-sm font-semibold text-gray-900 font-['General_Sans'] ml-0 sm:ml-auto">
             View Offers
             <svg className="ml-2" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path d="M5 12h14M12 5l7 7-7 7" />

@@ -134,10 +134,6 @@ export async function GET() {
 
     // Process dynamic entries from Sanity
     
-    // Debug logging
-    console.log('Processing sitemap entries:', entries.length);
-    console.log('Sample entries:', entries.slice(0, 3));
-    
     const dynamicUrls = entries.map((entry) => {
       let path = "/";
       let isValid = true;
@@ -224,10 +220,7 @@ export async function GET() {
         }
       }
       
-      // Debug logging for _updatedAt field
-      if (!entry._updatedAt) {
-        console.warn(`Entry missing _updatedAt:`, { _type: entry._type, slug: entry.slug, path });
-      }
+
       
       return {
         loc: `${baseUrl}${path}`,
@@ -240,7 +233,7 @@ export async function GET() {
       };
     });
 
-    // Filter out any invalid URLs and respect sitemapInclude settings
+    // Filter out any invalid URLs and respect sitemapInclude and noindex settings
     const validDynamicUrls = dynamicUrls.filter(url => {
       if (!url.isValid) {
         console.warn('Filtered out invalid URL (missing slug):', url.loc);
@@ -249,6 +242,11 @@ export async function GET() {
       
       // Check if entry should be excluded from sitemap
       if (url.sitemapInclude === false) {
+        return false;
+      }
+      
+      // Check if entry is marked as noindex
+      if (url.noindex === true) {
         return false;
       }
       

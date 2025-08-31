@@ -99,27 +99,7 @@ export async function getAllSitemapEntries() {
       client.fetch(basicFiltersQuery)
     ]);
 
-    // Debug logging
-    console.log('Sitemap entries fetched:', {
-      offers: entries.filter(e => e._type === 'offers').length,
-      articles: entries.filter(e => e._type === 'article').length,
-      banners: entries.filter(e => e._type === 'banner').length,
-      faqs: entries.filter(e => e._type === 'faq').length,
-      calculators: entries.filter(e => e._type === 'calculator').length,
-      total: entries.length
-    });
-    
-    console.log('Filter entries:', {
-      bonusTypes: basicFilters.bonusTypes?.length || 0,
-      bookmakers: basicFilters.bookmakers?.length || 0,
-      countries: countries.length
-    });
-    
-    // Debug the actual data fetched
-    console.log('Basic filters data:', {
-      bonusTypes: basicFilters.bonusTypes?.slice(0, 2) || [],
-      bookmakers: basicFilters.bookmakers?.slice(0, 2) || []
-    });
+
     
     // Transform affiliate links to match the expected format
     const transformedAffiliateLinks = affiliateLinks.map(link => ({
@@ -150,9 +130,7 @@ export async function getAllSitemapEntries() {
     });
 
     // Add bonus type filter pages - only if slug exists
-    console.log('Processing bonus types:', basicFilters.bonusTypes?.length || 0);
     basicFilters.bonusTypes?.forEach(bonusType => {
-      console.log('Bonus type:', { name: bonusType.name, slug: bonusType.slug, country: bonusType.country?.slug?.current });
       if (bonusType.slug?.current) {
         filterEntries.push({
           _type: 'filter',
@@ -167,9 +145,7 @@ export async function getAllSitemapEntries() {
     });
 
     // Add bookmaker filter pages - only if slug exists
-    console.log('Processing bookmakers:', basicFilters.bookmakers?.length || 0);
     basicFilters.bookmakers?.forEach(bookmaker => {
-      console.log('Bookmaker:', { name: bookmaker.name, slug: bookmaker.slug, country: bookmaker.country?.slug?.current });
       if (bookmaker.slug?.current) {
         filterEntries.push({
           _type: 'filter',
@@ -186,35 +162,20 @@ export async function getAllSitemapEntries() {
     // Filter out any entries with undefined or invalid slugs before returning
     const allEntries = [...entries, ...transformedAffiliateLinks, ...filterEntries];
     
-    // Debug logging for all entries
-    console.log('All entries before filtering:', {
-      total: allEntries.length,
-      byType: allEntries.reduce((acc, entry) => {
-        acc[entry._type] = (acc[entry._type] || 0) + 1;
-        return acc;
-      }, {})
-    });
-    
     const validEntries = allEntries.filter(entry => 
       entry.slug && 
       (typeof entry.slug === 'string' ? entry.slug !== 'undefined' : entry.slug.current !== 'undefined') &&
       // Only include entries that should be in sitemap
-      (entry.sitemapInclude === true || !entry.sitemapInclude)
+      (entry.sitemapInclude === true || !entry.sitemapInclude) &&
+      // Exclude entries marked as noindex
+      !entry.noindex
     );
-    
-    console.log('Valid entries after filtering:', {
-      total: validEntries.length,
-      byType: validEntries.reduce((acc, entry) => {
-        acc[entry._type] = (acc[entry._type] || 0) + 1;
-        return acc;
-      }, {})
-    });
     
     return validEntries;
   } catch (error) {
     console.error('Error fetching sitemap entries:', error);
     // Fallback to basic query if complex one fails
-    const fallbackQuery = `*[_type in ["offers","article","banner","faq","calculator"] && (sitemapInclude == true || !defined(sitemapInclude))]{
+    const fallbackQuery = `*[_type in ["offers","article","banner","faq","calculator"] && (sitemapInclude == true || !defined(sitemapInclude)) && !noindex]{
       _type,
       slug,
       sitemapInclude,

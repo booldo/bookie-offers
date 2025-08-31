@@ -450,7 +450,6 @@ function OfferDetailsInner({ slug }) {
             {/* How it works */}
             {offer && offer.howItWorks && (
               <div className="mb-6">
-                <div className="font-semibold text-gray-900 mb-3">How it works</div>
                 <div className="text-gray-700 text-sm">
                   <PortableText value={offer.howItWorks} components={portableTextComponents} />
                 </div>
