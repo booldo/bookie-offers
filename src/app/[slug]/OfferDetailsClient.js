@@ -253,9 +253,9 @@ export default function OfferDetailsClient({ offer, moreOffers, totalOffers, cou
       {/* Breadcrumb */}
       <nav className="text-sm text-gray-500 mb-6">
         <div className="flex items-center gap-2 flex-wrap">
-          <Link href={`/${countryName.toLowerCase().replace(/\s+/g, '-')}`} className="hover:text-gray-700">
-            {countryName} Offers
-          </Link>
+        <Link href={`/${countryName.toLowerCase().replace(/\s+/g, '-')}`} className="hover:text-gray-700">
+          {countryName} Offers
+        </Link>
           <span className="mx-2">/</span>
           <Link 
             href={`/${countryName.toLowerCase().replace(/\s+/g, '-')}/${offer.bonusType?.name?.toLowerCase().replace(/\s+/g, '-')}`} 
@@ -263,8 +263,8 @@ export default function OfferDetailsClient({ offer, moreOffers, totalOffers, cou
           >
             {offer.bonusType?.name || "Bonus"}
           </Link>
-          <span className="mx-2">/</span>
-          <span className="text-gray-900">{offer.title}</span>
+        <span className="mx-2">/</span>
+        <span className="text-gray-900">{offer.title}</span>
         </div>
       </nav>
 

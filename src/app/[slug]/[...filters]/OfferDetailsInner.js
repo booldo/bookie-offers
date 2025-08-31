@@ -512,7 +512,7 @@ function OfferDetailsInner({ slug }) {
                 {moreOffers.map((moreOffer) => (
                   <div
                     key={moreOffer._id}
-                    className="relative border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors cursor-pointer h-full"
+                    className="relative border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors cursor-pointer h-full min-w-0"
                   >
                     {moreOffer.slug?.current && (
                       <Link
@@ -523,8 +523,8 @@ function OfferDetailsInner({ slug }) {
                     )}
                     <div className="flex flex-col gap-3">
                       {/* Top row: Logo, Bookmaker Name, and Published Date */}
-                      <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-between min-w-0">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
                         {moreOffer.bookmaker?.logo ? (
                             <Image 
                               src={urlFor(moreOffer.bookmaker.logo).width(44).height(44).url()} 
@@ -536,13 +536,13 @@ function OfferDetailsInner({ slug }) {
                           ) : (
                             <div className="w-11 h-11 bg-gray-100 rounded-[6px] flex-shrink-0" />
                           )}
-                          <div className="font-['General_Sans'] font-semibold text-[16px] leading-[100%] tracking-[1%] text-[#272932]">
+                          <div className="font-['General_Sans'] font-semibold text-[16px] leading-[100%] tracking-[1%] text-[#272932] min-w-0">
                             {moreOffer.bookmaker?.name}
                           </div>
                         </div>
                         {/* Published Date - positioned on the far right */}
                         {moreOffer.published && (
-                          <div className="text-sm text-gray-500">
+                          <div className="text-sm text-gray-500 flex-shrink-0">
                             <span className="font-['General_Sans'] font-medium text-[14px] leading-[100%] tracking-[1%] text-[#696969]">
                               Published: {formatDate(moreOffer.published)}
                             </span>
