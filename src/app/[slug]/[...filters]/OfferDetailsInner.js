@@ -343,7 +343,7 @@ function OfferDetailsInner({ slug }) {
 
   return (
     <div className="min-h-screen bg-[#FFFFFF] flex flex-col">
-      <main className="max-w-7xl mx-auto w-full px-2 sm:px-4 flex-1 pb-24 sm:pb-0">
+      <main className="max-w-7xl mx-auto w-full px-1 sm:px-4 flex-1 pb-24 sm:pb-0">
         {/* Updated Breadcrumb */}
         <div className="mt-6 mb-4 flex items-center gap-2 text-sm text-gray-500 ml-2 flex-wrap">
           <button type="button" onClick={() => router.push(`/${getCountrySlug()}`)} className="hover:underline flex items-center gap-1 flex-shrink-0">
@@ -395,7 +395,7 @@ function OfferDetailsInner({ slug }) {
         {!error && offer && (
           <>
             {/* Offer Card */}
-            <div className="bg-white p-4 sm:p-6 mb-6 flex flex-col">
+            <div className="bg-white p-2 sm:p-6 mb-6 flex flex-col">
               {/* Top row */}
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center gap-3">
@@ -506,13 +506,13 @@ function OfferDetailsInner({ slug }) {
 
           {/* More Offers Section */}
           {moreOffers.length > 0 && (
-            <div className="bg-white p-4 sm:p-6 mb-4">
+            <div className="bg-white p-2 sm:p-6 mb-4">
               <div className="font-semibold text-gray-900 mb-4">More Offers</div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4">
                 {moreOffers.map((moreOffer) => (
                   <div
                     key={moreOffer._id}
-                    className="relative border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors cursor-pointer h-full min-w-0"
+                    className="relative border border-gray-200 rounded-lg p-2 sm:p-4 hover:border-gray-300 transition-colors cursor-pointer h-full min-w-0"
                   >
                     {moreOffer.slug?.current && (
                       <Link
