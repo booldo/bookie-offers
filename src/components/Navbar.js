@@ -20,6 +20,7 @@ export default function Navbar() {
   const [recentSearches, setRecentSearches] = useState([]);
   const router = useRouter();
   const pathname = usePathname();
+  const currentCountrySlug = (pathname || '').split('/').filter(Boolean)[0] || null;
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState(null);
@@ -29,6 +30,10 @@ export default function Navbar() {
   const searchDebounceRef = useRef();
   const menuRef = useRef();
   const [hamburgerMenu, setHamburgerMenu] = useState(null);
+  const [aboutPage, setAboutPage] = useState(null);
+  const [contactPage, setContactPage] = useState(null);
+  const [aboutCountryPage, setAboutCountryPage] = useState(null);
+  const [contactCountryPage, setContactCountryPage] = useState(null);
 
   // Load recent searches from localStorage on mount
   useEffect(() => {
@@ -152,6 +157,47 @@ export default function Navbar() {
     fetchHamburgerMenu();
   }, []);
 
+  // Load default about and contact pages (fallback when no country is detected)
+  useEffect(() => {
+    const fetchStaticPages = async () => {
+      try {
+        const [aboutData, contactData] = await Promise.all([
+          client.fetch(`*[_type == "about" && !defined(country) && !(_id in path("drafts.**"))][0]{ title, noindex, sitemapInclude }`),
+          client.fetch(`*[_type == "contact" && !defined(country) && !(_id in path("drafts.**"))][0]{ title, noindex, sitemapInclude }`)
+        ]);
+        setAboutPage(aboutData);
+        setContactPage(contactData);
+      } catch (e) {
+        console.error('Failed to fetch static pages:', e);
+      }
+    };
+    fetchStaticPages();
+  }, []);
+
+  // Load country-scoped about/contact when country changes
+  useEffect(() => {
+    const fetchCountryScoped = async () => {
+      try {
+        if (!currentCountrySlug) {
+          setAboutCountryPage(null);
+          setContactCountryPage(null);
+          return;
+        }
+        const [aboutForCountry, contactForCountry] = await Promise.all([
+          client.fetch(`*[_type == "about" && references(*[_type == "countryPage" && slug.current == $slug]._id)][0]{ title, noindex, sitemapInclude }`, { slug: currentCountrySlug }),
+          client.fetch(`*[_type == "contact" && references(*[_type == "countryPage" && slug.current == $slug]._id)][0]{ title, noindex, sitemapInclude }`, { slug: currentCountrySlug })
+        ]);
+        setAboutCountryPage(aboutForCountry || null);
+        setContactCountryPage(contactForCountry || null);
+      } catch (e) {
+        console.error('Failed to fetch country-scoped static pages:', e);
+        setAboutCountryPage(null);
+        setContactCountryPage(null);
+      }
+    };
+    fetchCountryScoped();
+  }, [currentCountrySlug]);
+
   // Update selected flag based on current path
   useEffect(() => {
     if (!pathname) return;
@@ -164,8 +210,7 @@ export default function Navbar() {
     setSelectedFlag(match || WORLD_WIDE_FLAG);
   }, [pathname, flags]);
 
-  // Determine country from pathname
-  const currentCountrySlug = pathname.split('/').filter(Boolean)[0] || null;
+  // Determine country from pathname (moved above to avoid TDZ)
 
   // Search handler
   const handleSearch = async (term) => {
@@ -566,8 +611,24 @@ export default function Navbar() {
                 </div>
               )}
             </div>
-            <Link href="/about" className="hover:underline">About Us</Link>
-            <Link href="/contact" className="hover:underline">Contact Us</Link>
+            {(() => {
+              const aboutDoc = (aboutCountryPage || aboutPage);
+              const aboutHref = currentCountrySlug
+                ? `/${encodeURIComponent(currentCountrySlug)}/about`
+                : "/about";
+              return aboutDoc && !aboutDoc.noindex && aboutDoc.sitemapInclude !== false ? (
+                <Link href={aboutHref} className="hover:underline">{aboutDoc.title || 'About Us'}</Link>
+              ) : null;
+            })()}
+            {(() => {
+              const contactDoc = (contactCountryPage || contactPage);
+              const contactHref = currentCountrySlug
+                ? `/${encodeURIComponent(currentCountrySlug)}/contact`
+                : "/contact";
+              return contactDoc && !contactDoc.noindex && contactDoc.sitemapInclude !== false ? (
+                <Link href={contactHref} className="hover:underline">{contactDoc.title || 'Contact Us'}</Link>
+              ) : null;
+            })()}
             
             {/* Additional Dynamic Menu Items */}
             {hamburgerMenu?.additionalMenuItems?.map((item, index) => (
@@ -584,7 +645,7 @@ export default function Navbar() {
           </div>
           {/* Hamburger Menu Title - Clickable to show content */}
           {hamburgerMenu?.title && !hamburgerMenu.noindex && hamburgerMenu.sitemapInclude !== false && (
-            <div className="border-t border-gray-200 px-10 py-4">
+            <div className="px-10 py-4">
               <Link 
                 href="/hamburger-menu/main"
                 className="text-sm text-gray-500 font-medium hover:text-gray-700 hover:underline cursor-pointer"

@@ -29,6 +29,8 @@ export default function HomeNavbar() {
   const searchDebounceRef = useRef();
   const menuRef = useRef();
   const [hamburgerMenu, setHamburgerMenu] = useState(null);
+  const [aboutPage, setAboutPage] = useState(null);
+  const [contactPage, setContactPage] = useState(null);
 
   // Load recent searches from localStorage on mount
   useEffect(() => {
@@ -150,6 +152,23 @@ export default function HomeNavbar() {
       }
     };
     fetchHamburgerMenu();
+  }, []);
+
+  // Load default about and contact pages from Sanity (must be documents WITHOUT a country)
+  useEffect(() => {
+    const fetchStaticPages = async () => {
+      try {
+        const [aboutData, contactData] = await Promise.all([
+          client.fetch(`*[_type == "about" && !defined(country) && !(_id in path("drafts.**"))][0]{ title, noindex, sitemapInclude }`),
+          client.fetch(`*[_type == "contact" && !defined(country) && !(_id in path("drafts.**"))][0]{ title, noindex, sitemapInclude }`)
+        ]);
+        setAboutPage(aboutData);
+        setContactPage(contactData);
+      } catch (e) {
+        console.error('Failed to fetch static pages:', e);
+      }
+    };
+    fetchStaticPages();
   }, []);
 
   // Update selected flag based on current path (dynamic)
@@ -489,7 +508,7 @@ export default function HomeNavbar() {
             {/* Default Menu Items */}
             <Link 
               href={pathname.startsWith('/ng') ? '/ng' : pathname.startsWith('/gh') ? '/gh' : '/'} 
-              className="hover:underline font-['General_Sans']"
+              className="hover:underline"
             >
               Home
             </Link>
@@ -514,8 +533,12 @@ export default function HomeNavbar() {
                 </div>
               )}
             </div>
-            <Link href="/about" className="hover:underline font-['General_Sans']">About Us</Link>
-            <Link href="/contact" className="hover:underline font-['General_Sans']">Contact Us</Link>
+            {aboutPage && !aboutPage.noindex && aboutPage.sitemapInclude !== false && (
+              <Link href="/about" className="hover:underline">{aboutPage.title || 'About Us'}</Link>
+            )}
+            {contactPage && !contactPage.noindex && contactPage.sitemapInclude !== false && (
+              <Link href="/contact" className="hover:underline">{contactPage.title || 'Contact Us'}</Link>
+            )}
             
             {/* Additional Dynamic Menu Items */}
             {hamburgerMenu?.additionalMenuItems?.map((item, index) => (
@@ -523,7 +546,7 @@ export default function HomeNavbar() {
                 <Link
                   key={index}
                   href={`/hamburger-menu/${item.label.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`}
-                  className="hover:underline font-['General_Sans']"
+                  className="hover:underline"
                 >
                   {item.label}
                 </Link>
@@ -532,10 +555,10 @@ export default function HomeNavbar() {
           </div>
           {/* Hamburger Menu Title - Clickable to show content */}
           {hamburgerMenu?.title && !hamburgerMenu.noindex && hamburgerMenu.sitemapInclude !== false && (
-            <div className="border-t border-gray-200 px-10 py-4">
+            <div className="px-10 py-4">
               <Link 
                 href="/hamburger-menu/main"
-                className="text-sm text-gray-500 font-medium hover:text-gray-700 hover:underline cursor-pointer font-['General_Sans']"
+                className="text-sm text-gray-500 font-medium hover:text-gray-700 hover:underline cursor-pointer"
               >
                 {hamburgerMenu.title}
               </Link>

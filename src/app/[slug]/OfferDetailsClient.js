@@ -262,7 +262,7 @@ export default function OfferDetailsClient({ offer, moreOffers, totalOffers, cou
             className="hover:text-gray-700 text-gray-700 font-medium"
           >
             {offer.bonusType?.name || "Bonus"}
-          </Link>
+        </Link>
         <span className="mx-2">/</span>
         <span className="text-gray-900">{offer.title}</span>
         </div>

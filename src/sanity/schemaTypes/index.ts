@@ -18,6 +18,7 @@ import footer from "./footer";
 import licenses from "./licenses";
 import paymentOptions from "./paymentOptions";
 import calculator from "./calculator";
+import redirects from "./redirects";
 
 export const schemaTypes = [
   bookmaker,
@@ -39,6 +40,7 @@ export const schemaTypes = [
   licenses,
   paymentOptions,
   calculator,
+  redirects,
 ];
 
 export const schema: { types: SchemaTypeDefinition[] } = {

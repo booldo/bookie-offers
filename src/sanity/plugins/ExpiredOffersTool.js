@@ -44,6 +44,11 @@ export function ExpiredOffersTool() {
     search: ''
   });
   const [processing, setProcessing] = useState(false);
+  const [redirects, setRedirects] = useState([]);
+  const [redirectedPages, setRedirectedPages] = useState([]);
+  const [redirect301States, setRedirect301States] = useState({});
+  const [targetUrls, setTargetUrls] = useState({});
+  const [showRedirectInput, setShowRedirectInput] = useState({});
   
   const toast = useToast();
 
@@ -78,14 +83,16 @@ export function ExpiredOffersTool() {
       const otherPagesQuery = `{
         "about": *[_type == "about" && !(_id in path("drafts.**"))]{ _id, _type, title, "path": "/about", sitemapInclude, noindex, _updatedAt },
         "contact": *[_type == "contact" && !(_id in path("drafts.**"))]{ _id, _type, title, "path": "/contact", sitemapInclude, noindex, _updatedAt },
+        "brieflyHomepage": *[_type == "brieflyHomepage" && !(_id in path("drafts.**"))]{ _id, _type, title, "path": "/briefly", sitemapInclude, noindex, _updatedAt },
+        "calculatorHomepage": *[_type == "calculatorHomepage" && !(_id in path("drafts.**"))]{ _id, _type, title, "path": "/briefly/calculators", sitemapInclude, noindex, _updatedAt },
         "country": *[_type == "countryPage" && !(_id in path("drafts.**"))]{ _id, _type, country, slug, sitemapInclude, noindex, _updatedAt }{
           _id, _type, "title": country, "path": "/" + slug.current, sitemapInclude, noindex, _updatedAt
         },
         "articles": *[_type == "article" && !(_id in path("drafts.**"))]{ _id, _type, title, slug, sitemapInclude, noindex, _updatedAt }{
           _id, _type, title, "path": "/briefly/" + slug.current, sitemapInclude, noindex, _updatedAt
         },
-        "calculators": *[_type == "calculator" && !(_id in path("drafts.**"))]{ _id, _type, title, slug, sitemapInclude, noindex, _updatedAt }{
-          _id, _type, title, "path": "/briefly/calculator/" + slug.current, sitemapInclude, noindex, _updatedAt
+        "calculators": *[_type == "calculator" && !(_id in path("drafts.**"))]{ _id, _type, title, slug, isActive, sitemapInclude, noindex, _updatedAt }{
+          _id, _type, title, "path": "/briefly/calculator/" + slug.current, isActive, sitemapInclude, noindex, _updatedAt
         },
         "hamburgerMenu": *[_type == "hamburgerMenu" && !(_id in path("drafts.**"))]{ 
           _id, _type, title, sitemapInclude, noindex, _updatedAt,
@@ -98,12 +105,22 @@ export function ExpiredOffersTool() {
             _updatedAt
           }
         },
-        "footer": *[_type == "footer" && !(_id in path("drafts.**"))]{
+        "footer": *[_type == "footer" && !(_id in path("drafts.**"))][0]{
           _id, _type, sitemapInclude, noindex, _updatedAt,
           "bottomRowLinks": bottomRowLinks.links[]{
             _id,
             label,
             slug,
+            url,
+            sitemapInclude,
+            noindex,
+            _updatedAt
+          },
+          "resourceLinks": gamblingResources.resources[]{
+            _id,
+            name,
+            url,
+            isActive,
             sitemapInclude,
             noindex,
             _updatedAt
@@ -111,14 +128,26 @@ export function ExpiredOffersTool() {
         }
       }`;
 
-      const [offersResult, countriesResult, otherPagesResult] = await Promise.all([
+      // Fetch existing redirects
+      const redirectsQuery = `*[_type == "redirects" && isActive == true] | order(sourcePath asc) {
+        _id,
+        sourcePath,
+        targetUrl,
+        redirectType,
+        description,
+        _updatedAt
+      }`;
+
+      const [offersResult, countriesResult, otherPagesResult, redirectsResult] = await Promise.all([
         client.fetch(offersQuery),
         client.fetch(countriesQuery),
-        client.fetch(otherPagesQuery)
+        client.fetch(otherPagesQuery),
+        client.fetch(redirectsQuery)
       ]);
 
       setAllOffers(offersResult);
       setCountries(countriesResult);
+      setRedirects(redirectsResult);
       
       // Process and flatten the other pages data
       const flattenedPages = [];
@@ -167,6 +196,54 @@ export function ExpiredOffersTool() {
         });
       }
       
+      // Add briefly homepage
+      if (otherPagesResult?.brieflyHomepage) {
+        otherPagesResult.brieflyHomepage.forEach(page => {
+          flattenedPages.push({
+            ...page,
+            contentType: 'Briefly Homepage',
+            displayTitle: page.title || 'Briefly (Blog)'
+          });
+        });
+      } else {
+        // Add placeholder for missing Briefly Homepage document
+        flattenedPages.push({
+          _id: 'briefly-homepage-placeholder',
+          _type: 'brieflyHomepage',
+          title: 'Briefly (Blog)',
+          path: '/briefly',
+          contentType: 'Briefly Homepage',
+          displayTitle: 'Briefly (Blog)',
+          isMissing: true,
+          noindex: false,
+          sitemapInclude: true
+        });
+      }
+      
+      // Add calculator homepage
+      if (otherPagesResult?.calculatorHomepage) {
+        otherPagesResult.calculatorHomepage.forEach(page => {
+          flattenedPages.push({
+            ...page,
+            contentType: 'Calculator Homepage',
+            displayTitle: page.title || 'Calculators'
+          });
+        });
+      } else {
+        // Add placeholder for missing Calculator Homepage document
+        flattenedPages.push({
+          _id: 'calculator-homepage-placeholder',
+          _type: 'calculatorHomepage',
+          title: 'Calculators',
+          path: '/briefly/calculators',
+          contentType: 'Calculator Homepage',
+          displayTitle: 'Calculators',
+          isMissing: true,
+          noindex: false,
+          sitemapInclude: true
+        });
+      }
+      
       // Add country pages
       if (otherPagesResult?.country) {
         flattenedPages.push(...otherPagesResult.country.map(page => ({
@@ -187,11 +264,15 @@ export function ExpiredOffersTool() {
       
       // Add calculators
       if (otherPagesResult?.calculators) {
-        flattenedPages.push(...otherPagesResult.calculators.map(page => ({
-          ...page,
-          contentType: 'Calculator',
-          displayTitle: page.title || 'Calculator'
-        })));
+        otherPagesResult.calculators.forEach(page => {
+          if (page.isActive !== false) { // Include if isActive is true or undefined
+            flattenedPages.push({
+              ...page,
+              contentType: 'Calculator',
+              displayTitle: page.title || 'Calculator'
+            });
+          }
+        });
       }
       
       // Add hamburger menu items
@@ -234,11 +315,12 @@ export function ExpiredOffersTool() {
       // Add footer links
       if (otherPagesResult?.footer?.bottomRowLinks) {
         otherPagesResult.footer.bottomRowLinks.forEach(link => {
+          const linkPath = link.slug?.current ? `/${link.slug.current}` : link.url || '#';
           flattenedPages.push({
             _id: link._id,
             _type: 'footerLink',
             title: link.label,
-            path: link.path,
+            path: linkPath,
             sitemapInclude: link.sitemapInclude,
             noindex: link.noindex,
             _updatedAt: link._updatedAt,
@@ -248,11 +330,80 @@ export function ExpiredOffersTool() {
         });
       }
       
+      // Add resource links
+      if (otherPagesResult?.footer?.resourceLinks) {
+        otherPagesResult.footer.resourceLinks.forEach(link => {
+          if (link.isActive) {
+            flattenedPages.push({
+              _id: link._id,
+              _type: 'resourceLink',
+              title: link.name,
+              path: link.url,
+              sitemapInclude: link.sitemapInclude,
+              noindex: link.noindex,
+              _updatedAt: link._updatedAt,
+              contentType: 'Resource Link',
+              displayTitle: link.name || 'Resource Link'
+            });
+          }
+        });
+      }
+      
       setAllOtherPages(flattenedPages);
       
-      // Apply filters to get displayed offers
-      applyFilters(offersResult, filters);
-      applyOtherPagesFilters(flattenedPages, filters);
+      // Create redirected pages array by matching redirects with offers and other pages
+      const redirectedPagesList = [];
+      
+      // Match redirects with offers
+      offersResult.forEach(offer => {
+        const offerPath = offer.slug?.current && offer.country?.slug?.current && offer.bonusType?.name ? 
+          `/${offer.country.slug.current}/${offer.bonusType.name.toLowerCase().replace(/\s+/g, '-')}/${offer.slug.current}` : null;
+        
+        if (offerPath) {
+          const matchingRedirect = redirectsResult.find(redirect => redirect.sourcePath === offerPath);
+          if (matchingRedirect) {
+            redirectedPagesList.push({
+              ...offer,
+              redirectId: matchingRedirect._id,
+              targetUrl: matchingRedirect.targetUrl,
+              redirectDescription: matchingRedirect.description,
+              originalType: 'offer',
+              originalPath: offerPath
+            });
+          }
+        }
+      });
+      
+      // Match redirects with other pages
+      flattenedPages.forEach(page => {
+        const matchingRedirect = redirectsResult.find(redirect => redirect.sourcePath === page.path);
+        if (matchingRedirect) {
+          redirectedPagesList.push({
+            ...page,
+            redirectId: matchingRedirect._id,
+            targetUrl: matchingRedirect.targetUrl,
+            redirectDescription: matchingRedirect.description,
+            originalType: 'page',
+            originalPath: page.path
+          });
+        }
+      });
+      
+      setRedirectedPages(redirectedPagesList);
+      
+      // Apply filters to get displayed offers (excluding redirected ones)
+      const nonRedirectedOffers = offersResult.filter(offer => {
+        const offerPath = offer.slug?.current && offer.country?.slug?.current && offer.bonusType?.name ? 
+          `/${offer.country.slug.current}/${offer.bonusType.name.toLowerCase().replace(/\s+/g, '-')}/${offer.slug.current}` : null;
+        return !offerPath || !redirectsResult.find(redirect => redirect.sourcePath === offerPath);
+      });
+      
+      const nonRedirectedPages = flattenedPages.filter(page => 
+        !redirectsResult.find(redirect => redirect.sourcePath === page.path)
+      );
+      
+      applyFilters(nonRedirectedOffers, filters);
+      applyOtherPagesFilters(nonRedirectedPages, filters);
       
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -300,9 +451,21 @@ export function ExpiredOffersTool() {
   const updateFilters = useCallback((newFilters) => {
     const updatedFilters = { ...filters, ...newFilters };
     setFilters(updatedFilters);
-    applyFilters(allOffers, updatedFilters);
-    applyOtherPagesFilters(allOtherPages, updatedFilters);
-  }, [filters, allOffers, allOtherPages, applyFilters]);
+    
+    // Filter out redirected pages from the main lists
+    const nonRedirectedOffers = allOffers.filter(offer => {
+      const offerPath = offer.slug?.current && offer.country?.slug?.current && offer.bonusType?.name ? 
+        `/${offer.country.slug.current}/${offer.bonusType.name.toLowerCase().replace(/\s+/g, '-')}/${offer.slug.current}` : null;
+      return !offerPath || !redirects.find(redirect => redirect.sourcePath === offerPath);
+    });
+    
+    const nonRedirectedPages = allOtherPages.filter(page => 
+      !redirects.find(redirect => redirect.sourcePath === page.path)
+    );
+    
+    applyFilters(nonRedirectedOffers, updatedFilters);
+    applyOtherPagesFilters(nonRedirectedPages, updatedFilters);
+  }, [filters, allOffers, allOtherPages, redirects, applyFilters]);
 
   useEffect(() => {
     fetchData();
@@ -338,11 +501,176 @@ export function ExpiredOffersTool() {
     return page.noindex === true || page.sitemapInclude === false;
   };
 
+  // Validate URL format
+  const isValidUrlFormat = (url) => {
+    if (!url || url.trim() === '') return true; // Empty is valid (not required)
+    
+    const trimmedUrl = url.trim();
+    
+    // Check for absolute URLs (http/https)
+    if (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')) {
+      try {
+        new URL(trimmedUrl);
+        return true;
+      } catch (error) {
+        return false;
+      }
+    }
+    // Check for relative URLs (starting with /)
+    else if (trimmedUrl.startsWith('/')) {
+      return trimmedUrl.length > 1 && !trimmedUrl.includes('..');
+    }
+    // Check for external URLs without protocol (add https:// and validate)
+    else if (trimmedUrl.includes('.') && !trimmedUrl.includes('/')) {
+      try {
+        new URL(`https://${trimmedUrl}`);
+        return true;
+      } catch (error) {
+        return false;
+      }
+    }
+    
+    return false;
+  };
+
+  // Toggle 301 redirect input for offers
+  const toggle301RedirectState = (offerId) => {
+    setRedirect301States(prev => ({
+      ...prev,
+      [offerId]: !prev[offerId]
+    }));
+    setShowRedirectInput(prev => ({
+      ...prev,
+      [offerId]: !prev[offerId]
+    }));
+  };
+
+  // Toggle 301 redirect input for other pages
+  const togglePage301RedirectState = (pageId) => {
+    setRedirect301States(prev => ({
+      ...prev,
+      [pageId]: !prev[pageId]
+    }));
+    setShowRedirectInput(prev => ({
+      ...prev,
+      [pageId]: !prev[pageId]
+    }));
+  };
+
+  // Create a new redirect
+  const createRedirect = async (sourcePath, targetUrl, description = '', itemId = null) => {
+    if (!sourcePath || !targetUrl || targetUrl.trim() === '') {
+      toast.push({
+        status: 'error',
+        title: 'Missing information',
+        description: 'Please provide both source path and target URL.'
+      });
+      return;
+    }
+
+    // Validate target URL format
+    const trimmedTargetUrl = targetUrl.trim();
+    
+    if (!isValidUrlFormat(trimmedTargetUrl)) {
+      toast.push({
+        status: 'error',
+        title: 'Invalid URL format',
+        description: 'Please enter a valid URL. Examples:\n• https://example.com\n• /about\n• example.com'
+      });
+      return;
+    }
+
+    setProcessing(true);
+    try {
+      console.log('🔄 Creating redirect:', { sourcePath, targetUrl: trimmedTargetUrl, description });
+      
+      // Create new redirect document
+      await client.create({
+        _type: 'redirects',
+        sourcePath: sourcePath,
+        targetUrl: trimmedTargetUrl,
+        redirectType: '301',
+        isActive: true,
+        description: description,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+
+      toast.push({
+        status: 'success',
+        title: 'Redirect created successfully',
+        description: `${sourcePath} will now redirect to ${trimmedTargetUrl}`
+      });
+      
+      // Clear input and collapse fields for this specific item
+      if (itemId) {
+        setTargetUrls(prev => ({ 
+          ...prev, 
+          [itemId]: '', 
+          [`${itemId}_desc`]: '' 
+        }));
+        
+        // Collapse the input fields for this specific item
+        setShowRedirectInput(prev => ({ 
+          ...prev, 
+          [itemId]: false 
+        }));
+        
+        // Also clear the redirect states
+        setRedirect301States(prev => ({ 
+          ...prev, 
+          [itemId]: false 
+        }));
+      }
+      
+      await fetchData();
+      
+    } catch (error) {
+      console.error('Error creating redirect:', error);
+      toast.push({
+        status: 'error',
+        title: 'Failed to create redirect',
+        description: error.message
+      });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  // Remove a redirect
+  const removeRedirect = async (redirectId) => {
+    setProcessing(true);
+    try {
+      await client
+        .patch(redirectId)
+        .set({ isActive: false })
+        .commit();
+
+      toast.push({
+        status: 'success',
+        title: 'Redirect removed',
+        description: 'The redirect has been deactivated'
+      });
+      
+      await fetchData();
+      
+    } catch (error) {
+      console.error('Error removing redirect:', error);
+      toast.push({
+        status: 'error',
+        title: 'Failed to remove redirect',
+        description: error.message
+      });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   const getPageVisibilityButtonProps = (page) => {
     if (isPageHidden(page)) {
-      return { text: 'Show', tone: 'positive', title: 'Show this page (indexable, in sitemap)' };
+      return { text: 'Remove from 410', tone: 'critical', title: 'Show this page (indexable, in sitemap)' };
     }
-    return { text: 'Hide', tone: 'critical', title: 'Hide this page (noindex, exclude from sitemap)' };
+    return { text: 'Redirect to 410', tone: 'positive', title: 'Hide this page (noindex, exclude from sitemap)' };
   };
 
   const togglePageVisibility = async (page) => {
@@ -453,18 +781,18 @@ export function ExpiredOffersTool() {
     }
   };
 
-  // Get button text and tone for hide/show button
+  // Get button text and tone for 410/show button
   const getVisibilityButtonProps = (offer) => {
     if (isOfferHidden(offer)) {
       return {
-        text: 'Show',
-        tone: 'positive',
+        text: 'Remove from 410',
+        tone: 'critical',
         title: 'Show this offer in offer cards and sitemap'
       };
     } else {
       return {
-        text: 'Hide',
-        tone: 'critical',
+        text: 'Redirect to 410',
+        tone: 'positive',
         title: 'Hide this offer from offer cards and sitemap (noindex)'
       };
     }
@@ -476,18 +804,6 @@ export function ExpiredOffersTool() {
     <ToastProvider>
       <Box padding={4}>
         <Stack space={4}>
-          {/* Header */}
-          <Card padding={4} radius={2} shadow={1}>
-            <Stack space={3}>
-              <Text size={4} weight="bold">Redirection Tool</Text>
-                             <Text size={2} muted>
-                 Manage offer lifecycle, expiration status, and visibility control
-               </Text>
-               <Text size={1} muted>
-                 Note: Hidden offers will show 410 errors on the frontend and won't appear in offer cards
-               </Text>
-            </Stack>
-          </Card>
 
           {/* Filters and Actions */}
           <Card padding={4} radius={2} shadow={1}>
@@ -552,6 +868,7 @@ export function ExpiredOffersTool() {
               </Flex>
             ) : (
               <Stack space={3}>
+                <Text size={3} weight="semibold">All Offers</Text>
                 {offers.length === 0 ? (
                   <Text align="center" muted>
                     No offers found matching the current filters
@@ -574,6 +891,64 @@ export function ExpiredOffersTool() {
                            disabled={processing}
                           title={getVisibilityButtonProps(offer).title}
                          />
+                         
+                         <Button
+                           size={1}
+                          text="redirect to 301"
+                          tone="positive"
+                           onClick={() => toggle301RedirectState(offer._id)}
+                           disabled={processing}
+                          title="Set 301 redirect to another URL"
+                         />
+                         
+                         {showRedirectInput[offer._id] && (
+                           <Stack space={2}>
+                             <TextInput
+                               size={1}
+                               placeholder="Target URL"
+                               value={targetUrls[offer._id] || ''}
+                               onChange={(event) => setTargetUrls(prev => ({
+                                 ...prev,
+                                 [offer._id]: event.target.value
+                               }))}
+                               style={{ minWidth: '300px' }}
+                             />
+                             {targetUrls[offer._id] && (
+                               <Text size={1} style={{ 
+                                 color: isValidUrlFormat(targetUrls[offer._id]) ? '#059669' : '#DC2626',
+                                 fontSize: '12px'
+                               }}>
+                                 {isValidUrlFormat(targetUrls[offer._id]) 
+                                   ? '✅ Valid URL format' 
+                                   : '❌ Invalid URL format'
+                                 }
+                               </Text>
+                             )}
+                             <TextInput
+                               size={1}
+                               placeholder="Description (optional)"
+                               value={targetUrls[`${offer._id}_desc`] || ''}
+                               onChange={(event) => setTargetUrls(prev => ({
+                                 ...prev,
+                                 [`${offer._id}_desc`]: event.target.value
+                               }))}
+                               style={{ minWidth: '300px' }}
+                             />
+                             <Button
+                               size={1}
+                               text="Redirect to Page"
+                               tone="positive"
+                               onClick={() => createRedirect(
+                                 offer.slug?.current && offer.country?.slug?.current && offer.bonusType?.name ? 
+                                   `/${offer.country.slug.current}/${offer.bonusType.name.toLowerCase().replace(/\s+/g, '-')}/${offer.slug.current}` : '', 
+                                 targetUrls[offer._id],
+                                 targetUrls[`${offer._id}_desc`] || '',
+                                 offer._id
+                               )}
+                               disabled={processing || !targetUrls[offer._id]?.trim() || !isValidUrlFormat(targetUrls[offer._id])}
+                             />
+                           </Stack>
+                         )}
                         
                         <Box flex={1}>
                           <Stack space={2}>
@@ -640,6 +1015,49 @@ export function ExpiredOffersTool() {
               </Stack>
             )}
           </Card>
+          {/* Redirects List */}
+          <Card padding={4} radius={2} shadow={1}>
+            {loading ? (
+              <Flex justify="center" padding={4}>
+                <Spinner />
+              </Flex>
+            ) : (
+              <Stack space={3}>
+                <Text size={3} weight="semibold">Active Redirects</Text>
+                {redirects.length === 0 ? (
+                  <Text align="center" muted>
+                    No active redirects found
+                  </Text>
+                ) : (
+                  redirects.map((redirect) => (
+                    <Card key={redirect._id} padding={3} radius={2} shadow={1}>
+                      <Flex align="center" gap={3}>
+                        <Box flex={1}>
+                          <Stack space={1}>
+                            <Text weight="semibold">{redirect.sourcePath}</Text>
+                            <Text size={1} muted>Redirects to: {redirect.targetUrl}</Text>
+                            {redirect.description && (
+                              <Text size={1} muted>{redirect.description}</Text>
+                            )}
+                          </Stack>
+                        </Box>
+                        <Button
+                          size={1}
+                          text="Remove"
+                          tone="critical"
+                          onClick={() => removeRedirect(redirect._id)}
+                          disabled={processing}
+                          title="Deactivate this redirect"
+                        />
+                      </Flex>
+                    </Card>
+                  ))
+                )}
+              </Stack>
+            )}
+          </Card>
+
+
           {/* Other Pages List */}
           <Card padding={4} radius={2} shadow={1}>
             {loading ? (
@@ -667,14 +1085,73 @@ export function ExpiredOffersTool() {
                             title="Document not found - click to see instructions"
                           />
                         ) : (
-                          <Button
-                            size={1}
-                            text={getPageVisibilityButtonProps(page).text}
-                            tone={getPageVisibilityButtonProps(page).tone}
-                            onClick={() => togglePageVisibility(page)}
-                            disabled={processing}
-                            title={getPageVisibilityButtonProps(page).title}
-                          />
+                          <>
+                            <Button
+                              size={1}
+                              text={getPageVisibilityButtonProps(page).text}
+                              tone={getPageVisibilityButtonProps(page).tone}
+                              onClick={() => togglePageVisibility(page)}
+                              disabled={processing}
+                              title={getPageVisibilityButtonProps(page).title}
+                            />
+                            
+                            <Button
+                              size={1}
+                              text="redirect to 301"
+                              tone="positive"
+                              onClick={() => togglePage301RedirectState(page._id)}
+                              disabled={processing}
+                              title="Set 301 redirect to another URL"
+                            />
+                            
+                            {showRedirectInput[page._id] && (
+                              <Stack space={2}>
+                                <TextInput
+                                  size={1}
+                                  placeholder="Target URL"
+                                  value={targetUrls[page._id] || ''}
+                                  onChange={(event) => setTargetUrls(prev => ({
+                                    ...prev,
+                                    [page._id]: event.target.value
+                                  }))}
+                                  style={{ minWidth: '300px' }}
+                                />
+                                {targetUrls[page._id] && (
+                                  <Text size={1} style={{ 
+                                    color: isValidUrlFormat(targetUrls[page._id]) ? '#059669' : '#DC2626',
+                                    fontSize: '12px'
+                                  }}>
+                                    {isValidUrlFormat(targetUrls[page._id]) 
+                                      ? '✅ Valid URL format' 
+                                      : '❌ Invalid URL format'
+                                    }
+                                  </Text>
+                                )}
+                                <TextInput
+                                  size={1}
+                                  placeholder="Description (optional)"
+                                  value={targetUrls[`${page._id}_desc`] || ''}
+                                  onChange={(event) => setTargetUrls(prev => ({
+                                    ...prev,
+                                    [`${page._id}_desc`]: event.target.value
+                                  }))}
+                                  style={{ minWidth: '300px' }}
+                                />
+                                                                  <Button
+                                    size={1}
+                                    text="Redirect to Page"
+                                    tone="positive"
+                                    onClick={() => createRedirect(
+                                      page.path, 
+                                      targetUrls[page._id],
+                                      targetUrls[`${page._id}_desc`] || '',
+                                      page._id
+                                    )}
+                                    disabled={processing || !targetUrls[page._id]?.trim() || !isValidUrlFormat(targetUrls[page._id])}
+                                  />
+                              </Stack>
+                            )}
+                          </>
                         )}
 
                         <Box flex={1}>

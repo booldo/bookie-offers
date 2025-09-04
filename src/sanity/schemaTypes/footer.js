@@ -378,6 +378,7 @@ export default {
                   type: 'url',
                   description: 'SEO: Canonical URL for this page (leave blank for default)'
                 },
+
                 {
                   name: 'isActive',
                   title: 'Active',

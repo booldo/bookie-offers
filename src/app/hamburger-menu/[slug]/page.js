@@ -14,7 +14,7 @@ import ExpiredOfferPage from "../../[slug]/[...filters]/ExpiredOfferPage";
 
 const builder = imageUrlBuilder(client);
 function urlFor(source) {
-  return builder.image(source).url();
+  return builder.image(source);
 }
 
 export default function HamburgerMenuPage() {
@@ -201,17 +201,57 @@ export default function HamburgerMenuPage() {
               <PortableText 
                 value={content.content}
                 components={{
+                  types: {
+                    image: ({ value }) => {
+                      if (!value?.asset) return null;
+                      return (
+                        <div className="my-4 sm:my-6">
+                          <Image
+                            src={urlFor(value).width(800).height(600).url()}
+                            alt={value.alt || 'Hamburger menu image'}
+                            width={800}
+                            height={600}
+                            className="rounded-lg shadow-sm w-full h-auto"
+                          />
+                          {value.caption && (
+                            <p className="text-sm text-gray-600 mt-2 text-center font-['General_Sans']">
+                              {value.caption}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    },
+                  },
                   block: {
-                    h1: ({children}) => <h1 className="text-3xl font-bold mb-4 mt-6">{children}</h1>,
-                    h2: ({children}) => <h2 className="text-2xl font-bold mb-3 mt-5">{children}</h2>,
-                    h3: ({children}) => <h3 className="text-xl font-bold mb-2 mt-4">{children}</h3>,
-                    h4: ({children}) => <h4 className="text-lg font-bold mb-2 mt-3">{children}</h4>,
-                    p: ({children}) => <p className="mb-4 text-base leading-6">{children}</p>,
-                    ul: ({children}) => <ul className="list-disc list-inside mb-4 space-y-1">{children}</ul>,
-                    ol: ({children}) => <ol className="list-decimal list-inside mb-4 space-y-1">{children}</ol>,
-                    li: ({children}) => <li className="text-base leading-6">{children}</li>,
-                    blockquote: ({children}) => <blockquote className="border-l-4 border-green-600 pl-4 italic text-gray-700 mb-4">{children}</blockquote>,
-                  }
+                    h1: ({children}) => <h1 className="text-3xl font-bold mb-4 mt-6 font-['General_Sans']">{children}</h1>,
+                    h2: ({children}) => <h2 className="text-2xl font-bold mb-3 mt-5 font-['General_Sans']">{children}</h2>,
+                    h3: ({children}) => <h3 className="text-xl font-bold mb-2 mt-4 font-['General_Sans']">{children}</h3>,
+                    h4: ({children}) => <h4 className="text-lg font-bold mb-2 mt-3 font-['General_Sans']">{children}</h4>,
+                    normal: ({children}) => <p className="mb-4 text-base leading-6 font-['General_Sans']">{children}</p>,
+                    blockquote: ({children}) => <blockquote className="border-l-4 border-green-600 pl-4 italic text-gray-700 mb-4 font-['General_Sans']">{children}</blockquote>,
+                  },
+                  list: {
+                    bullet: ({ children }) => <ul className="list-disc list-inside mb-4 space-y-1 font-['General_Sans']">{children}</ul>,
+                    number: ({ children }) => <ol className="list-decimal list-inside mb-4 space-y-1 font-['General_Sans']">{children}</ol>,
+                  },
+                  listItem: {
+                    bullet: ({ children }) => <li className="text-base leading-6 font-['General_Sans']">{children}</li>,
+                    number: ({ children }) => <li className="text-base leading-6 font-['General_Sans']">{children}</li>,
+                  },
+                  marks: {
+                    strong: ({ children }) => <strong className="font-semibold font-['General_Sans']">{children}</strong>,
+                    em: ({ children }) => <em className="italic font-['General_Sans']">{children}</em>,
+                    link: ({ children, value }) => (
+                      <a
+                        href={value?.href}
+                        target={value?.blank ? '_blank' : '_self'}
+                        rel={value?.blank ? 'noopener noreferrer' : undefined}
+                        className="text-blue-600 hover:text-blue-800 underline font-['General_Sans']"
+                      >
+                        {children}
+                      </a>
+                    ),
+                  },
                 }}
               />
           ) : (

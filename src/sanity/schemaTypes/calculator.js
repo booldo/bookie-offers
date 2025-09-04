@@ -100,6 +100,7 @@ export default {
       initialValue: true
     },
 
+
   ],
   preview: {
     select: {

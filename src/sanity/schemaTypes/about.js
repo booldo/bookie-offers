@@ -2,18 +2,65 @@ export default {
   name: 'about',
   title: 'About',
   type: 'document',
+  validation: Rule => Rule.custom((doc, context) => {
+    const { getClient } = context
+    const client = getClient({ apiVersion: '2023-05-03' })
+
+    const currentId = doc._id || 'draft'
+    const draftId = currentId.startsWith('drafts.') ? currentId : `drafts.${currentId}`
+    const publishedId = currentId.replace(/^drafts\./, '')
+
+    const query = `count(*[_type == "about" && title == $title && ((defined(country) && country._ref == $countryRef) || (!defined(country) && !defined($countryRef))) && !(_id in [$draftId, $publishedId])])`
+    const defaultCountQuery = `count(*[_type == "about" && !defined(country) && !(_id in [$draftId, $publishedId])])`
+
+    return client.fetch(query, {
+      title: doc.title || '',
+      countryRef: doc.country?._ref || null,
+      draftId,
+      publishedId
+    }).then(count => {
+      if (count > 0) {
+        return 'about page already exist in the the country page'
+      }
+      // Enforce only one default (no country)
+      if (!doc.country) {
+        return client.fetch(defaultCountQuery, { draftId, publishedId }).then(defaultCount => {
+          if (defaultCount > 0) {
+            return 'Only one default About (no country) is allowed'
+          }
+          return true
+        })
+      }
+      return true
+    }).catch(() => true)
+  }),
+  preview: {
+    select: {
+      title: 'title',
+      country: 'country.country'
+    },
+    prepare(selection) {
+      const { title, country } = selection
+      return {
+        title: title || 'About',
+        subtitle: country || 'Default'
+      }
+    }
+  },
   fields: [
+    {
+      name: 'country',
+      title: 'Country',
+      type: 'reference',
+      to: [{ type: 'countryPage' }],
+      description: 'Select a country for this About page. Leave empty for Landing page.',
+      options: { disableNew: true }
+    },
     {
       name: 'title',
       title: 'Title',
       type: 'string',
       validation: Rule => Rule.required(),
-    },
-    {
-      name: 'mainImage',
-      title: 'Main Image',
-      type: 'image',
-      options: { hotspot: true },
     },
     {
       name: 'content',
@@ -75,13 +122,6 @@ export default {
       title: 'Canonical URL',
       type: 'url',
       description: 'SEO: Canonical URL for this page (leave blank for default)'
-    },
-    {
-      name: 'updatedAt',
-      title: 'Last Updated',
-      type: 'datetime',
-      readOnly: true,
-      description: 'Automatically updated when the document is modified'
     }
   ],
 }

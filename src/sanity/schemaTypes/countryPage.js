@@ -134,6 +134,7 @@ export default {
       description: "SEO: Should this page be included in sitemap.xml?",
       initialValue: true
     },
+
     {
       name: "comparison",
       title: "Comparison Section",

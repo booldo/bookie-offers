@@ -58,6 +58,8 @@ function FooterSkeleton() {
 export default function Footer() {
   const [footerData, setFooterData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [aboutPage, setAboutPage] = useState(null);
+  const [contactPage, setContactPage] = useState(null);
 
   // Helper function to get hamburger menu item URL
   const getHamburgerItemUrl = (label) => {
@@ -73,8 +75,8 @@ export default function Footer() {
     const urls = {
       home: '/',
       blog: '/briefly',
-      about: '/about',
-      contact: '/contact',
+      about: aboutPage && !aboutPage.noindex && aboutPage.sitemapInclude !== false ? '/about' : null,
+      contact: contactPage && !contactPage.noindex && contactPage.sitemapInclude !== false ? '/contact' : null,
       faq: '/faq'
     };
     
@@ -101,39 +103,45 @@ export default function Footer() {
   useEffect(() => {
     const fetchFooterData = async () => {
       try {
-        const data = await client.fetch(`*[_type == "footer" && isActive == true][0]{
-          socialMedia,
-          navigationLinks{
-            menuItems[]{
-              type,
-              hamburgerMenuItem->{
-                _id,
-                title,
-                additionalMenuItems[]{
-                  label,
-                  isActive
-                }
-              },
-              isActive
-            }
-          },
-          affiliateDisclosure,
-          responsibleGambling,
-          gamblingResources,
-          bottomRowLinks{
-            links[]{
-              label,
-              slug,
-              url,
-              isActive,
-              noindex,
-              sitemapInclude
+        const [data, aboutData, contactData] = await Promise.all([
+          client.fetch(`*[_type == "footer" && isActive == true][0]{
+            socialMedia,
+            navigationLinks{
+              menuItems[]{
+                type,
+                hamburgerMenuItem->{
+                  _id,
+                  title,
+                  additionalMenuItems[]{
+                    label,
+                    isActive
+                  }
+                },
+                isActive
+              }
             },
-            copyrightText
-          }
-        }`);
+            affiliateDisclosure,
+            responsibleGambling,
+            gamblingResources,
+            bottomRowLinks{
+              links[]{
+                label,
+                slug,
+                url,
+                isActive,
+                noindex,
+                sitemapInclude
+              },
+              copyrightText
+            }
+          }`),
+          client.fetch(`*[_type == "about" && !(_id in path("drafts.**"))][0]{ noindex, sitemapInclude }`),
+          client.fetch(`*[_type == "contact" && !(_id in path("drafts.**"))][0]{ noindex, sitemapInclude }`)
+        ]);
         
         setFooterData(data);
+        setAboutPage(aboutData);
+        setContactPage(contactData);
       } catch (error) {
         console.error('Error fetching footer data:', error);
       } finally {
@@ -190,7 +198,7 @@ export default function Footer() {
         {footerData?.navigationLinks?.menuItems && (
           <div className="flex flex-col gap-1 md:items-center">
             {footerData.navigationLinks.menuItems.map((item, index) => (
-              item.isActive && (
+              item.isActive && getMenuItemUrl(item) && (
                 <div key={index}>
                   {/* Main menu item */}
                   <a 
