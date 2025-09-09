@@ -154,21 +154,21 @@ export default function HomeNavbar() {
     fetchHamburgerMenu();
   }, []);
 
-  // Load default about and contact pages from Sanity (must be documents WITHOUT a country)
+  // Load landing page about and contact pages from Sanity
   useEffect(() => {
-    const fetchStaticPages = async () => {
+    const fetchLandingPages = async () => {
       try {
         const [aboutData, contactData] = await Promise.all([
-          client.fetch(`*[_type == "about" && !defined(country) && !(_id in path("drafts.**"))][0]{ title, noindex, sitemapInclude }`),
-          client.fetch(`*[_type == "contact" && !defined(country) && !(_id in path("drafts.**"))][0]{ title, noindex, sitemapInclude }`)
+          client.fetch(`*[_type == "about" && country == "Landing Page"][0]{ noindex, sitemapInclude }`),
+          client.fetch(`*[_type == "contact" && country == "Landing Page"][0]{ noindex, sitemapInclude }`)
         ]);
         setAboutPage(aboutData);
         setContactPage(contactData);
       } catch (e) {
-        console.error('Failed to fetch static pages:', e);
+        console.error('Failed to fetch landing pages:', e);
       }
     };
-    fetchStaticPages();
+    fetchLandingPages();
   }, []);
 
   // Update selected flag based on current path (dynamic)
@@ -508,7 +508,7 @@ export default function HomeNavbar() {
             {/* Default Menu Items */}
             <Link 
               href={pathname.startsWith('/ng') ? '/ng' : pathname.startsWith('/gh') ? '/gh' : '/'} 
-              className="hover:underline"
+              className="hover:underline font-['General_Sans']"
             >
               Home
             </Link>
@@ -534,10 +534,10 @@ export default function HomeNavbar() {
               )}
             </div>
             {aboutPage && !aboutPage.noindex && aboutPage.sitemapInclude !== false && (
-              <Link href="/about" className="hover:underline">{aboutPage.title || 'About Us'}</Link>
+              <Link href="/about" className="hover:underline font-['General_Sans']">About Us</Link>
             )}
             {contactPage && !contactPage.noindex && contactPage.sitemapInclude !== false && (
-              <Link href="/contact" className="hover:underline">{contactPage.title || 'Contact Us'}</Link>
+              <Link href="/contact" className="hover:underline font-['General_Sans']">Contact Us</Link>
             )}
             
             {/* Additional Dynamic Menu Items */}
@@ -546,7 +546,7 @@ export default function HomeNavbar() {
                 <Link
                   key={index}
                   href={`/hamburger-menu/${item.label.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`}
-                  className="hover:underline"
+                  className="hover:underline font-['General_Sans']"
                 >
                   {item.label}
                 </Link>
@@ -558,7 +558,7 @@ export default function HomeNavbar() {
             <div className="px-10 py-4">
               <Link 
                 href="/hamburger-menu/main"
-                className="text-sm text-gray-500 font-medium hover:text-gray-700 hover:underline cursor-pointer"
+                className="text-sm text-gray-500 font-medium hover:text-gray-700 hover:underline cursor-pointer font-['General_Sans']"
               >
                 {hamburgerMenu.title}
               </Link>

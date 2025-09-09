@@ -2,48 +2,16 @@ export default {
   name: 'contact',
   title: 'Contact',
   type: 'document',
-  validation: Rule => Rule.custom((doc, context) => {
-    const { getClient } = context
-    const client = getClient({ apiVersion: '2023-05-03' })
-
-    const currentId = doc._id || 'draft'
-    const draftId = currentId.startsWith('drafts.') ? currentId : `drafts.${currentId}`
-    const publishedId = currentId.replace(/^drafts\./, '')
-
-    const query = `count(*[_type == "contact" && title == $title && ((defined(country) && country._ref == $countryRef) || (!defined(country) && !defined($countryRef))) && !(_id in [$draftId, $publishedId])])`
-    const defaultCountQuery = `count(*[_type == "contact" && !defined(country) && !(_id in [$draftId, $publishedId])])`
-
-    return client.fetch(query, {
-      title: doc.title || '',
-      countryRef: doc.country?._ref || null,
-      draftId,
-      publishedId
-    }).then(count => {
-      if (count > 0) {
-        return 'contact page already exist in the country'
-      }
-      // Enforce only one default (no country) Contact document
-      if (!doc.country) {
-        return client.fetch(defaultCountQuery, { draftId, publishedId }).then(defaultCount => {
-          if (defaultCount > 0) {
-            return 'Only one default Contact (no country) is allowed'
-          }
-          return true
-        })
-      }
-      return true
-    }).catch(() => true)
-  }),
   preview: {
     select: {
       title: 'title',
-      country: 'country.country'
+      country: 'country'
     },
     prepare(selection) {
       const { title, country } = selection
       return {
         title: title || 'Contact',
-        subtitle: country || 'Default'
+        subtitle: country || 'No Country Selected'
       }
     }
   },
@@ -51,10 +19,17 @@ export default {
     {
       name: 'country',
       title: 'Country',
-      type: 'reference',
-      to: [{ type: 'countryPage' }],
-      description: 'Select a country for this Contact page. Leave empty to use Default.',
-      options: { disableNew: true }
+      type: 'string',
+      description: 'Select a country for this contact page. Choose "Landing Page" for homepage navbar.',
+      validation: Rule => Rule.required(),
+      options: {
+        list: [
+          { title: 'Landing Page', value: 'Landing Page' },
+          { title: 'Nigeria', value: 'Nigeria' },
+          { title: 'Ghana', value: 'Ghana' }
+        ]
+      },
+      initialValue: 'Landing Page'
     },
     {
       name: 'title',
@@ -127,7 +102,19 @@ export default {
       description: 'SEO: Canonical URL for this page (leave blank for default)'
     },
 
-    
+    {
+      name: 'updatedAt',
+      title: 'Last Updated',
+      type: 'datetime',
+      readOnly: true,
+      description: 'Automatically updated when the document is modified',
+      options: {
+        dateFormat: 'YYYY-MM-DD',
+        timeFormat: 'HH:mm',
+        timeStep: 1,
+        calendarTodayLabel: 'Today'
+      }
+    }
   ],
 }
 

@@ -1,14 +1,14 @@
 "use client";
 
-import HomeNavbar from "../../components/HomeNavbar";
-import Footer from "../../components/Footer";
+import Navbar from "../../../components/Navbar";
+import Footer from "../../../components/Footer";
 import Link from "next/link";
-import { client } from "../../sanity/lib/client";
+import { client } from "../../../sanity/lib/client";
 import imageUrlBuilder from '@sanity/image-url';
 import Image from "next/image";
 import { PortableText } from '@portabletext/react';
 import { Suspense, useEffect, useState } from "react";
-import ExpiredOfferPage from "../[slug]/[...filters]/ExpiredOfferPage";
+import ExpiredOfferPage from "../[...filters]/ExpiredOfferPage";
 
 // Custom components for PortableText
 const portableTextComponents = {
@@ -79,10 +79,17 @@ function getImageUrl(source, width = 800, height = 600) {
 }
 
 // Data fetching function for client component
-async function getAboutData() {
+async function getAboutData(countrySlug) {
   try {
+      // First get the country name from the slug
+      const countryData = await client.fetch(`*[_type == "countryPage" && slug.current == $countrySlug][0]{ country }`, { countrySlug });
+      
+      if (!countryData) {
+        return { aboutDoc: null, allArticles: [] };
+      }
+      
       const [aboutDoc, allArticles] = await Promise.all([
-        client.fetch(`*[_type == "about" && country == "Landing Page"][0]{
+        client.fetch(`*[_type == "about" && country == $countryName][0]{
           _id,
           title,
           content,
@@ -93,7 +100,7 @@ async function getAboutData() {
           nofollow,
           canonicalUrl,
           sitemapInclude
-        }`),
+        }`, { countryName: countryData.country }),
       client.fetch(`*[_type == "article" && (noindex != true) && (sitemapInclude != false)]|order(_createdAt desc)[0...5]{
           _id,
           title,
@@ -152,30 +159,28 @@ function ArticlesSidebar({ articles }) {
   );
 }
 
-// Back button component (client-side)
-import BackButton from './BackButton';
-
 // Main About page component
-export default function AboutPage() {
+export default function CountryAboutPage({ params }) {
   const [about, setAbout] = useState(null);
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchData() {
-      const data = await getAboutData();
+      const awaitedParams = await params;
+      const data = await getAboutData(awaitedParams.slug);
       setAbout(data.about);
       setArticles(data.articles);
       setLoading(false);
     }
     fetchData();
-  }, []);
+  }, [params]);
 
   // Show loading state
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <HomeNavbar />
+        <Navbar />
         <div className="max-w-6xl mx-auto py-8 sm:py-10 px-4 sm:px-6 lg:px-8">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
@@ -201,7 +206,7 @@ export default function AboutPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#fafbfc]">
-      <HomeNavbar />
+      <Navbar />
       <main className="flex-1 max-w-6xl mx-auto py-8 sm:py-10 px-4 sm:px-6 lg:px-8 w-full">
         {/* Breadcrumb-like back to Home, styled like offer details */}
         <div className="mt-0 mb-4 sm:mb-6 flex items-center gap-2 text-sm text-gray-500 flex-wrap">
@@ -232,4 +237,4 @@ export default function AboutPage() {
       <Footer />
     </div>
   );
-} 
+}

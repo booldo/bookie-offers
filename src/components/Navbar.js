@@ -20,7 +20,6 @@ export default function Navbar() {
   const [recentSearches, setRecentSearches] = useState([]);
   const router = useRouter();
   const pathname = usePathname();
-  const currentCountrySlug = (pathname || '').split('/').filter(Boolean)[0] || null;
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState(null);
@@ -157,22 +156,25 @@ export default function Navbar() {
     fetchHamburgerMenu();
   }, []);
 
-  // Load default about and contact pages (fallback when no country is detected)
+  // Load default about and contact pages from Sanity (fallback)
   useEffect(() => {
-    const fetchStaticPages = async () => {
+    const fetchDefaultPages = async () => {
       try {
         const [aboutData, contactData] = await Promise.all([
-          client.fetch(`*[_type == "about" && !defined(country) && !(_id in path("drafts.**"))][0]{ title, noindex, sitemapInclude }`),
-          client.fetch(`*[_type == "contact" && !defined(country) && !(_id in path("drafts.**"))][0]{ title, noindex, sitemapInclude }`)
+          client.fetch(`*[_type == "about" && country == "Landing Page"][0]{ noindex, sitemapInclude }`),
+          client.fetch(`*[_type == "contact" && country == "Landing Page"][0]{ noindex, sitemapInclude }`)
         ]);
         setAboutPage(aboutData);
         setContactPage(contactData);
       } catch (e) {
-        console.error('Failed to fetch static pages:', e);
+        console.error('Failed to fetch default pages:', e);
       }
     };
-    fetchStaticPages();
+    fetchDefaultPages();
   }, []);
+
+  // Determine country from pathname
+  const currentCountrySlug = pathname.split('/').filter(Boolean)[0] || null;
 
   // Load country-scoped about/contact when country changes
   useEffect(() => {
@@ -183,9 +185,20 @@ export default function Navbar() {
           setContactCountryPage(null);
           return;
         }
+        
+        // First get the country name from the slug
+        const countryData = await client.fetch(`*[_type == "countryPage" && slug.current == $countrySlug][0]{ country }`, { countrySlug: currentCountrySlug });
+        
+        if (!countryData) {
+          setAboutCountryPage(null);
+          setContactCountryPage(null);
+          return;
+        }
+        
+        // Fetch country-specific pages based on the country name
         const [aboutForCountry, contactForCountry] = await Promise.all([
-          client.fetch(`*[_type == "about" && references(*[_type == "countryPage" && slug.current == $slug]._id)][0]{ title, noindex, sitemapInclude }`, { slug: currentCountrySlug }),
-          client.fetch(`*[_type == "contact" && references(*[_type == "countryPage" && slug.current == $slug]._id)][0]{ title, noindex, sitemapInclude }`, { slug: currentCountrySlug })
+          client.fetch(`*[_type == "about" && country == $countryName][0]{ noindex, sitemapInclude }`, { countryName: countryData.country }),
+          client.fetch(`*[_type == "contact" && country == $countryName][0]{ noindex, sitemapInclude }`, { countryName: countryData.country })
         ]);
         setAboutCountryPage(aboutForCountry || null);
         setContactCountryPage(contactForCountry || null);
@@ -209,8 +222,6 @@ export default function Navbar() {
     const match = flags.find(f => f.slug === parts[0] || f.path === `/${parts[0]}`);
     setSelectedFlag(match || WORLD_WIDE_FLAG);
   }, [pathname, flags]);
-
-  // Determine country from pathname (moved above to avoid TDZ)
 
   // Search handler
   const handleSearch = async (term) => {
@@ -613,20 +624,16 @@ export default function Navbar() {
             </div>
             {(() => {
               const aboutDoc = (aboutCountryPage || aboutPage);
-              const aboutHref = currentCountrySlug
-                ? `/${encodeURIComponent(currentCountrySlug)}/about`
-                : "/about";
+              const aboutHref = currentCountrySlug && aboutCountryPage ? `/${currentCountrySlug}/about` : "/about";
               return aboutDoc && !aboutDoc.noindex && aboutDoc.sitemapInclude !== false ? (
-                <Link href={aboutHref} className="hover:underline">{aboutDoc.title || 'About Us'}</Link>
+                <Link href={aboutHref} className="hover:underline">About Us</Link>
               ) : null;
             })()}
             {(() => {
               const contactDoc = (contactCountryPage || contactPage);
-              const contactHref = currentCountrySlug
-                ? `/${encodeURIComponent(currentCountrySlug)}/contact`
-                : "/contact";
+              const contactHref = currentCountrySlug && contactCountryPage ? `/${currentCountrySlug}/contact` : "/contact";
               return contactDoc && !contactDoc.noindex && contactDoc.sitemapInclude !== false ? (
-                <Link href={contactHref} className="hover:underline">{contactDoc.title || 'Contact Us'}</Link>
+                <Link href={contactHref} className="hover:underline">Contact Us</Link>
               ) : null;
             })()}
             

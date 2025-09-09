@@ -15,6 +15,9 @@ export async function checkRedirect(path) {
     const redirect = await client.fetch(redirectQuery, { path });
     console.log('📊 Query result:', redirect);
     
+    if (redirect?.redirectType === '410') {
+      return { type: '410' };
+    }
     if (redirect?.targetUrl) {
       console.log('✅ Redirect found:', redirect);
       return {

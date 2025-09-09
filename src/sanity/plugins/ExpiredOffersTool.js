@@ -229,7 +229,7 @@ export function ExpiredOffersTool() {
             displayTitle: page.title || 'Calculators'
           });
         });
-      } else {
+         } else {
         // Add placeholder for missing Calculator Homepage document
         flattenedPages.push({
           _id: 'calculator-homepage-placeholder',
@@ -894,7 +894,7 @@ export function ExpiredOffersTool() {
                          
                          <Button
                            size={1}
-                          text="redirect to 301"
+                          text="301"
                           tone="positive"
                            onClick={() => toggle301RedirectState(offer._id)}
                            disabled={processing}
@@ -1053,7 +1053,7 @@ export function ExpiredOffersTool() {
                     </Card>
                   ))
                 )}
-              </Stack>
+        </Stack>
             )}
           </Card>
 
@@ -1097,7 +1097,7 @@ export function ExpiredOffersTool() {
                             
                             <Button
                               size={1}
-                              text="redirect to 301"
+                              text="301"
                               tone="positive"
                               onClick={() => togglePage301RedirectState(page._id)}
                               disabled={processing}
