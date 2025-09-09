@@ -122,6 +122,12 @@ export default {
       description: "SEO: Prevent search engines from following links on this page"
     },
     {
+      name: "gone",
+      title: "Gone (410)",
+      type: "boolean",
+      description: "Mark this page as permanently gone (410 status)"
+    },
+    {
       name: "canonicalUrl",
       title: "Canonical URL",
       type: "url",

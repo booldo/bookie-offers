@@ -667,10 +667,10 @@ export function ExpiredOffersTool() {
   };
 
   const getPageVisibilityButtonProps = (page) => {
-    if (isPageHidden(page)) {
+    if (page.gone) {
       return { text: 'Remove from 410', tone: 'critical', title: 'Show this page (indexable, in sitemap)' };
     }
-    return { text: 'Redirect to 410', tone: 'positive', title: 'Hide this page (noindex, exclude from sitemap)' };
+    return { text: 'Redirect to 410', tone: 'positive', title: 'Mark this page as gone (410 status)' };
   };
 
   const togglePageVisibility = async (page) => {
@@ -687,16 +687,16 @@ export function ExpiredOffersTool() {
         return;
       }
       
-      const makeHidden = !isPageHidden(page);
+      const makeGone = !page.gone;
       await client
         .patch(page._id)
-        .set({ noindex: makeHidden, sitemapInclude: !makeHidden })
+        .set({ gone: makeGone })
         .commit();
 
       toast.push({
         status: 'success',
-        title: makeHidden ? 'Page hidden' : 'Page visible',
-        description: makeHidden ? 'Set noindex and removed from sitemap.' : 'Unset noindex and included in sitemap.'
+        title: makeGone ? 'Page marked as gone (410)' : 'Page restored',
+        description: makeGone ? 'This page will now return 410 status.' : 'Page is now accessible again.'
       });
 
       await fetchData();
@@ -746,24 +746,24 @@ export function ExpiredOffersTool() {
     return allOffers.filter(o => o.country?._id === countryId).length;
   };
 
-  const isOfferHidden = (offer) => offer?.noindex === true || offer?.sitemapInclude === false;
+  const isOfferHidden = (offer) => offer?.gone === true;
 
   // Toggle offer visibility (show/hide) using noindex/sitemapInclude
   const toggleOfferVisibility = async (offer) => {
     setProcessing(true);
     try {
-      const makeHidden = !isOfferHidden(offer);
+      const makeGone = !offer.gone;
       await client
         .patch(offer._id)
-        .set({ noindex: makeHidden, sitemapInclude: !makeHidden })
+        .set({ gone: makeGone })
         .commit();
       
       toast.push({
         status: 'success',
-        title: makeHidden ? 'Offer hidden' : 'Offer visible',
-        description: makeHidden
-          ? 'Set noindex and removed from sitemap.'
-          : 'Unset noindex and included in sitemap.'
+        title: makeGone ? 'Offer marked as gone (410)' : 'Offer restored',
+        description: makeGone
+          ? 'This offer will now return 410 status.'
+          : 'Offer is now accessible again.'
       });
       
       // Refresh the data
@@ -793,7 +793,7 @@ export function ExpiredOffersTool() {
       return {
         text: 'Redirect to 410',
         tone: 'positive',
-        title: 'Hide this offer from offer cards and sitemap (noindex)'
+        title: 'Mark this offer as gone (410 status)'
       };
     }
   };
