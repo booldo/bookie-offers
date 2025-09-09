@@ -327,12 +327,6 @@ export default {
       description: "SEO: Prevent search engines from following links on this page"
     },
     {
-      name: "gone",
-      title: "Gone (410)",
-      type: "boolean",
-      description: "Redirected to 410"
-    },
-    {
       name: "canonicalUrl",
       title: "Canonical URL",
       type: "url",

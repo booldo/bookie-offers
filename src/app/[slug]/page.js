@@ -1,55 +1,16 @@
 import CountryPageShell, { generateStaticParams, generateMetadata } from './CountryPageShell';
 import OffersServer from './OffersServer';
 import { Suspense } from "react";
-import { notFound } from 'next/navigation';
-import { client } from '../../sanity/lib/client';
 
 // Export the static generation functions from CountryPageShell
 export { generateStaticParams, generateMetadata };
 
-// Force dynamic rendering so we can check for gone status
+// Force dynamic rendering so middleware can intercept and return 410 when needed
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export default async function CountryPage({ params }) {
   const awaitedParams = await params;
-  
-  // Check if this country page is marked as gone
-  try {
-    const countryQuery = `*[_type == "countryPage" && slug.current == $slug][0] {
-      gone,
-      country,
-      countryCode
-    }`;
-    
-    const country = await client.fetch(countryQuery, { slug: awaitedParams.slug });
-    
-    if (country?.gone) {
-      // Return 410 response
-      return new Response(
-        `<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8"/>
-  <title>410 Gone</title>
-  <meta name="robots" content="noindex, nofollow"/>
-</head>
-<body>
-  <h1>410 Gone</h1>
-  <p>The requested resource is no longer available.</p>
-</body>
-</html>`,
-        {
-          status: 410,
-          headers: {
-            'content-type': 'text/html; charset=utf-8',
-          },
-        }
-      );
-    }
-  } catch (error) {
-    console.error('Error checking country gone status:', error);
-  }
   
   return (
     <CountryPageShell params={awaitedParams}>
