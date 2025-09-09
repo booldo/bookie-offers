@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { checkRedirect } from './lib/redirects';
+import { checkRedirect } from './src/lib/redirects';
 
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
@@ -70,13 +70,8 @@ export async function middleware(request) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
     '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
 };
+
+
