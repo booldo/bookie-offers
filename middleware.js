@@ -17,9 +17,11 @@ export async function middleware(request) {
 
   try {
     console.log('🔍 Middleware checking path:', pathname);
+    console.log('🔍 Full URL:', request.url);
     
     // Check if this path should redirect
     const redirect = await checkRedirect(pathname);
+    console.log('🔍 Redirect result:', redirect);
     
     if (redirect) {
       console.log('✅ Redirect found:', redirect);
