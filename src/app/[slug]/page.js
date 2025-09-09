@@ -5,6 +5,10 @@ import { Suspense } from "react";
 // Export the static generation functions from CountryPageShell
 export { generateStaticParams, generateMetadata };
 
+// Force dynamic rendering so middleware can intercept and return 410 when needed
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function CountryPage({ params }) {
   const awaitedParams = await params;
   

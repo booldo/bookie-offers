@@ -45,6 +45,24 @@ export async function middleware(request) {
       // Construct proper redirect URL
       let targetUrl = redirect.url;
       if (targetUrl) {
+        // Treat redirects pointing to the 410 page as true 410 responses
+        const normalizedTarget = targetUrl.trim().toLowerCase();
+        if (normalizedTarget === '/410' || normalizedTarget.endsWith('/410')) {
+          try {
+            const goneUrl = `${request.nextUrl.origin}/410`;
+            const resp = await fetch(goneUrl, { headers: { 'x-internal-gone': '1' } });
+            const html = await resp.text();
+            return new Response(html, {
+              status: 410,
+              headers: { 'content-type': resp.headers.get('content-type') || 'text/html; charset=utf-8' }
+            });
+          } catch (e) {
+            return new Response('<!doctype html><html><head><meta charset="utf-8"/><title>410 Gone</title><meta name="robots" content="noindex, nofollow"/></head><body><h1>410 Gone</h1><p>The requested resource is no longer available.</p></body></html>', {
+              status: 410,
+              headers: { 'content-type': 'text/html; charset=utf-8' }
+            });
+          }
+        }
         // If target URL is relative, make it absolute
         if (targetUrl.startsWith('/')) {
           targetUrl = `${request.nextUrl.origin}${targetUrl}`;
