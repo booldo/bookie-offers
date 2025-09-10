@@ -3,49 +3,28 @@ import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import Link from "next/link";
 import Image from "next/image";
-import { headers } from 'next/headers';
 
-// This function sets the HTTP status to 410
-export async function generateMetadata() {
-  return {
-    title: "410 - Content No Longer Available | Booldo",
-    description: "This content has been intentionally removed or hidden and is no longer accessible.",
-    robots: "noindex, nofollow"
-  };
-}
-
-export default async function Gone410Page({ searchParams }) {
-  // Get search params for offer details
-  const params = await searchParams;
-  const offerType = params?.type || 'content';
-  const slug = params?.slug;
-  const countrySlug = params?.country;
-  const isExpired = params?.expired === 'true';
-  const isHidden = params?.hidden === 'true';
-
-  // Set HTTP status to 410 via headers (this is handled by middleware)
-  const headersList = headers();
-  
+export default function Gone410Page({ offer, countrySlug = "", isHidden = false, contentType = "offer" }) {
   // Determine the appropriate message based on the content state
   const getMessage = () => {
     if (isHidden) {
       return {
         title: "Content No Longer Available",
-        description: `This ${offerType} has been intentionally removed or hidden and is no longer accessible.`,
+        description: `This ${contentType} has been intentionally removed or hidden and is no longer accessible.`,
         buttonText: "Go Home",
         buttonLink: "/"
       };
-    } else if (!slug) {
+    } else if (!offer) {
       return {
         title: "Content Does Not Exist",
-        description: `The ${offerType} you're looking for doesn't exist or may have been removed. Please check the URL or browse our available content.`,
+        description: `The ${contentType} you're looking for doesn't exist or may have been removed. Please check the URL or browse our available content.`,
         buttonText: "Browse Available Content",
         buttonLink: `/${countrySlug || 'ng'}`
       };
     } else {
       return {
         title: "Content Has Expired",
-        description: `This ${offerType} is no longer available. The promotion has ended and cannot be claimed.`,
+        description: `This ${contentType} is no longer available. The promotion has ended and cannot be claimed.`,
         buttonText: "View Active Content",
         buttonLink: `/${countrySlug || 'ng'}`
       };
@@ -53,20 +32,23 @@ export default async function Gone410Page({ searchParams }) {
   };
 
   const message = getMessage();
-
+  
   return (
-    <div className={`min-h-screen bg-[#fafbfc] flex flex-col`}>
+    <div className="min-h-screen bg-[#fafbfc] flex flex-col">
       <Navbar />
       <main className="max-w-7xl mx-auto w-full px-4 flex-1">
+        {/* Back Button - positioned like breadcrumb */}
         <div className="mt-6 mb-4 flex items-center gap-2 text-sm text-gray-500 flex-wrap">
           <Link href="/" className="hover:underline flex items-center gap-1 flex-shrink-0">
             <Image src="/assets/back-arrow.png" alt="Back" width={24} height={24} />
             Home
           </Link>
         </div>
-
+        
+        {/* 410 Error Content */}
         <div className="py-12 flex items-center justify-center">
           <div className="text-center">
+            {/* 410 Status Icon */}
             <div className="mb-8">
               <div className="w-24 h-24 mx-auto bg-red-100 rounded-full flex items-center justify-center mb-4">
                 <svg 
@@ -85,16 +67,47 @@ export default async function Gone410Page({ searchParams }) {
               </div>
             </div>
 
+            {/* Error Code */}
             <h1 className="text-6xl font-bold text-red-600 mb-4">410</h1>
-
+            
+            {/* Main Message */}
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">
               {message.title}
             </h2>
-
+            
+            {/* Content Details - only show for expired offers, not hidden content */}
+            {!isHidden && offer && (
+              <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8 max-w-md mx-auto">
+                <h3 className="font-semibold text-gray-900 mb-2">
+                  {offer.title}
+                </h3>
+                <p className="text-gray-600 text-sm mb-2">
+                  Bookmaker: {offer.bookmaker}
+                </p>
+                <p className="text-red-600 text-sm font-medium">
+                  Expired: {offer.expires}
+                </p>
+              </div>
+            )}
+            
+            {/* Non-existent content message */}
+            {!isHidden && !offer && (
+              <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8 max-w-md mx-auto">
+                <h3 className="font-semibold text-gray-900 mb-2">
+                  The requested content could not be found
+                </h3>
+                <p className="text-gray-600 text-sm mb-2">
+                  This content may have been removed or the URL may be incorrect
+                </p>
+              </div>
+            )}
+            
+            {/* Description */}
             <p className="text-gray-600 mb-8 max-w-md mx-auto">
               {message.description}
             </p>
-
+            
+            {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link 
                 href={message.buttonLink} 
@@ -104,7 +117,8 @@ export default async function Gone410Page({ searchParams }) {
                 {message.buttonText}
               </Link>
             </div>
-
+            
+            {/* Additional Info */}
             <div className="mt-8 text-sm text-gray-500">
               <p>Looking for similar content? Check out our latest offerings!</p>
             </div>
@@ -115,5 +129,3 @@ export default async function Gone410Page({ searchParams }) {
     </div>
   );
 }
-
-

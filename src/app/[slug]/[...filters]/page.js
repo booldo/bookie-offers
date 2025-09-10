@@ -273,7 +273,7 @@ export async function generateMetadata({ params }) {
 
 export const revalidate = 60;
 
-import ExpiredOfferPage from './ExpiredOfferPage';
+import Gone410Page from '../../410/Gone410Page';
 import { NextResponse } from 'next/server';
 
 export default async function CountryFiltersPage({ params }) {
@@ -304,38 +304,8 @@ export default async function CountryFiltersPage({ params }) {
   // Handle affiliate pretty links FIRST - before any other logic
   const segments = awaitedParams.filters || [];
 
-  // --- 410 HANDLING FOR EXPIRED/HIDDEN/NON-EXISTENT OFFERS (UI ONLY) ---
-  // Only applies to offer details page (country/bonus-type/offer-slug)
-  const isOfferDetailsPage = awaitedParams.filters && awaitedParams.filters.length >= 2;
-  if (isOfferDetailsPage) {
-    const countrySlug = awaitedParams.slug;
-    const offerSlug = awaitedParams.filters[awaitedParams.filters.length - 1];
-    const offerData = await client.fetch(`*[_type == "offers" && slug.current == $offerSlug][0]{
-      title,
-      bookmaker->{ name },
-      expires,
-      noindex,
-      sitemapInclude
-    }`, { offerSlug });
-    const now = new Date();
-    const isExpired = offerData?.expires ? new Date(offerData.expires) < now : false;
-    const isHidden = offerData && (offerData.noindex === true || offerData.sitemapInclude === false);
-    if (!offerData || isExpired || isHidden) {
-      // Render the Gone410Page UI for users (no HTTP status change)
-      return (
-        <ExpiredOfferPage
-          offer={offerData ? {
-            title: offerData.title,
-            bookmaker: offerData.bookmaker?.name,
-            expires: offerData.expires ? new Date(offerData.expires).toISOString().split('T')[0] : undefined
-          } : null}
-          countrySlug={countrySlug}
-          isHidden={isHidden}
-          contentType="offer"
-        />
-      );
-    }
-  }
+  // 410 handling is now done in middleware for proper HTTP status codes
+  // This ensures expired/hidden/non-existent offers return actual 410 status
 
   // Check for pretty links in different formats
   if (segments.length > 0) {

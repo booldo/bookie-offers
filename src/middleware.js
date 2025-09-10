@@ -1,15 +1,43 @@
 import { NextResponse } from 'next/server';
 import { checkRedirect } from './lib/redirects';
+import { checkOfferStatus, generate410Html } from './lib/gone410';
 
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
   
+  // Check for offer pages that should return 410 status
+  const offerPageMatch = pathname.match(/^\/([^\/]+)\/[^\/]+\/([^\/]+)$/);
+  if (offerPageMatch) {
+    const [, countrySlug, offerSlug] = offerPageMatch;
+    console.log('🔍 Checking offer for 410 status:', { countrySlug, offerSlug });
+    
+    const offerStatus = await checkOfferStatus(countrySlug, offerSlug);
+    if (offerStatus.shouldReturn410) {
+      console.log('✅ Returning 410 status for offer:', offerSlug);
+      const html = generate410Html(offerStatus);
+      return new Response(html, {
+        status: 410,
+        headers: {
+          'content-type': 'text/html; charset=utf-8',
+          'cache-control': 'no-cache, no-store, must-revalidate'
+        }
+      });
+    }
+  }
+
+  // Handle 410 page with proper HTTP status
+  if (pathname === '/410') {
+    const response = NextResponse.next();
+    response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    // The actual 410 status will be set by the page component
+    return response;
+  }
+
   // Skip middleware for static files and API routes
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api') ||
     pathname.startsWith('/static') ||
-    pathname === '/410' ||
     pathname.includes('.')
   ) {
     return NextResponse.next();
