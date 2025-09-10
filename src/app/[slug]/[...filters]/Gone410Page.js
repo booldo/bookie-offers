@@ -1,20 +1,11 @@
-"use client";
 import React from "react";
 import Navbar from "../../../components/Navbar";
 import Footer from "../../../components/Footer";
 import Link from "next/link";
 import Image from "next/image";
 
-function ExpiredOfferPage({ offer, embedded = false, countrySlug = "", isCountryEmpty = false, countryName = "", isHidden = false, contentType = "offer" }) {
-  // Handle back button click without router dependency
-  const handleBackClick = () => {
-    if (countrySlug) {
-      window.location.href = `/${countrySlug}`;
-    } else {
-      window.location.href = '/';
-    }
-  };
-  
+// Server component that returns proper 410 status
+export default function Gone410Page({ offer, embedded = false, countrySlug = "", isCountryEmpty = false, countryName = "", isHidden = false, contentType = "offer" }) {
   // Determine the appropriate message based on the content state
   const getMessage = () => {
     if (isHidden) {
@@ -56,10 +47,10 @@ function ExpiredOfferPage({ offer, embedded = false, countrySlug = "", isCountry
       <main className="max-w-7xl mx-auto w-full px-4 flex-1">
         {/* Back Button - positioned like breadcrumb */}
         <div className="mt-6 mb-4 flex items-center gap-2 text-sm text-gray-500 flex-wrap">
-          <button onClick={handleBackClick} className="hover:underline flex items-center gap-1 flex-shrink-0">
+          <Link href={countrySlug ? `/${countrySlug}` : '/'} className="hover:underline flex items-center gap-1 flex-shrink-0">
             <Image src="/assets/back-arrow.png" alt="Back" width={24} height={24} />
             Home
-          </button>
+          </Link>
         </div>
         
         {/* 410 Error Content */}
@@ -147,4 +138,9 @@ function ExpiredOfferPage({ offer, embedded = false, countrySlug = "", isCountry
   );
 }
 
-export default ExpiredOfferPage; 
+// This metadata ensures the page returns a 410 status code
+export const metadata = {
+  title: "410 - Content No Longer Available",
+  description: "This content has been removed and is no longer available.",
+  robots: "noindex, nofollow"
+};

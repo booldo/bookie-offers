@@ -2,9 +2,10 @@ import CountryPageShell, { generateStaticParams } from '../CountryPageShell';
 import DynamicOffers from '../DynamicOffers';
 import OfferDetailsInner from './OfferDetailsInner';
 import { Suspense } from "react";
-import { redirect } from 'next/navigation';
+import { redirect, notFound } from 'next/navigation';
 import { client } from '../../../sanity/lib/client';
 import { urlFor } from '../../../sanity/lib/image';
+import Gone410Page from './Gone410Page';
 
 // Use the same static generation functions from CountryPageShell
 export { generateStaticParams };
@@ -378,6 +379,73 @@ export default async function CountryFiltersPage({ params }) {
   if (isOfferDetailsPage) {
     // Extract the offer slug from the last segment
     const offerSlug = awaitedParams.filters[awaitedParams.filters.length - 1];
+    const countrySlug = awaitedParams.slug;
+    
+    // Check if offer exists and its status for 410 handling
+    try {
+      const countryDoc = await client.fetch(`*[_type == "countryPage" && slug.current == $slug][0]{country}`, { slug: countrySlug });
+      const countryName = countryDoc?.country;
+      
+      if (countryName) {
+        const offerData = await client.fetch(`
+          *[_type == "offers" && country->country == $countryName && slug.current == $offerSlug][0]{
+            _id,
+            title,
+            expires,
+            noindex,
+            sitemapInclude,
+            bookmaker->{name}
+          }
+        `, { offerSlug, countryName });
+        
+        // Return 410 for expired offers
+        if (offerData?.expires && new Date(offerData.expires) < new Date()) {
+          return (
+            <Gone410Page 
+              offer={{
+                title: offerData.title,
+                bookmaker: offerData.bookmaker?.name,
+                expires: offerData.expires
+              }}
+              embedded={false}
+              countrySlug={countrySlug}
+            />
+          );
+        }
+        
+        // Return 410 for hidden content
+        if (offerData && (offerData.noindex === true || offerData.sitemapInclude === false)) {
+          return (
+            <Gone410Page 
+              offer={null}
+              embedded={false}
+              countrySlug={countrySlug}
+              isCountryEmpty={false}
+              countryName={countryName}
+              isHidden={true}
+              contentType="offer"
+            />
+          );
+        }
+        
+        // Return 410 for non-existent offers
+        if (!offerData) {
+          return (
+            <Gone410Page 
+              offer={null}
+              embedded={false}
+              countrySlug={countrySlug}
+              isCountryEmpty={false}
+              countryName={countryName}
+              contentType="offer"
+            />
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Error checking offer status for 410:', error);
+    }
+    
     return (
       <CountryPageShell params={awaitedParams} isOfferDetailsPage={true}>
         <Suspense fallback={
