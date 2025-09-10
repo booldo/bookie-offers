@@ -3,7 +3,7 @@ import { checkRedirect } from './lib/redirects';
 
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
-
+  
   // Skip middleware for static files and API routes
   if (
     pathname.startsWith('/_next') ||
@@ -13,42 +13,6 @@ export async function middleware(request) {
     pathname.includes('.')
   ) {
     return NextResponse.next();
-  }
-
-  // --- 410 Gone logic for expired/hidden offers ---
-  // Match dynamic offer routes like /gh/free-bet/offer-slug
-  const match = /^\/([^/]+)\/(.+)$/.exec(pathname);
-  if (match) {
-    const offerSlug = match[2].split('/').pop();
-    try {
-      const { client } = await import("./sanity/lib/client");
-      const offerData = await client.fetch(
-        `*[_type == "offers" && slug.current == $offerSlug][0]{ expires, noindex, sitemapInclude }`,
-        { offerSlug }
-      );
-      const now = new Date();
-      const isExpired = offerData?.expires ? new Date(offerData.expires) < now : false;
-      const isHidden = offerData && (offerData.noindex === true || offerData.sitemapInclude === false);
-      if (!offerData || isExpired || isHidden) {
-        const ua = request.headers.get('user-agent') || '';
-        const isBot = /bot|crawl|slurp|spider|bing|duckduckgo|baidu|yandex/i.test(ua);
-        if (isBot) {
-          // Serve /410 page with 410 status
-          const goneUrl = `${request.nextUrl.origin}/410`;
-          const resp = await fetch(goneUrl, { headers: { 'x-internal-gone': '1' } });
-          const html = await resp.text();
-          return new Response(html, {
-            status: 410,
-            headers: { 'content-type': resp.headers.get('content-type') || 'text/html; charset=utf-8' }
-          });
-        } else {
-          // Rewrite users to /410 (UI only, status will be 200)
-          return NextResponse.rewrite(new URL('/410', request.url));
-        }
-      }
-    } catch (e) {
-      // If error fetching offer, fall through
-    }
   }
 
   try {
