@@ -273,6 +273,9 @@ export async function generateMetadata({ params }) {
 
 export const revalidate = 60;
 
+import ExpiredOfferPage from './ExpiredOfferPage';
+import { NextResponse } from 'next/server';
+
 export default async function CountryFiltersPage({ params }) {
   const awaitedParams = await params;
   
@@ -293,19 +296,52 @@ export default async function CountryFiltersPage({ params }) {
         bonusType->{ name }
       }
     `);
-    console.log('🔍 DEBUG - All active affiliate links in Sanity:', allAffiliateLinks);
+    console.log(' DEBUG - All active affiliate links in Sanity:', allAffiliateLinks);
   } catch (error) {
     console.error('Error fetching all affiliate links:', error);
   }
   
   // Handle affiliate pretty links FIRST - before any other logic
   const segments = awaitedParams.filters || [];
-  
+
+  // --- 410 HANDLING FOR EXPIRED/HIDDEN/NON-EXISTENT OFFERS (UI ONLY) ---
+  // Only applies to offer details page (country/bonus-type/offer-slug)
+  const isOfferDetailsPage = awaitedParams.filters && awaitedParams.filters.length >= 2;
+  if (isOfferDetailsPage) {
+    const countrySlug = awaitedParams.slug;
+    const offerSlug = awaitedParams.filters[awaitedParams.filters.length - 1];
+    const offerData = await client.fetch(`*[_type == "offers" && slug.current == $offerSlug][0]{
+      title,
+      bookmaker->{ name },
+      expires,
+      noindex,
+      sitemapInclude
+    }`, { offerSlug });
+    const now = new Date();
+    const isExpired = offerData?.expires ? new Date(offerData.expires) < now : false;
+    const isHidden = offerData && (offerData.noindex === true || offerData.sitemapInclude === false);
+    if (!offerData || isExpired || isHidden) {
+      // Render the Gone410Page UI for users (no HTTP status change)
+      return (
+        <ExpiredOfferPage
+          offer={offerData ? {
+            title: offerData.title,
+            bookmaker: offerData.bookmaker?.name,
+            expires: offerData.expires ? new Date(offerData.expires).toISOString().split('T')[0] : undefined
+          } : null}
+          countrySlug={countrySlug}
+          isHidden={isHidden}
+          contentType="offer"
+        />
+      );
+    }
+  }
+
   // Check for pretty links in different formats
   if (segments.length > 0) {
     // Try the full joined path first (e.g., "betika/welcome-bonus-2")
     const fullPath = segments.join('/');
-    console.log('🔍 DEBUG - Checking full path:', fullPath);
+    console.log(' DEBUG - Checking full path:', fullPath);
     
     // Query for active affiliate links with this pretty link
     const affiliateLink = await client.fetch(`
@@ -371,10 +407,8 @@ export default async function CountryFiltersPage({ params }) {
   }
   
   console.log('🔍 DEBUG - No affiliate redirect found, continuing with normal processing');
-  
-  // Check if this is an offer details page (has 3 segments: country/bonus-type/offer-slug)
-  const isOfferDetailsPage = awaitedParams.filters && awaitedParams.filters.length >= 2;
-  
+  // (Removed duplicate isOfferDetailsPage declaration)
+
   if (isOfferDetailsPage) {
     // Extract the offer slug from the last segment
     const offerSlug = awaitedParams.filters[awaitedParams.filters.length - 1];
