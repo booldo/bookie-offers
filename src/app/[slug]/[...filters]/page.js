@@ -377,7 +377,9 @@ export default async function CountryFiltersPage({ params }) {
   }
   
   console.log('🔍 DEBUG - No affiliate redirect found, continuing with normal processing');
-  // (Removed duplicate isOfferDetailsPage declaration)
+  
+  // Check if this is an offer details page (has 2 or more segments: country/bonus-type/offer-slug)
+  const isOfferDetailsPage = awaitedParams.filters && awaitedParams.filters.length >= 2;
 
   if (isOfferDetailsPage) {
     // Extract the offer slug from the last segment
