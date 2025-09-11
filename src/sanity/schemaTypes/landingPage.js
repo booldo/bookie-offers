@@ -1,6 +1,6 @@
 export default {
   name: "landingPage",
-  title: "Landing Page Metadata",
+  title: "World Wide Page",
   type: "document",
   preview: {
     select: {
@@ -9,7 +9,7 @@ export default {
     prepare({ title }) {
       return {
         title: title || "Untitled",
-        subtitle: "Landing page SEO settings"
+        subtitle: "Global landing page SEO settings"
       };
     }
   },

@@ -30,10 +30,6 @@ export default function Navbar() {
   const searchDebounceRef = useRef();
   const menuRef = useRef();
   const [hamburgerMenu, setHamburgerMenu] = useState(null);
-  const [aboutPage, setAboutPage] = useState(null);
-  const [contactPage, setContactPage] = useState(null);
-  const [aboutCountryPage, setAboutCountryPage] = useState(null);
-  const [contactCountryPage, setContactCountryPage] = useState(null);
 
   // Load recent searches from localStorage on mount
   useEffect(() => {
@@ -138,16 +134,10 @@ export default function Navbar() {
       try {
         const menuData = await client.fetch(`*[_type == "hamburgerMenu" && isActive == true][0]{
           title,
+          slug,
           content,
-          noindex,
-          sitemapInclude,
-          additionalMenuItems[]{
-            label,
-            content,
-            isActive,
             noindex,
             sitemapInclude
-          }
         }`);
         setHamburgerMenu(menuData);
       } catch (e) {
@@ -157,46 +147,7 @@ export default function Navbar() {
     fetchHamburgerMenu();
   }, []);
 
-  // Load default about and contact pages (fallback when no country is detected)
-  useEffect(() => {
-    const fetchStaticPages = async () => {
-      try {
-        const [aboutData, contactData] = await Promise.all([
-          client.fetch(`*[_type == "about" && !defined(country) && !(_id in path("drafts.**"))][0]{ title, noindex, sitemapInclude }`),
-          client.fetch(`*[_type == "contact" && !defined(country) && !(_id in path("drafts.**"))][0]{ title, noindex, sitemapInclude }`)
-        ]);
-        setAboutPage(aboutData);
-        setContactPage(contactData);
-      } catch (e) {
-        console.error('Failed to fetch static pages:', e);
-      }
-    };
-    fetchStaticPages();
-  }, []);
 
-  // Load country-scoped about/contact when country changes
-  useEffect(() => {
-    const fetchCountryScoped = async () => {
-      try {
-        if (!currentCountrySlug) {
-          setAboutCountryPage(null);
-          setContactCountryPage(null);
-          return;
-        }
-        const [aboutForCountry, contactForCountry] = await Promise.all([
-          client.fetch(`*[_type == "about" && references(*[_type == "countryPage" && slug.current == $slug]._id)][0]{ title, noindex, sitemapInclude }`, { slug: currentCountrySlug }),
-          client.fetch(`*[_type == "contact" && references(*[_type == "countryPage" && slug.current == $slug]._id)][0]{ title, noindex, sitemapInclude }`, { slug: currentCountrySlug })
-        ]);
-        setAboutCountryPage(aboutForCountry || null);
-        setContactCountryPage(contactForCountry || null);
-      } catch (e) {
-        console.error('Failed to fetch country-scoped static pages:', e);
-        setAboutCountryPage(null);
-        setContactCountryPage(null);
-      }
-    };
-    fetchCountryScoped();
-  }, [currentCountrySlug]);
 
   // Update selected flag based on current path
   useEffect(() => {
@@ -374,7 +325,7 @@ export default function Navbar() {
         results = [...results, ...bannersResults];
       }
       
-      // Search comparison content (current country only)
+      // Search home content (current country only)
       if (currentCountrySlug) {
         const comparisonQuery = `*[_type == "comparison" && country->slug.current == $countrySlug && (
           title match $term ||
@@ -544,11 +495,11 @@ export default function Navbar() {
             </svg>
           </button>
           {dropdownOpen && (
-            <div className="absolute right-0 mt-2 w-56 bg-white border rounded shadow-xl z-[100]">
+            <div className="absolute right-0 mt-2 w-56 bg-[#FFFFFF] rounded-xl shadow-xl border border-gray-100 py-2 z-[100]">
               {countriesLoading ? (
                 // Skeleton loading for countries
                 Array.from({ length: 6 }).map((_, index) => (
-                  <div key={index} className="flex items-center justify-between w-full px-4 py-2 animate-pulse">
+                  <div key={index} className="flex items-center justify-between w-full px-3 py-2 animate-pulse">
                     <div className="flex items-center gap-2">
                       <div className="w-5 h-5 bg-gray-200 rounded"></div>
                       <div className="h-4 bg-gray-200 rounded w-20"></div>
@@ -559,12 +510,12 @@ export default function Navbar() {
                 flags.map(flag => (
                   <button
                     key={flag.name}
-                    className="flex items-center justify-between w-full px-4 py-2 hover:bg-gray-100"
+                    className="flex items-center justify-between w-full px-3 py-2 hover:bg-gray-50 rounded-lg mx-1"
                     onClick={() => handleFlagSelect(flag)}
                   >
                     <div className="flex items-center gap-2">
                       <img src={flag.src} alt={flag.name} className="w-5 h-5" />
-                      <span>{flag.name}</span>
+                      <span className="text-[#272932] text-[14px] leading-[24px] font-medium font-['General_Sans']">{flag.name}</span>
                     </div>
                     {selectedFlag.name === flag.name && (
                       <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="green" strokeWidth="3">
@@ -611,49 +562,13 @@ export default function Navbar() {
                 </div>
               )}
             </div>
-            {(() => {
-              const aboutDoc = (aboutCountryPage || aboutPage);
-              const aboutHref = currentCountrySlug
-                ? `/${encodeURIComponent(currentCountrySlug)}/about`
-                : "/about";
-              return aboutDoc && !aboutDoc.noindex && aboutDoc.sitemapInclude !== false ? (
-                <Link href={aboutHref} className="hover:underline">{aboutDoc.title || 'About Us'}</Link>
-              ) : null;
-            })()}
-            {(() => {
-              const contactDoc = (contactCountryPage || contactPage);
-              const contactHref = currentCountrySlug
-                ? `/${encodeURIComponent(currentCountrySlug)}/contact`
-                : "/contact";
-              return contactDoc && !contactDoc.noindex && contactDoc.sitemapInclude !== false ? (
-                <Link href={contactHref} className="hover:underline">{contactDoc.title || 'Contact Us'}</Link>
-              ) : null;
-            })()}
+            {hamburgerMenu?.title && !hamburgerMenu.noindex && hamburgerMenu.sitemapInclude !== false && (
+              <Link href={`/${hamburgerMenu?.slug?.current || (hamburgerMenu.title || '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`} className="hover:underline">{hamburgerMenu.title}</Link>
+            )}
             
-            {/* Additional Dynamic Menu Items */}
-            {hamburgerMenu?.additionalMenuItems?.map((item, index) => (
-              item.isActive && !item.noindex && item.sitemapInclude !== false && (
-                <Link
-                  key={index}
-                  href={`/hamburger-menu/${item.label.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`}
-                  className="hover:underline"
-                >
-                  {item.label}
-                </Link>
-              )
-            ))}
+            
           </div>
-          {/* Hamburger Menu Title - Clickable to show content */}
-          {hamburgerMenu?.title && !hamburgerMenu.noindex && hamburgerMenu.sitemapInclude !== false && (
-            <div className="px-10 py-4">
-              <Link 
-                href="/hamburger-menu/main"
-                className="text-sm text-gray-500 font-medium hover:text-gray-700 hover:underline cursor-pointer"
-              >
-                {hamburgerMenu.title}
-              </Link>
-            </div>
-          )}
+          
         </div>
       )}
       {/* Search Suggestion Panel + Results */}
@@ -730,7 +645,7 @@ export default function Navbar() {
                         case 'banner':
                           return item.title || 'Banner';
                         case 'comparison':
-                          return item.title || 'Comparison';
+                          return item.title || 'Home Content';
                         case 'faq':
                           return item.question || 'FAQ';
                         default:

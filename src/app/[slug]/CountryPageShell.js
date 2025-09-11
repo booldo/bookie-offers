@@ -178,6 +178,7 @@ async function getCountryPageData(slug) {
     const countryQuery = `*[_type == "countryPage" && slug.current == $slug && isActive == true][0]{
       title,
       country,
+      pageTitle,
       metaTitle,
       metaDescription,
       banner,
@@ -187,7 +188,7 @@ async function getCountryPageData(slug) {
       nofollow,
       canonicalUrl,
       sitemapInclude,
-      comparison,
+      pageContent,
       faqs
     }`;
     
@@ -340,14 +341,13 @@ export default async function CountryPageShell({ params, children, isOfferDetail
           {children}
         </div>
         
-        {/* Static comparison + FAQ section - prerendered */}
-        {((filterComparison) || (filterFaqs && filterFaqs.length > 0) || countryData.comparison || (countryData.faqs && countryData.faqs.length > 0)) && (
+        {/* Static home content + FAQ section - prerendered */}
+        {((filterComparison) || (filterFaqs && filterFaqs.length > 0) || countryData.pageContent || (countryData.faqs && countryData.faqs.length > 0)) && (
           <section className="bg-white rounded-xl p-4 sm:p-6 mb-8 sm:mb-10 shadow-sm border border-gray-100">
-            {(filterComparison || countryData.comparison) && (
+            {(filterComparison || countryData.pageContent) && (
               <div className="mb-4 sm:mb-6">
-                <h2 className="text-lg sm:text-xl md:text-2xl font-semibold mb-3 font-['General_Sans']">Comparison</h2>
                 <div className="text-gray-600 text-sm sm:text-base font-['General_Sans']">
-                  <PortableText value={filterComparison || countryData.comparison} />
+                  <PortableText value={filterComparison || countryData.pageContent} />
                 </div>
               </div>
             )}

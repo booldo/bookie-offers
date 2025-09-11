@@ -6,11 +6,8 @@ import article from "./article";
 import banner from "./banner";
 import faq from "./faq";
 import landingPage from "./landingPage";
-import clickTracking from "./clickTracking";
 import comparison from "./comparison";
 import affiliate from "./affiliate";
-import about from "./about";
-import contact from "./contact";
 import countryPage from "./countryPage";
 import codeBlock from "./codeBlock";
 import hamburgerMenu from "./hamburgerMenu";
@@ -28,11 +25,8 @@ export const schemaTypes = [
   banner,
   faq,
   landingPage,
-  clickTracking,
   comparison,
   affiliate,
-  about,
-  contact,
   countryPage,
   codeBlock,
   hamburgerMenu,

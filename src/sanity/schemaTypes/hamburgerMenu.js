@@ -1,6 +1,6 @@
 export default {
   name: 'hamburgerMenu',
-  title: 'Hamburger Menu',
+  title: 'Menu Pages',
   type: 'document',
   fields: [
     {
@@ -8,6 +8,18 @@ export default {
       title: 'Title',
       type: 'string',
       description: 'The title that appears at the bottom of the hamburger menu',
+      validation: Rule => Rule.required()
+    },
+    {
+      name: 'slug',
+      title: 'URL Slug',
+      type: 'slug',
+      description: 'URL path for this menu (e.g., \'stack\')',
+      options: {
+        source: 'title',
+        maxLength: 96,
+        slugify: input => (input || '').toString().toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-')
+      },
       validation: Rule => Rule.required()
     },
     {
@@ -81,116 +93,7 @@ export default {
       ],
       description: 'The content that will be displayed when the hamburger menu title is clicked'
     },
-    {
-      name: 'additionalMenuItems',
-      title: 'Additional Menu Items',
-      type: 'array',
-      of: [
-        {
-          type: 'object',
-          fields: [
-            {
-              name: 'label',
-              title: 'Menu Label',
-              type: 'string',
-              validation: Rule => Rule.required()
-            },
-            {
-              name: 'content',
-              title: 'Content',
-              type: 'array',
-              of: [
-                {
-                  type: 'block',
-                  styles: [
-                    {title: 'Normal', value: 'normal'},
-                    {title: 'H1', value: 'h1'},
-                    {title: 'H2', value: 'h2'},
-                    {title: 'H3', value: 'h3'},
-                    {title: 'H4', value: 'h4'},
-                    {title: 'Quote', value: 'blockquote'}
-                  ],
-                  lists: [
-                    {title: 'Bullet', value: 'bullet'},
-                    {title: 'Number', value: 'number'}
-                  ],
-                  marks: {
-                    decorators: [
-                      {title: 'Strong', value: 'strong'},
-                      {title: 'Emphasis', value: 'em'},
-                      {title: 'Code', value: 'code'}
-                    ],
-                    annotations: [
-                      {
-                        title: 'URL',
-                        name: 'link',
-                        type: 'object',
-                        fields: [
-                          {
-                            title: 'URL',
-                            name: 'href',
-                            type: 'url',
-                            validation: Rule => Rule.uri({
-                              allowRelative: true,
-                              scheme: ['http', 'https', 'mailto', 'tel']
-                            })
-                          },
-                          {
-                            title: 'Open in new tab',
-                            name: 'blank',
-                            type: 'boolean'
-                          }
-                        ]
-                      }
-                    ]
-                  }
-                },
-                {
-                  type: 'image',
-                  options: { hotspot: true },
-                  fields: [
-                    {
-                      name: 'alt',
-                      type: 'string',
-                      title: 'Alternative Text',
-                      description: 'Important for SEO and accessibility.',
-                      validation: Rule => Rule.required()
-                    },
-                    {
-                      name: 'caption',
-                      type: 'string',
-                      title: 'Caption'
-                    }
-                  ]
-                }
-              ],
-              description: 'The content that will be displayed when this menu item is clicked'
-            },
-            {
-              name: 'isActive',
-              title: 'Active',
-              type: 'boolean',
-              description: 'Whether this menu item should be displayed',
-              initialValue: true
-            }
-          ],
-          preview: {
-            select: {
-              title: 'label',
-              subtitle: 'isActive'
-            },
-            prepare(selection) {
-              const {title, subtitle} = selection;
-              return {
-                title: title || 'Menu Item',
-                subtitle: subtitle ? 'Active' : 'Inactive'
-              };
-            }
-          }
-        }
-      ],
-      description: 'Additional menu items that will appear below the default menu items'
-    },
+    
     // Metadata fields for SEO
     {
       name: 'metaTitle',
@@ -259,15 +162,12 @@ export default {
   ],
   preview: {
     select: {
-      title: 'title',
-      subtitle: 'additionalMenuItems'
+      title: 'title'
     },
     prepare(selection) {
-      const {title, subtitle} = selection;
-      const itemCount = subtitle ? subtitle.length : 0;
+      const {title} = selection;
       return {
-        title: title || 'Hamburger Menu',
-        subtitle: `${itemCount} additional menu item${itemCount !== 1 ? 's' : ''}`
+        title: title || 'Hamburger Menu'
       };
     }
   }

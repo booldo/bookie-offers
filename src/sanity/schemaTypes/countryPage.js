@@ -79,6 +79,13 @@ export default {
       validation: Rule => Rule.required(),
     },
     {
+      name: "pageTitle",
+      title: "Page Title",
+      type: "string",
+      description: "Heading shown above the offers list on the country page",
+      initialValue: "Best Offers"
+    },
+    {
       name: "pageFlag",
       title: "Page Flag",
       type: "image",
@@ -136,11 +143,11 @@ export default {
     },
 
     {
-      name: "comparison",
-      title: "Comparison Section",
+      name: "pageContent",
+      title: "Page Content",
       type: "array",
       of: [{ type: 'block' }],
-      description: "Portable text comparison content for this country homepage"
+      description: "Portable text content for this country homepage"
     },
     {
       name: "faqs",

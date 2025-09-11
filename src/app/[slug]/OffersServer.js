@@ -5,8 +5,8 @@ import { PortableText } from '@portabletext/react';
 import OffersClient from './OffersClient';
 import ExpiredOfferPage from './[...filters]/ExpiredOfferPage';
 
-// Server-side data fetching for offers
-async function getOffersData(countryName) {
+// Server-side data fetching for offers and aggregations
+async function getOffersData({ countryName, countryId }) {
   if (!countryName) {
     console.log('getOffersData: No country name provided');
     return { offers: [], bonusTypeOptions: [], bookmakerOptions: [], advancedOptions: [] };
@@ -68,8 +68,16 @@ async function getOffersData(countryName) {
     const offers = await client.fetch(query, { countryName });
     console.log('Offers fetched:', offers.length, 'offers found for', countryName);
     
-    if (offers.length === 0) {
-      return { offers: [], bonusTypeOptions: [], bookmakerOptions: [], advancedOptions: [] };
+    // Fetch all bonus types and bookmakers for the country (ensure dropdowns list all, even with zero offers)
+    let allBonusTypes = [];
+    let allBookmakers = [];
+    if (countryId) {
+      const [btList, bmList] = await Promise.all([
+        client.fetch(`*[_type == "bonusType" && country._ref == $cid && isActive == true] | order(name asc){ name }`, { cid: countryId }),
+        client.fetch(`*[_type == "bookmaker" && country._ref == $cid && isActive == true] | order(name asc){ name }`, { cid: countryId })
+      ]);
+      allBonusTypes = btList?.map(b => b.name).filter(Boolean) || [];
+      allBookmakers = bmList?.map(b => b.name).filter(Boolean) || [];
     }
     
     // Compute bonus type counts and unique bonus types
@@ -78,7 +86,10 @@ async function getOffersData(countryName) {
       const bt = offer.bonusType?.name || "Other";
       bonusTypeCount[bt] = (bonusTypeCount[bt] || 0) + 1;
     });
-    const bonusTypeOptions = Object.entries(bonusTypeCount).map(([name, count]) => ({ name, count }));
+    // Bonus types remain derived from offers (do not include zero-offer items)
+    const bonusTypeOptions = Object.entries(bonusTypeCount)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => a.name.localeCompare(b.name));
     
     // Compute bookmaker counts and unique bookmakers
     const bookmakerCount = {};
@@ -86,7 +97,10 @@ async function getOffersData(countryName) {
       const bm = offer.bookmaker?.name || "Other";
       bookmakerCount[bm] = (bookmakerCount[bm] || 0) + 1;
     });
-    const bookmakerOptions = Object.entries(bookmakerCount).map(([name, count]) => ({ name, count }));
+    const bookmakerSet = new Set([...Object.keys(bookmakerCount), ...allBookmakers]);
+    const bookmakerOptions = Array.from(bookmakerSet)
+      .map(name => ({ name, count: bookmakerCount[name] || 0 }))
+      .sort((a, b) => a.name.localeCompare(b.name));
     
     // Compute payment method counts from actual data
     const paymentMethodCount = {};
@@ -140,7 +154,9 @@ export default async function OffersServer({ countrySlug, initialFilter }) {
   // First fetch country data to get the country name
   const countryData = await client.fetch(`
     *[_type == "countryPage" && slug.current == $slug && isActive == true][0]{
+      _id,
       country,
+      pageTitle,
       slug
     }
   `, { slug: countrySlug });
@@ -153,8 +169,8 @@ export default async function OffersServer({ countrySlug, initialFilter }) {
     );
   }
   
-  // Fetch offers data
-  const { offers, bonusTypeOptions, bookmakerOptions, advancedOptions } = await getOffersData(countryData.country);
+  // Fetch offers data and dropdown options merged with country-scoped lists
+  const { offers, bonusTypeOptions, bookmakerOptions, advancedOptions } = await getOffersData({ countryName: countryData.country, countryId: countryData._id });
   
   if (offers.length === 0) {
     return (
@@ -174,6 +190,7 @@ export default async function OffersServer({ countrySlug, initialFilter }) {
       bonusTypeOptions={bonusTypeOptions}
       bookmakerOptions={bookmakerOptions}
       advancedOptions={advancedOptions}
+      pageTitle={countryData.pageTitle}
       initialFilter={initialFilter}
     />
   );

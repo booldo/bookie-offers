@@ -471,7 +471,7 @@ export default async function CountryFiltersPage({ params }) {
     };
   }
   
-  // For single filter pages, try to load comparison/faq for bookmaker or bonus type
+  // For single filter pages, try to load home content/faq for bookmaker or bonus type
   let filterComparison = null;
   let filterFaqs = null;
   if (isSingleFilterPage && singleFilter) {
