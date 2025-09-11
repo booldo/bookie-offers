@@ -95,7 +95,7 @@ export function ExpiredOffersTool() {
           _id, _type, title, "path": "/briefly/calculator/" + slug.current, isActive, sitemapInclude, noindex, _updatedAt
         },
         "hamburgerMenu": *[_type == "hamburgerMenu" && !(_id in path("drafts.**"))]{ 
-          _id, _type, title, sitemapInclude, noindex, _updatedAt,
+          _id, _type, title, slug, sitemapInclude, noindex, _updatedAt,
           "additionalMenuItems": additionalMenuItems[]{
             _id,
             label,
@@ -279,11 +279,12 @@ export function ExpiredOffersTool() {
       if (otherPagesResult?.hamburgerMenu) {
         otherPagesResult.hamburgerMenu.forEach(menu => {
           // Add main menu item
+          const menuPath = menu.slug?.current ? `/${menu.slug.current}` : `/${menu.title?.toLowerCase().replace(/\s+/g, '-')}`;
           flattenedPages.push({
             _id: menu._id,
             _type: menu._type,
             title: menu.title,
-            path: `/hamburger-menu/${menu.title?.toLowerCase().replace(/\s+/g, '-')}`,
+            path: menuPath,
             sitemapInclude: menu.sitemapInclude,
             noindex: menu.noindex,
             _updatedAt: menu._updatedAt,

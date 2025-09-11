@@ -8,6 +8,119 @@ import { PortableText } from '@portabletext/react';
 import { Suspense } from "react";
 import ExpiredOfferPage from "./[...filters]/ExpiredOfferPage";
 
+// Custom components for PortableText rendering
+const portableTextComponents = {
+  block: {
+    h1: ({ children }) => (
+      <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">{children}</h1>
+    ),
+    h2: ({ children }) => (
+      <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3">{children}</h2>
+    ),
+    h3: ({ children }) => (
+      <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">{children}</h3>
+    ),
+    h4: ({ children }) => (
+      <h4 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">{children}</h4>
+    ),
+    h5: ({ children }) => (
+      <h5 className="text-sm sm:text-base font-semibold text-gray-900 mb-2">{children}</h5>
+    ),
+    h6: ({ children }) => (
+      <h6 className="text-xs sm:text-sm font-semibold text-gray-900 mb-2">{children}</h6>
+    ),
+    normal: ({ children }) => (
+      <p className="mb-4 text-gray-800 leading-relaxed">{children}</p>
+    ),
+    blockquote: ({ children }) => (
+      <blockquote className="border-l-4 border-blue-500 pl-4 italic text-gray-700 mb-4">{children}</blockquote>
+    ),
+    code: ({ children }) => (
+      <pre className="bg-gray-100 p-4 rounded-lg overflow-x-auto mb-4"><code className="text-sm font-mono">{children}</code></pre>
+    ),
+  },
+  list: {
+    bullet: ({ children }) => (
+      <ul className="list-disc list-inside mb-4 space-y-1">{children}</ul>
+    ),
+    number: ({ children }) => (
+      <ol className="list-decimal list-inside mb-4 space-y-1">{children}</ol>
+    ),
+    checkmarks: ({ children }) => (
+      <ul className="list-none mb-4 space-y-1">{children}</ul>
+    ),
+  },
+  listItem: {
+    bullet: ({ children }) => (
+      <li className="text-gray-800">{children}</li>
+    ),
+    number: ({ children }) => (
+      <li className="text-gray-800">{children}</li>
+    ),
+    checkmarks: ({ children }) => (
+      <li className="flex items-start">
+        <span className="text-green-500 mr-2">✓</span>
+        <span className="text-gray-800">{children}</span>
+      </li>
+    ),
+  },
+  marks: {
+    strong: ({ children }) => (
+      <strong className="font-semibold text-gray-900">{children}</strong>
+    ),
+    em: ({ children }) => (
+      <em className="italic">{children}</em>
+    ),
+    code: ({ children }) => (
+      <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono">{children}</code>
+    ),
+    underline: ({ children }) => (
+      <span className="underline">{children}</span>
+    ),
+    'strike-through': ({ children }) => (
+      <span className="line-through">{children}</span>
+    ),
+    highlight: ({ children }) => (
+      <span className="bg-yellow-200 px-1 rounded">{children}</span>
+    ),
+    link: ({ children, value }) => (
+      <a 
+        href={value?.href} 
+        target={value?.blank ? '_blank' : '_self'}
+        rel={value?.blank ? 'noopener noreferrer' : undefined}
+        className="text-blue-600 hover:text-blue-800 underline"
+      >
+        {children}
+      </a>
+    ),
+    email: ({ children, value }) => (
+      <a 
+        href={`mailto:${value?.href}`}
+        className="text-blue-600 hover:text-blue-800 underline"
+      >
+        {children}
+      </a>
+    ),
+  },
+  types: {
+    image: ({ value }) => {
+      if (!value?.asset) return null;
+      return (
+        <div className="my-4">
+          <img 
+            src={urlFor(value).width(800).height(400).url()} 
+            alt={value.alt || ''} 
+            className="w-full h-auto rounded-lg shadow-sm"
+          />
+          {value.caption && (
+            <p className="text-sm text-gray-600 mt-2 text-center italic">{value.caption}</p>
+          )}
+        </div>
+      );
+    },
+  },
+};
+
 // Generate static params for all active countries
 export async function generateStaticParams() {
   try {
@@ -272,7 +385,7 @@ export async function generateMetadata({ params }) {
 }
 
 // Main country page shell component
-export default async function CountryPageShell({ params, children, isOfferDetailsPage = false, filterComparison = null, filterFaqs = null }) {
+export default async function CountryPageShell({ params, children, isOfferDetailsPage = false, filterComparison = null, filterFaqs = null, hasMultipleFilters = false }) {
   const awaitedParams = await params;
   const data = await getCountryPageData(awaitedParams.slug);
   
@@ -342,20 +455,23 @@ export default async function CountryPageShell({ params, children, isOfferDetail
         </div>
         
         {/* Static home content + FAQ section - prerendered */}
-        {((filterComparison) || (filterFaqs && filterFaqs.length > 0) || countryData.pageContent || (countryData.faqs && countryData.faqs.length > 0)) && (
+        {((filterComparison) || (filterFaqs && filterFaqs.length > 0) || (!filterComparison && countryData.pageContent) || (countryData.faqs && countryData.faqs.length > 0)) && (
           <section className="bg-white rounded-xl p-4 sm:p-6 mb-8 sm:mb-10 shadow-sm border border-gray-100">
-            {(filterComparison || countryData.pageContent) && (
+            {(filterComparison || (!filterComparison && countryData.pageContent)) && (
               <div className="mb-4 sm:mb-6">
                 <div className="text-gray-600 text-sm sm:text-base font-['General_Sans']">
-                  <PortableText value={filterComparison || countryData.pageContent} />
+                  <PortableText 
+                    value={filterComparison || countryData.pageContent} 
+                    components={portableTextComponents}
+                  />
                 </div>
               </div>
             )}
-            {((filterFaqs && filterFaqs.length > 0) || (countryData.faqs && countryData.faqs.length > 0)) && (
+            {((filterFaqs && filterFaqs.length > 0) || (!filterFaqs && countryData.faqs && countryData.faqs.length > 0)) && (
               <div>
                 <h2 className="text-lg sm:text-xl md:text-2xl font-semibold mb-3 font-['General_Sans']">FAQs</h2>
                 <div className="space-y-3">
-                  {(filterFaqs || countryData.faqs).map((faq, idx) => (
+                  {(filterFaqs || countryData.faqs || []).map((faq, idx) => (
                     <div key={idx} className="border border-gray-200 rounded-lg p-3 sm:p-4">
                       <div className="font-medium text-gray-900 mb-1 font-['General_Sans']">{faq.question}</div>
                       <div className="text-gray-700 text-sm sm:text-base whitespace-pre-line font-['General_Sans']">{faq.answer}</div>

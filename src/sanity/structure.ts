@@ -66,15 +66,6 @@ export const structure: StructureResolver = (S) =>
                         .params({countryId})
                 ),
                   
-                  // Home Content
-              S.listItem()
-                .title('Home Content')
-                .child(
-                  S.documentList()
-                        .title('Home Content')
-                        .filter('_type == "comparison" && country._ref == $countryId')
-                        .params({countryId})
-                ),
                   
                   // Pretty Links
               S.listItem()

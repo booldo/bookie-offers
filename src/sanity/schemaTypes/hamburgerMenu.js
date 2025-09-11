@@ -35,17 +35,24 @@ export default {
             {title: 'H2', value: 'h2'},
             {title: 'H3', value: 'h3'},
             {title: 'H4', value: 'h4'},
-            {title: 'Quote', value: 'blockquote'}
+            {title: 'H5', value: 'h5'},
+            {title: 'H6', value: 'h6'},
+            {title: 'Quote', value: 'blockquote'},
+            {title: 'Code Block', value: 'code'}
           ],
           lists: [
             {title: 'Bullet', value: 'bullet'},
-            {title: 'Number', value: 'number'}
+            {title: 'Number', value: 'number'},
+            {title: 'Checkmarks', value: 'checkmarks'}
           ],
           marks: {
             decorators: [
               {title: 'Strong', value: 'strong'},
               {title: 'Emphasis', value: 'em'},
-              {title: 'Code', value: 'code'}
+              {title: 'Code', value: 'code'},
+              {title: 'Underline', value: 'underline'},
+              {title: 'Strike', value: 'strike-through'},
+              {title: 'Highlight', value: 'highlight'}
             ],
             annotations: [
               {
@@ -66,6 +73,18 @@ export default {
                     title: 'Open in new tab',
                     name: 'blank',
                     type: 'boolean'
+                  }
+                ]
+              },
+              {
+                title: 'Email',
+                name: 'email',
+                type: 'object',
+                fields: [
+                  {
+                    title: 'Email',
+                    name: 'href',
+                    type: 'email'
                   }
                 ]
               }
@@ -110,16 +129,6 @@ export default {
       validation: Rule => Rule.max(160).warning('Should be under 160 characters')
     },
     {
-      name: 'keywords',
-      title: 'Keywords',
-      type: 'array',
-      of: [{ type: 'string' }],
-      description: 'Keywords for SEO (comma separated)',
-      options: {
-        layout: 'tags'
-      }
-    },
-    {
       name: 'sitemapInclude',
       title: 'Include in Sitemap',
       type: 'boolean',
@@ -145,13 +154,6 @@ export default {
       description: 'SEO: Canonical URL for this page (leave blank for default)'
     },
 
-    {
-      name: 'isActive',
-      title: 'Active',
-      type: 'boolean',
-      description: 'Whether the hamburger menu is active',
-      initialValue: true
-    },
     {
       name: 'updatedAt',
       title: 'Last Updated',

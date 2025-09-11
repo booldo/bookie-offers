@@ -236,7 +236,7 @@ export default async function CountryPage({ params }) {
   }
   
   return (
-    <CountryPageShell params={awaitedParams}>
+    <CountryPageShell params={awaitedParams} hasMultipleFilters={false}>
       {/* Dynamic offers section with proper PPR streaming */}
       <Suspense fallback={
         <div className="space-y-6">

@@ -6,7 +6,6 @@ import article from "./article";
 import banner from "./banner";
 import faq from "./faq";
 import landingPage from "./landingPage";
-import comparison from "./comparison";
 import affiliate from "./affiliate";
 import countryPage from "./countryPage";
 import codeBlock from "./codeBlock";
@@ -25,7 +24,6 @@ export const schemaTypes = [
   banner,
   faq,
   landingPage,
-  comparison,
   affiliate,
   countryPage,
   codeBlock,

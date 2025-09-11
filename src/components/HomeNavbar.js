@@ -28,7 +28,7 @@ export default function HomeNavbar() {
   const [popularSearches, setPopularSearches] = useState([]);
   const searchDebounceRef = useRef();
   const menuRef = useRef();
-  const [hamburgerMenu, setHamburgerMenu] = useState(null);
+  const [hamburgerMenus, setHamburgerMenus] = useState([]);
 
   // Load recent searches from localStorage on mount
   useEffect(() => {
@@ -129,21 +129,21 @@ export default function HomeNavbar() {
 
   // Load hamburger menu data from Sanity
   useEffect(() => {
-    const fetchHamburgerMenu = async () => {
+    const fetchHamburgerMenus = async () => {
       try {
-        const menuData = await client.fetch(`*[_type == "hamburgerMenu" && isActive == true][0]{
+        const menuData = await client.fetch(`*[_type == "hamburgerMenu"]{
           title,
           slug,
           content,
             noindex,
             sitemapInclude
-        }`);
-        setHamburgerMenu(menuData);
+        } | order(title asc)`);
+        setHamburgerMenus(menuData || []);
       } catch (e) {
-        console.error('Failed to fetch hamburger menu:', e);
+        console.error('Failed to fetch hamburger menus:', e);
       }
     };
-    fetchHamburgerMenu();
+    fetchHamburgerMenus();
   }, []);
 
 
@@ -509,9 +509,17 @@ export default function HomeNavbar() {
                 </div>
               )}
             </div>
-            {hamburgerMenu?.title && !hamburgerMenu.noindex && hamburgerMenu.sitemapInclude !== false && (
-              <Link href={`/${hamburgerMenu?.slug?.current || (hamburgerMenu.title || '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`} className="hover:underline font-['General_Sans']">{hamburgerMenu.title}</Link>
-            )}
+            {hamburgerMenus.map((menu) => (
+              menu?.title && !menu.noindex && menu.sitemapInclude !== false && (
+                <Link 
+                  key={menu._id || menu.title}
+                  href={`/${menu?.slug?.current || (menu.title || '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`} 
+                  className="hover:underline font-['General_Sans']"
+                >
+                  {menu.title}
+                </Link>
+              )
+            ))}
             
             
           </div>

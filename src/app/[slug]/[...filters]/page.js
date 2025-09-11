@@ -504,7 +504,12 @@ export default async function CountryFiltersPage({ params }) {
   }
 
   return (
-    <CountryPageShell params={awaitedParams} filterComparison={filterComparison} filterFaqs={filterFaqs}>
+    <CountryPageShell 
+      params={awaitedParams} 
+      filterComparison={filterComparison} 
+      filterFaqs={filterFaqs}
+      hasMultipleFilters={isCombinationFilterPage}
+    >
       <Suspense fallback={
         <div className="space-y-4">
           {/* Filter skeleton */}
