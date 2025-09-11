@@ -5,7 +5,7 @@ export default {
   preview: {
     select: {
       title: 'title',
-      country: 'country'
+      country: 'country->country'
     },
     prepare(selection) {
       const { title, country } = selection
