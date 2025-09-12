@@ -17,7 +17,7 @@ export const structure: StructureResolver = (S) =>
             .items([
                   // Country Settings
                   S.listItem()
-                    .title('Add Country')
+                    .title('Country Page')
                     .child(
                       S.document()
                         .documentId(countryId)
