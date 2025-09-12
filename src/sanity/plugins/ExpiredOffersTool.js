@@ -668,9 +668,9 @@ export function ExpiredOffersTool() {
 
   const getPageVisibilityButtonProps = (page) => {
     if (isPageHidden(page)) {
-      return { text: 'Remove from 410', tone: 'critical', title: 'Show this page (indexable, in sitemap)' };
+      return { text: 'Show', tone: 'critical', title: 'Show this page (indexable, in sitemap)' };
     }
-    return { text: 'Redirect to 410', tone: 'positive', title: 'Hide this page (noindex, exclude from sitemap)' };
+    return { text: 'Hide', tone: 'positive', title: 'Hide this page (noindex, exclude from sitemap) and Show 410 code' };
   };
 
   const togglePageVisibility = async (page) => {
@@ -785,13 +785,13 @@ export function ExpiredOffersTool() {
   const getVisibilityButtonProps = (offer) => {
     if (isOfferHidden(offer)) {
       return {
-        text: 'Remove from 410',
+        text: 'Unhide',
         tone: 'critical',
-        title: 'Show this offer in offer cards and sitemap'
+        title: 'Unhide this offer (make visible)'
       };
     } else {
       return {
-        text: 'Redirect to 410',
+        text: 'Hide',
         tone: 'positive',
         title: 'Hide this offer from offer cards and sitemap (noindex)'
       };
