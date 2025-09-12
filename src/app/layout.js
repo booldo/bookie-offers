@@ -17,8 +17,9 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <head>
         <link rel="icon" href="/assets/favicon.ico" type="image/x-icon" />
+        <link href="https://api.fontshare.com/v2/css?f[]=general-sans@300,400,500,600,700,800&display=swap" rel="stylesheet" />
       </head>
-      <body className={`antialiased`}>
+      <body className={`antialiased`} style={{ fontFamily: "var(--font-sans)" }}>
         {children}
       </body>
     </html>
