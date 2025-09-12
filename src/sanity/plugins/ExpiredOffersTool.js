@@ -183,7 +183,7 @@ export function ExpiredOffersTool() {
             displayTitle: page.title || 'Calculators'
           });
         });
-      } else {
+         } else {
         // Add placeholder for missing Calculator Homepage document
         flattenedPages.push({
           _id: 'calculator-homepage-placeholder',
@@ -623,9 +623,9 @@ export function ExpiredOffersTool() {
 
   const getPageVisibilityButtonProps = (page) => {
     if (isPageHidden(page)) {
-      return { text: 'Remove from 410', tone: 'critical', title: 'Show this page (indexable, in sitemap)' };
+      return { text: 'Show', tone: 'critical', title: 'Show this page (indexable, in sitemap)' };
     }
-    return { text: 'Redirect to 410', tone: 'positive', title: 'Hide this page (noindex, exclude from sitemap)' };
+    return { text: 'Hide', tone: 'positive', title: 'Hide this page (noindex, exclude from sitemap) and Show 410 code' };
   };
 
   const togglePageVisibility = async (page) => {
@@ -740,13 +740,13 @@ export function ExpiredOffersTool() {
   const getVisibilityButtonProps = (offer) => {
     if (isOfferHidden(offer)) {
       return {
-        text: 'Remove from 410',
+        text: 'Unhide',
         tone: 'critical',
-        title: 'Show this offer in offer cards and sitemap'
+        title: 'Unhide this offer (make visible)'
       };
     } else {
       return {
-        text: 'Redirect to 410',
+        text: 'Hide',
         tone: 'positive',
         title: 'Hide this offer from offer cards and sitemap (noindex)'
       };
@@ -849,7 +849,7 @@ export function ExpiredOffersTool() {
                          
                          <Button
                            size={1}
-                          text="redirect to 301"
+                          text="301"
                           tone="positive"
                            onClick={() => toggle301RedirectState(offer._id)}
                            disabled={processing}
@@ -1008,7 +1008,7 @@ export function ExpiredOffersTool() {
                     </Card>
                   ))
                 )}
-              </Stack>
+        </Stack>
             )}
           </Card>
 
@@ -1052,7 +1052,7 @@ export function ExpiredOffersTool() {
                             
                             <Button
                               size={1}
-                              text="redirect to 301"
+                              text="301"
                               tone="positive"
                               onClick={() => togglePage301RedirectState(page._id)}
                               disabled={processing}

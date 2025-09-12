@@ -20,7 +20,6 @@ export default function Navbar() {
   const [recentSearches, setRecentSearches] = useState([]);
   const router = useRouter();
   const pathname = usePathname();
-  const currentCountrySlug = (pathname || '').split('/').filter(Boolean)[0] || null;
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState(null);
@@ -153,7 +152,6 @@ export default function Navbar() {
   }, []);
 
 
-
   // Update selected flag based on current path
   useEffect(() => {
     if (!pathname) return;
@@ -165,8 +163,6 @@ export default function Navbar() {
     const match = flags.find(f => f.slug === parts[0] || f.path === `/${parts[0]}`);
     setSelectedFlag(match || WORLD_WIDE_FLAG);
   }, [pathname, flags]);
-
-  // Determine country from pathname (moved above to avoid TDZ)
 
   // Search handler
   const handleSearch = async (term) => {

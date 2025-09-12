@@ -131,10 +131,10 @@ export default {
     },
     {
       name: "comparison",
-      title: "Bonus Type Content",
+      title: "Bonus Content",
       type: "array",
       of: [{ type: 'block' }],
-      description: "Portable text content for this bonus type"
+      description: "Portable text bonus content for this bonus type"
     },
     {
       name: "faqs",

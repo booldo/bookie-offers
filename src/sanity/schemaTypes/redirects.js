@@ -14,8 +14,14 @@ export default {
       name: 'targetUrl',
       title: 'Target URL',
       type: 'url',
-      description: 'The destination URL where users should be redirected to',
-      validation: Rule => Rule.required()
+      description: 'Destination URL. Not required when Redirect Type is 410 (Gone).',
+      validation: Rule => Rule.custom((value, context) => {
+        const redirectType = context?.parent?.redirectType;
+        if (redirectType === '410') {
+          return true;
+        }
+        return value ? true : 'Target URL is required unless Redirect Type is 410';
+      })
     },
     {
       name: 'redirectType',
@@ -24,7 +30,8 @@ export default {
       options: {
         list: [
           {title: '301 (Permanent)', value: '301'},
-          {title: '302 (Temporary)', value: '302'}
+          {title: '302 (Temporary)', value: '302'},
+          {title: '410 (Gone)', value: '410'}
         ]
       },
       initialValue: '301',

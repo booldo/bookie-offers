@@ -273,6 +273,9 @@ export async function generateMetadata({ params }) {
 
 export const revalidate = 60;
 
+import Gone410Page from '../../410/Gone410Page';
+import { NextResponse } from 'next/server';
+
 export default async function CountryFiltersPage({ params }) {
   const awaitedParams = await params;
   
@@ -293,19 +296,22 @@ export default async function CountryFiltersPage({ params }) {
         bonusType->{ name }
       }
     `);
-    console.log('🔍 DEBUG - All active affiliate links in Sanity:', allAffiliateLinks);
+    console.log(' DEBUG - All active affiliate links in Sanity:', allAffiliateLinks);
   } catch (error) {
     console.error('Error fetching all affiliate links:', error);
   }
   
   // Handle affiliate pretty links FIRST - before any other logic
   const segments = awaitedParams.filters || [];
-  
+
+  // 410 handling is now done in middleware for proper HTTP status codes
+  // This ensures expired/hidden/non-existent offers return actual 410 status
+
   // Check for pretty links in different formats
   if (segments.length > 0) {
     // Try the full joined path first (e.g., "betika/welcome-bonus-2")
     const fullPath = segments.join('/');
-    console.log('🔍 DEBUG - Checking full path:', fullPath);
+    console.log(' DEBUG - Checking full path:', fullPath);
     
     // Query for active affiliate links with this pretty link
     const affiliateLink = await client.fetch(`
@@ -372,9 +378,9 @@ export default async function CountryFiltersPage({ params }) {
   
   console.log('🔍 DEBUG - No affiliate redirect found, continuing with normal processing');
   
-  // Check if this is an offer details page (has 3 segments: country/bonus-type/offer-slug)
+  // Check if this is an offer details page (has 2 or more segments: country/bonus-type/offer-slug)
   const isOfferDetailsPage = awaitedParams.filters && awaitedParams.filters.length >= 2;
-  
+
   if (isOfferDetailsPage) {
     // Extract the offer slug from the last segment
     const offerSlug = awaitedParams.filters[awaitedParams.filters.length - 1];

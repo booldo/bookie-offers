@@ -143,11 +143,11 @@ export default {
     },
 
     {
-      name: "pageContent",
-      title: "Page Content",
+      name: "comparison",
+      title: "Country Content",
       type: "array",
       of: [{ type: 'block' }],
-      description: "Portable text content for this country homepage"
+      description: "Portable text  content for this country homepage"
     },
     {
       name: "faqs",

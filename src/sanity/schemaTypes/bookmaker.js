@@ -147,6 +147,13 @@ export default {
       }
     },
     {
+      name: "comparison",
+      title: "Bookmaker Section",
+      type: "array",
+      of: [{ type: 'block' }],
+      description: "Portable text bookmaker content for this bookmaker"
+    },
+    {
       name: "faqs",
       title: "FAQs",
       type: "array",

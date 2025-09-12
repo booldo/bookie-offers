@@ -147,6 +147,22 @@ export default function HomeNavbar() {
     fetchHamburgerMenus();
   }, []);
 
+  // Load landing page about and contact pages from Sanity
+  useEffect(() => {
+    const fetchLandingPages = async () => {
+      try {
+        const [aboutData, contactData] = await Promise.all([
+          client.fetch(`*[_type == "about" && country == "Landing Page"][0]{ noindex, sitemapInclude }`),
+          client.fetch(`*[_type == "contact" && country == "Landing Page"][0]{ noindex, sitemapInclude }`)
+        ]);
+        setAboutPage(aboutData);
+        setContactPage(contactData);
+      } catch (e) {
+        console.error('Failed to fetch landing pages:', e);
+      }
+    };
+    fetchLandingPages();
+  }, []);
 
   // Update selected flag based on current path (dynamic)
   useEffect(() => {
@@ -485,7 +501,7 @@ export default function HomeNavbar() {
             {/* Default Menu Items */}
             <Link 
               href={pathname.startsWith('/ng') ? '/ng' : pathname.startsWith('/gh') ? '/gh' : '/'} 
-              className="hover:underline"
+              className="hover:underline font-['General_Sans']"
             >
               Home
             </Link>
