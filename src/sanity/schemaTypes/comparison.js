@@ -1,6 +1,6 @@
 export default {
   name: "comparison",
-  title: "Comparison Content",
+  title: "Country Page Content",
   type: "document",
   preview: {
     select: {
@@ -21,7 +21,7 @@ export default {
       title: "Title",
       type: "string",
       validation: Rule => Rule.required(),
-      description: "The main heading for the comparison section"
+      description: "The main heading for the Country Page Content section"
     },
     {
       name: "country",
@@ -29,7 +29,7 @@ export default {
       type: "reference",
       to: [{ type: "countryPage" }],
       validation: Rule => Rule.required(),
-      description: "Country this comparison is for",
+      description: "Country this Country Page Content is for",
       options: {
         filter: 'isActive == true'
       }
@@ -40,14 +40,14 @@ export default {
       type: "array",
       of: [{ type: "block" }],
       validation: Rule => Rule.required(),
-      description: "The main content paragraphs for the comparison section"
+      description: "The main content paragraphs for the Country Page Content section"
     },
     {
       name: "isActive",
       title: "Is Active",
       type: "boolean",
       initialValue: true,
-      description: "Whether this comparison content should be displayed"
+      description: "Whether this Country Page Content content should be displayed"
     },
     {
       name: "order",

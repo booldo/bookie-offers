@@ -137,10 +137,10 @@ export default {
 
     {
       name: "comparison",
-      title: "Comparison Section",
+      title: "Country Content",
       type: "array",
       of: [{ type: 'block' }],
-      description: "Portable text comparison content for this country homepage"
+      description: "Portable text  content for this country homepage"
     },
     {
       name: "faqs",
