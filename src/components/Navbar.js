@@ -132,13 +132,18 @@ export default function Navbar() {
   useEffect(() => {
     const fetchHamburgerMenus = async () => {
       try {
-        const menuData = await client.fetch(`*[_type == "hamburgerMenu"]{
+        const menuData = await client.fetch(`*[_type == "hamburgerMenu" && selectedPage->slug.current == $countrySlug]{
+          _id,
           title,
           slug,
           content,
-            noindex,
-            sitemapInclude
-        } | order(title asc)`);
+          noindex,
+          sitemapInclude,
+          selectedPage->{
+            _type,
+            slug
+          }
+        } | order(title asc)`, { countrySlug: currentCountrySlug });
         setHamburgerMenus(menuData || []);
       } catch (e) {
         console.error('Failed to fetch hamburger menus:', e);
@@ -566,7 +571,7 @@ export default function Navbar() {
               menu?.title && !menu.noindex && menu.sitemapInclude !== false && (
                 <Link 
                   key={menu._id || menu.title}
-                  href={`/${menu?.slug?.current || (menu.title || '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`} 
+                  href={`/${currentCountrySlug || ''}/${menu?.slug?.current || (menu.title || '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`.replace('//','/')} 
                   className="hover:underline"
                 >
                   {menu.title}

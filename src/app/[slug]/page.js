@@ -93,8 +93,8 @@ export { generateStaticParams };
 // Provide correct metadata for hamburger menu pages; fall back to country metadata otherwise
 export async function generateMetadata({ params }) {
   const awaitedParams = await params;
-  // Fetch active hamburger menu doc
-  const menuDoc = await client.fetch(`*[_type == "hamburgerMenu" && isActive == true][0]{
+  // Fetch menu page by slug so /[slug] matches Menu Pages documents
+  const menuDoc = await client.fetch(`*[_type == "hamburgerMenu" && slug.current == $slug][0]{
     title,
     slug,
     metaTitle,
@@ -103,9 +103,9 @@ export async function generateMetadata({ params }) {
     nofollow,
     canonicalUrl,
     sitemapInclude
-  }`);
+  }`, { slug: awaitedParams.slug });
   const menuSlug = menuDoc?.slug?.current || null;
-  if (menuDoc && menuSlug && awaitedParams.slug === menuSlug) {
+  if (menuDoc && menuSlug) {
     return {
       title: menuDoc.metaTitle || menuDoc.title || 'Menu',
       description: menuDoc.metaDescription || undefined,
@@ -141,8 +141,8 @@ export async function generateMetadata({ params }) {
 
 export default async function CountryPage({ params }) {
   const awaitedParams = await params;
-  // Intercept hamburger menu slug to render at /[slug]
-  const menuDoc = await client.fetch(`*[_type == "hamburgerMenu" && isActive == true][0]{
+  // Render Menu Page if a matching slug exists
+  const menuDoc = await client.fetch(`*[_type == "hamburgerMenu" && slug.current == $slug][0]{
     title,
     slug,
     content,
@@ -152,9 +152,9 @@ export default async function CountryPage({ params }) {
     nofollow,
     canonicalUrl,
     sitemapInclude
-  }`);
+  }`, { slug: awaitedParams.slug });
   const menuSlug = menuDoc?.slug?.current || null;
-  if (menuDoc && menuSlug && awaitedParams.slug === menuSlug) {
+  if (menuDoc && menuSlug) {
     if (menuDoc.noindex === true || menuDoc.sitemapInclude === false) {
       return (
         <div className="min-h-screen flex flex-col bg-[#fafbfc]">

@@ -58,8 +58,7 @@ function FooterSkeleton() {
 export default function Footer() {
   const [footerData, setFooterData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [aboutPage, setAboutPage] = useState(null);
-  const [contactPage, setContactPage] = useState(null);
+  
 
   // Helper function to get hamburger menu item URL
   const getHamburgerItemUrl = (label) => {
@@ -75,8 +74,7 @@ export default function Footer() {
     const urls = {
       home: '/',
       blog: '/briefly',
-      about: aboutPage && !aboutPage.noindex && aboutPage.sitemapInclude !== false ? '/about' : null,
-      contact: contactPage && !contactPage.noindex && contactPage.sitemapInclude !== false ? '/contact' : null,
+      calculators: '/calculators',
       faq: '/faq'
     };
     
@@ -92,8 +90,7 @@ export default function Footer() {
     const labels = {
       home: 'Home',
       blog: 'Blog',
-      about: 'About Us',
-      contact: 'Contact Us',
+      calculators: 'Calculators',
       faq: 'FAQ'
     };
     
@@ -103,8 +100,7 @@ export default function Footer() {
   useEffect(() => {
     const fetchFooterData = async () => {
       try {
-        const [data, aboutData, contactData] = await Promise.all([
-          client.fetch(`*[_type == "footer" && isActive == true][0]{
+        const data = await client.fetch(`*[_type == "footer" && isActive == true][0]{
             socialMedia,
             navigationLinks{
               menuItems[]{
@@ -134,14 +130,9 @@ export default function Footer() {
               },
               copyrightText
             }
-          }`),
-          client.fetch(`*[_type == "about" && !(_id in path("drafts.**"))][0]{ noindex, sitemapInclude }`),
-          client.fetch(`*[_type == "contact" && !(_id in path("drafts.**"))][0]{ noindex, sitemapInclude }`)
-        ]);
+          }`);
         
         setFooterData(data);
-        setAboutPage(aboutData);
-        setContactPage(contactData);
       } catch (error) {
         console.error('Error fetching footer data:', error);
       } finally {

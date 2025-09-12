@@ -36,30 +36,6 @@ export async function GET() {
 
     // Fetch additional static pages that should be in sitemap
     try {
-      // Fetch About and Contact pages
-      const [aboutPage, contactPage] = await Promise.all([
-        client.fetch(`*[_type == "about" && !(_id in path("drafts.**"))][0]{ noindex, sitemapInclude, _updatedAt }`),
-        client.fetch(`*[_type == "contact" && !(_id in path("drafts.**"))][0]{ noindex, sitemapInclude, _updatedAt }`)
-      ]);
-
-      // Add About page to sitemap if not hidden
-      if (aboutPage && !aboutPage.noindex && aboutPage.sitemapInclude !== false) {
-        urls.push({
-          loc: `${baseUrl}/about`,
-          lastmod: aboutPage._updatedAt ? new Date(aboutPage._updatedAt).toISOString() : new Date().toISOString(),
-          priority: "0.7"
-        });
-      }
-
-      // Add Contact page to sitemap if not hidden
-      if (contactPage && !contactPage.noindex && contactPage.sitemapInclude !== false) {
-        urls.push({
-          loc: `${baseUrl}/contact`,
-          lastmod: contactPage._updatedAt ? new Date(contactPage._updatedAt).toISOString() : new Date().toISOString(),
-          priority: "0.7"
-        });
-      }
-
       // Fetch footer pages
       const footerPages = await client.fetch(`*[_type == "footer" && isActive == true]{
         bottomRowLinks{
@@ -93,6 +69,7 @@ export async function GET() {
         sitemapInclude,
         _updatedAt,
         updatedAt,
+        slug,
         additionalMenuItems[]{
           label,
           isActive,
@@ -113,6 +90,16 @@ export async function GET() {
             lastmod: (menu.updatedAt || menu._updatedAt) ? new Date(menu.updatedAt || menu._updatedAt).toISOString() : new Date().toISOString(),
             priority: "0.6"
           });
+
+          // Add the top-level Menu Page at /[slug]
+          const menuSlug = typeof menu.slug === 'string' ? menu.slug : menu.slug?.current;
+          if (menuSlug) {
+            urls.push({
+              loc: `${baseUrl}/${menuSlug}`,
+              lastmod: (menu.updatedAt || menu._updatedAt) ? new Date(menu.updatedAt || menu._updatedAt).toISOString() : new Date().toISOString(),
+              priority: "0.6"
+            });
+          }
         }
         
         // Add additional menu items
@@ -281,9 +268,8 @@ export async function GET() {
     })));
 
     // Remove duplicates based on loc
-    const uniqueUrls = urls.filter((url, index, self) => 
-      index === self.findIndex(u => u.loc === url.loc)
-    );
+    const uniqueUrls = urls
+      .filter((url, index, self) => index === self.findIndex(u => u.loc === url.loc));
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

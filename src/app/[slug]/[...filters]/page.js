@@ -401,6 +401,47 @@ export default async function CountryFiltersPage({ params }) {
   
   // Check if this might be a pretty link (single segment that could be an affiliate link)
   if (isSingleFilterPage && singleFilter) {
+    // First: handle Menu Page at country level: /{country}/{menuSlug}
+    const menuDoc = await client.fetch(`*[_type == "hamburgerMenu" && slug.current == $slug][0]{
+      title,
+      slug,
+      content,
+      noindex,
+      nofollow,
+      canonicalUrl,
+      sitemapInclude,
+      selectedPage->{
+        _type,
+        slug
+      }
+    }`, { slug: singleFilter });
+    if (menuDoc && menuDoc.selectedPage?._type == 'countryPage' && menuDoc.selectedPage?.slug?.current == awaitedParams.slug) {
+      // Render the menu page content within the country shell
+      if (menuDoc.noindex === true || menuDoc.sitemapInclude === false) {
+        return (
+          <CountryPageShell params={awaitedParams} hasMultipleFilters={false}>
+            <div className="min-h-[50vh] flex items-center justify-center">
+              <div className="text-center text-gray-600">This menu page is hidden.</div>
+            </div>
+          </CountryPageShell>
+        );
+      }
+      return (
+        <CountryPageShell params={awaitedParams} hasMultipleFilters={false}>
+          <div className="max-w-6xl mx-auto px-4 py-8">
+            {Array.isArray(menuDoc.content) && menuDoc.content.length > 0 ? (
+              <div className="prose max-w-none">
+                {/* eslint-disable-next-line react/jsx-no-undef */}
+                <DynamicOffers countrySlug={awaitedParams.slug} initialFilter={null} />
+              </div>
+            ) : (
+              <div className="text-center text-gray-500 py-12">No content available for this menu item.</div>
+            )}
+          </div>
+        </CountryPageShell>
+      );
+    }
+
     console.log('🔍 DEBUG - Checking single filter for pretty link:', singleFilter);
     
       // Check if this is a pretty link for an affiliate

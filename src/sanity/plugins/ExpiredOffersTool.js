@@ -81,8 +81,6 @@ export function ExpiredOffersTool() {
 
       // Fetch other pages for redirection management
       const otherPagesQuery = `{
-        "about": *[_type == "about" && !(_id in path("drafts.**"))]{ _id, _type, title, "path": "/about", sitemapInclude, noindex, _updatedAt },
-        "contact": *[_type == "contact" && !(_id in path("drafts.**"))]{ _id, _type, title, "path": "/contact", sitemapInclude, noindex, _updatedAt },
         "brieflyHomepage": *[_type == "brieflyHomepage" && !(_id in path("drafts.**"))]{ _id, _type, title, "path": "/briefly", sitemapInclude, noindex, _updatedAt },
         "calculatorHomepage": *[_type == "calculatorHomepage" && !(_id in path("drafts.**"))]{ _id, _type, title, "path": "/briefly/calculators", sitemapInclude, noindex, _updatedAt },
         "country": *[_type == "countryPage" && !(_id in path("drafts.**"))]{ _id, _type, country, slug, sitemapInclude, noindex, _updatedAt }{
@@ -151,50 +149,6 @@ export function ExpiredOffersTool() {
       
       // Process and flatten the other pages data
       const flattenedPages = [];
-      
-      // Add about pages
-      if (otherPagesResult?.about && otherPagesResult.about.length > 0) {
-        flattenedPages.push(...otherPagesResult.about.map(page => ({
-          ...page,
-          contentType: 'About Page',
-          displayTitle: page.title || 'About Us'
-        })));
-      } else {
-        // Add placeholder for missing About document
-        flattenedPages.push({
-          _id: 'about-placeholder',
-          _type: 'about',
-          title: 'About Us',
-          path: '/about',
-          contentType: 'About Page',
-          displayTitle: 'About Us',
-          isMissing: true,
-          noindex: false,
-          sitemapInclude: true
-        });
-      }
-      
-      // Add contact pages
-      if (otherPagesResult?.contact && otherPagesResult.contact.length > 0) {
-        flattenedPages.push(...otherPagesResult.contact.map(page => ({
-          ...page,
-          contentType: 'Contact Page',
-          displayTitle: page.title || 'Contact Us'
-        })));
-         } else {
-        // Add placeholder for missing Contact document
-        flattenedPages.push({
-          _id: 'contact-placeholder',
-          _type: 'contact',
-          title: 'Contact Us',
-          path: '/contact',
-          contentType: 'Contact Page',
-          displayTitle: 'Contact Us',
-          isMissing: true,
-          noindex: false,
-          sitemapInclude: true
-        });
-      }
       
       // Add briefly homepage
       if (otherPagesResult?.brieflyHomepage) {

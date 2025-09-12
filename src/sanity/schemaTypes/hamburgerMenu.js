@@ -8,7 +8,42 @@ export default {
       title: 'Title',
       type: 'string',
       description: 'The title that appears at the bottom of the hamburger menu',
-      validation: Rule => Rule.required()
+      validation: Rule => Rule.required().custom(async (value, context) => {
+        const { document, getClient } = context;
+        if (!value) return true;
+        const normalizedTitle = (value || '').toString().trim().toLowerCase();
+        const selectedRef = document?.selectedPage?._ref || null;
+        // Only enforce uniqueness when a selected page is set
+        if (!selectedRef) return true;
+        const client = getClient({ apiVersion: '2023-10-01' });
+        const currentId = document?._id || '';
+        const publishedId = currentId.startsWith('drafts.') ? currentId.replace('drafts.', '') : currentId;
+        const query = `count(*[_type == "hamburgerMenu" && lower(title) == $title && selectedPage._ref == $ref && !(_id in [$currentId, $publishedId, "drafts." + $publishedId])])`;
+        const params = { title: normalizedTitle, ref: selectedRef, currentId, publishedId };
+        try {
+          const count = await client.fetch(query, params);
+          if (count > 0) {
+            return 'A menu page with this title already exists for the selected page.';
+          }
+        } catch (e) {
+          // If validation fails to query, allow save to avoid blocking edits
+          return true;
+        }
+        return true;
+      })
+    },
+    {
+      name: 'selectedPage',
+      title: 'Select Page',
+      type: 'reference',
+      to: [
+        { type: 'landingPage' },
+        { type: 'countryPage' }
+      ],
+      options: {
+        disableNew: true
+      },
+      description: 'Link this menu page to an existing Landing Page or Country Page document'
     },
     {
       name: 'slug',

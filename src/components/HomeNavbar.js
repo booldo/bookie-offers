@@ -131,12 +131,13 @@ export default function HomeNavbar() {
   useEffect(() => {
     const fetchHamburgerMenus = async () => {
       try {
-        const menuData = await client.fetch(`*[_type == "hamburgerMenu"]{
+        const menuData = await client.fetch(`*[_type == "hamburgerMenu" && selectedPage->_type == "landingPage"]{
+          _id,
           title,
           slug,
           content,
-            noindex,
-            sitemapInclude
+          noindex,
+          sitemapInclude
         } | order(title asc)`);
         setHamburgerMenus(menuData || []);
       } catch (e) {

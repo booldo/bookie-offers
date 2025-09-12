@@ -327,7 +327,7 @@ export default function DynamicOffers({ countrySlug, initialFilter = null, filte
           }
         }
 
-        // Compute bonus type counts and unique bonus types (offers-derived only)
+        // Compute bonus type counts and unique bonus types
         const bonusTypeCount = {};
         offersData.forEach(offer => {
           const bt = offer.bonusType?.name || "Other";
