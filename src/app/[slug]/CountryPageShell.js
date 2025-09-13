@@ -1,3 +1,5 @@
+"use client";
+
 import { client } from "../../sanity/lib/client";
 import { urlFor } from "../../sanity/lib/image";
 import Navbar from "../../components/Navbar";
@@ -122,7 +124,9 @@ const portableTextComponents = {
 };
 
 // Generate static params for all active countries
-export async function generateStaticParams() {
+// Moved to separate file: generateStaticParams.js
+// export async function generateStaticParams() {
+  /* Moved to separate file: generateStaticParams.js
   try {
     const countries = await client.fetch(`
       *[_type == "countryPage" && isActive == true && (noindex != true) && (sitemapInclude != false)]{
@@ -282,7 +286,7 @@ export async function generateStaticParams() {
     console.error('Error generating static params:', error);
     return [];
   }
-}
+  */
 
 // Static data fetching for country page
 async function getCountryPageData(slug) {

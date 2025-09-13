@@ -1,10 +1,90 @@
-import CountryPageShell, { generateStaticParams } from '../CountryPageShell';
-import DynamicOffers from '../DynamicOffers';
+import CountryPageShell from '../CountryPageShell';
+import { generateStaticParams } from '../generateStaticParams';
+import DynamicOffersWrapper from '../DynamicOffersWrapper';
 import OfferDetailsInner from './OfferDetailsInner';
 import { Suspense } from "react";
 import { redirect } from 'next/navigation';
 import { client } from '../../../sanity/lib/client';
 import { urlFor } from '../../../sanity/lib/image';
+import { PortableText } from '@portabletext/react';
+
+// Custom components for PortableText rendering
+const portableTextComponents = {
+  block: {
+    h1: ({ children }) => (
+      <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">{children}</h1>
+    ),
+    h2: ({ children }) => (
+      <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3">{children}</h2>
+    ),
+    h3: ({ children }) => (
+      <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">{children}</h3>
+    ),
+    h4: ({ children }) => (
+      <h4 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">{children}</h4>
+    ),
+    normal: ({ children }) => (
+      <p className="mb-4 text-gray-800 leading-relaxed">{children}</p>
+    ),
+    blockquote: ({ children }) => (
+      <blockquote className="border-l-4 border-blue-500 pl-4 italic text-gray-700 mb-4">{children}</blockquote>
+    ),
+  },
+  list: {
+    bullet: ({ children }) => (
+      <ul className="list-disc list-inside mb-4 space-y-1">{children}</ul>
+    ),
+    number: ({ children }) => (
+      <ol className="list-decimal list-inside mb-4 space-y-1">{children}</ol>
+    ),
+  },
+  listItem: {
+    bullet: ({ children }) => (
+      <li className="text-gray-800">{children}</li>
+    ),
+    number: ({ children }) => (
+      <li className="text-gray-800">{children}</li>
+    ),
+  },
+  marks: {
+    strong: ({ children }) => (
+      <strong className="font-semibold text-gray-900">{children}</strong>
+    ),
+    em: ({ children }) => (
+      <em className="italic">{children}</em>
+    ),
+    code: ({ children }) => (
+      <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono">{children}</code>
+    ),
+    link: ({ children, value }) => (
+      <a 
+        href={value?.href} 
+        target={value?.blank ? '_blank' : '_self'}
+        rel={value?.blank ? 'noopener noreferrer' : undefined}
+        className="text-blue-600 hover:text-blue-800 underline"
+      >
+        {children}
+      </a>
+    ),
+  },
+  types: {
+    image: ({ value }) => {
+      if (!value?.asset) return null;
+      return (
+        <div className="my-4">
+          <img 
+            src={urlFor(value).width(800).height(400).url()} 
+            alt={value.alt || ''} 
+            className="w-full h-auto rounded-lg shadow-sm"
+          />
+          {value.caption && (
+            <p className="text-sm text-gray-600 mt-2 text-center italic">{value.caption}</p>
+          )}
+        </div>
+      );
+    },
+  },
+};
 
 // Use the same static generation functions from CountryPageShell
 export { generateStaticParams };
@@ -405,10 +485,10 @@ export default async function CountryFiltersPage({ params }) {
   const isSingleFilterPage = awaitedParams.filters && awaitedParams.filters.length === 1;
   const singleFilter = isSingleFilterPage ? awaitedParams.filters[0] : null;
   
-  // Check if this might be a pretty link (single segment that could be an affiliate link)
   if (isSingleFilterPage && singleFilter) {
-    // First: handle Menu Page at country level: /{country}/{menuSlug}
+    const menuSlug = `${awaitedParams.slug}/${singleFilter}`;
     const menuDoc = await client.fetch(`*[_type == "hamburgerMenu" && slug.current == $slug][0]{
+      _id,
       title,
       slug,
       content,
@@ -420,32 +500,45 @@ export default async function CountryFiltersPage({ params }) {
         _type,
         slug
       }
-    }`, { slug: singleFilter });
-    if (menuDoc && menuDoc.selectedPage?._type == 'countryPage' && menuDoc.selectedPage?.slug?.current == awaitedParams.slug) {
-      // Render the menu page content within the country shell
-      if (menuDoc.noindex === true || menuDoc.sitemapInclude === false) {
+    }`, { slug: menuSlug });
+    
+    if (menuDoc) {
+      // Check if this menu page is for the current country
+      if (menuDoc.selectedPage?._type === 'countryPage' && menuDoc.selectedPage?.slug?.current === awaitedParams.slug) {
+        // Render the menu page content within the country shell
+        if (menuDoc.noindex === true || menuDoc.sitemapInclude === false) {
+          return (
+            <CountryPageShell params={awaitedParams} hasMultipleFilters={false}>
+              <div className="min-h-[50vh] flex items-center justify-center">
+                <div className="text-center text-gray-600">This menu page is hidden.</div>
+              </div>
+            </CountryPageShell>
+          );
+        }
+        
         return (
           <CountryPageShell params={awaitedParams} hasMultipleFilters={false}>
-            <div className="min-h-[50vh] flex items-center justify-center">
-              <div className="text-center text-gray-600">This menu page is hidden.</div>
+            <div className="max-w-6xl mx-auto px-4 py-8">
+              <div className="mb-4 sm:mb-6 flex items-center gap-2 text-sm text-gray-500 flex-wrap">
+                <button onClick={() => window.history.back()} className="hover:underline flex items-center gap-1 flex-shrink-0 focus:outline-none" aria-label="Go back">
+                  <img src="/assets/back-arrow.png" alt="Back" width={24} height={24} />
+                  Home
+                </button>
+              </div>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold font-['General_Sans'] mb-6">
+                {menuDoc.title}
+              </h1>
+              {Array.isArray(menuDoc.content) && menuDoc.content.length > 0 ? (
+                <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8 border border-gray-100">
+                  <PortableText value={menuDoc.content} components={portableTextComponents} />
+                </div>
+              ) : (
+                <div className="text-center text-gray-500 py-12">No content available for this menu item.</div>
+              )}
             </div>
           </CountryPageShell>
         );
       }
-      return (
-        <CountryPageShell params={awaitedParams} hasMultipleFilters={false}>
-          <div className="max-w-6xl mx-auto px-4 py-8">
-            {Array.isArray(menuDoc.content) && menuDoc.content.length > 0 ? (
-              <div className="prose max-w-none">
-                {/* eslint-disable-next-line react/jsx-no-undef */}
-                <DynamicOffers countrySlug={awaitedParams.slug} initialFilter={null} />
-              </div>
-            ) : (
-              <div className="text-center text-gray-500 py-12">No content available for this menu item.</div>
-            )}
-          </div>
-        </CountryPageShell>
-      );
     }
 
     console.log('🔍 DEBUG - Checking single filter for pretty link:', singleFilter);
@@ -593,7 +686,7 @@ export default async function CountryFiltersPage({ params }) {
           </div>
         </div>
       }>
-        <DynamicOffers 
+        <DynamicOffersWrapper 
           countrySlug={awaitedParams.slug} 
           initialFilter={singleFilter}
           filterInfo={filterInfo}

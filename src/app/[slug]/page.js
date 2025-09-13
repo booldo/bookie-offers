@@ -141,8 +141,8 @@ export async function generateMetadata({ params }) {
 
 export default async function CountryPage({ params }) {
   const awaitedParams = await params;
-  // Render Menu Page if a matching slug exists
-  const menuDoc = await client.fetch(`*[_type == "hamburgerMenu" && slug.current == $slug][0]{
+  // Render Menu Page if a matching slug exists (only for landing page hamburgerMenu documents)
+  const menuDoc = await client.fetch(`*[_type == "hamburgerMenu" && slug.current == $slug && selectedPage->_type == "landingPage"][0]{
     title,
     slug,
     content,
@@ -151,7 +151,11 @@ export default async function CountryPage({ params }) {
     noindex,
     nofollow,
     canonicalUrl,
-    sitemapInclude
+    sitemapInclude,
+    selectedPage->{
+      _type,
+      slug
+    }
   }`, { slug: awaitedParams.slug });
   const menuSlug = menuDoc?.slug?.current || null;
   if (menuDoc && menuSlug) {

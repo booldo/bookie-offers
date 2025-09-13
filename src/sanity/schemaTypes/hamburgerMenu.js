@@ -49,11 +49,38 @@ export default {
       name: 'slug',
       title: 'URL Slug',
       type: 'slug',
-      description: 'URL path for this menu (e.g., \'stack\')',
+      description: 'URL path for this menu',
       options: {
-        source: 'title',
+        source: async (doc, context) => {
+          const { getClient } = context;
+          const client = getClient({ apiVersion: '2023-05-03' });
+          if (!doc.selectedPage?._ref || !doc.title) {
+            return "Please select a page and enter title first";
+          }
+          try {
+            // Check if selectedPage is a countryPage
+            const countryQuery = `*[_type == "countryPage" && _id == $pageId][0]{ slug }`;
+            const countryResult = await client.fetch(countryQuery, { pageId: doc.selectedPage._ref });
+            
+            if (countryResult?.slug?.current && doc.title) {
+              const countrySlug = countryResult.slug.current.toLowerCase();
+              const titleSlug = doc.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+              return `${countrySlug}/${titleSlug}`;
+            }
+            
+            // If it's a landingPage, just use the title
+            if (doc.title) {
+              return doc.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+            }
+            
+            return "Could not generate slug";
+          } catch (error) {
+            console.error('Error generating slug:', error);
+            return "Error generating slug";
+          }
+        },
         maxLength: 96,
-        slugify: input => (input || '').toString().toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-')
+        slugify: input => input.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-\/]/g, '')
       },
       validation: Rule => Rule.required()
     },
@@ -66,12 +93,12 @@ export default {
           type: 'block',
           styles: [
             {title: 'Normal', value: 'normal'},
-            {title: 'H1', value: 'h1'},
-            {title: 'H2', value: 'h2'},
-            {title: 'H3', value: 'h3'},
-            {title: 'H4', value: 'h4'},
-            {title: 'H5', value: 'h5'},
-            {title: 'H6', value: 'h6'},
+            {title: 'Heading 1', value: 'h1'},
+            {title: 'Heading 2', value: 'h2'},
+            {title: 'Heading 3', value: 'h3'},
+            {title: 'Heading 4', value: 'h4'},
+            {title: 'Heading 5', value: 'h5'},
+            {title: 'Heading 6', value: 'h6'},
             {title: 'Quote', value: 'blockquote'},
             {title: 'Code Block', value: 'code'}
           ],
@@ -199,12 +226,16 @@ export default {
   ],
   preview: {
     select: {
-      title: 'title'
+      title: 'title',
+      selectedType: 'selectedPage._type',
+      selectedCountry: 'selectedPage.country'
     },
     prepare(selection) {
-      const {title} = selection;
+      const {title, selectedType, selectedCountry} = selection;
+      const subtitle = selectedType === 'landingPage' ? 'Landing Page' : (selectedType === 'countryPage' ? (selectedCountry || 'Country Page') : 'No page selected');
       return {
-        title: title || 'Hamburger Menu'
+        title: title || 'Hamburger Menu',
+        subtitle
       };
     }
   }

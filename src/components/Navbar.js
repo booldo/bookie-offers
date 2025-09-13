@@ -30,6 +30,9 @@ export default function Navbar() {
   const menuRef = useRef();
   const [hamburgerMenus, setHamburgerMenus] = useState([]);
 
+  // Determine current country slug from pathname
+  const currentCountrySlug = pathname ? pathname.split('/').filter(Boolean)[0] || null : null;
+
   // Load recent searches from localStorage on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -131,25 +134,46 @@ export default function Navbar() {
   useEffect(() => {
     const fetchHamburgerMenus = async () => {
       try {
-        const menuData = await client.fetch(`*[_type == "hamburgerMenu" && selectedPage->slug.current == $countrySlug]{
-          _id,
-          title,
-          slug,
-          content,
-          noindex,
-          sitemapInclude,
-          selectedPage->{
-            _type,
-            slug
-          }
-        } | order(title asc)`, { countrySlug: currentCountrySlug });
+        let menuData = [];
+        
+        if (currentCountrySlug) {
+          // Fetch menus for the current country
+          menuData = await client.fetch(`*[_type == "hamburgerMenu" && selectedPage->_type == "countryPage" && selectedPage->slug.current == $countrySlug]{
+            _id,
+            title,
+            slug,
+            content,
+            noindex,
+            sitemapInclude,
+            selectedPage->{
+              _type,
+              slug
+            }
+          } | order(title asc)`, { countrySlug: currentCountrySlug });
+        } else {
+          // Fetch menus for landing page (worldwide)
+          menuData = await client.fetch(`*[_type == "hamburgerMenu" && selectedPage->_type == "landingPage"]{
+            _id,
+            title,
+            slug,
+            content,
+            noindex,
+            sitemapInclude,
+            selectedPage->{
+              _type,
+              slug
+            }
+          } | order(title asc)`);
+        }
+        
         setHamburgerMenus(menuData || []);
       } catch (e) {
         console.error('Failed to fetch hamburger menus:', e);
+        setHamburgerMenus([]);
       }
     };
     fetchHamburgerMenus();
-  }, []);
+  }, [currentCountrySlug]);
 
 
   // Update selected flag based on current path
