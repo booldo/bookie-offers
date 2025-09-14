@@ -9,7 +9,7 @@ import { PortableText } from "@portabletext/react";
 // Skeleton loading component for footer
 function FooterSkeleton() {
   return (
-    <footer className="bg-[#f6f7f9] w-full px-4 pt-8 pb-4 text-gray-700 text-sm border-t mt-8">
+    <footer className="bg-[#f6f7f9] w-full px-4 pt-8 pb-4 text-gray-700 text-sm mt-8">
       <div className="w-full flex flex-col gap-4">
         {/* Social Media Skeleton */}
         <div className="md:text-center">
@@ -148,7 +148,7 @@ export default function Footer() {
   }
 
   return (
-    <footer className="bg-[#f6f7f9] w-full px-4 pt-8 pb-4 text-gray-700 text-sm border-t mt-8 font-['General_Sans'] tracking-[1%]">
+    <footer className="bg-[#f6f7f9] w-full px-4 pt-8 pb-4 text-gray-700 text-sm mt-8 font-['General_Sans'] tracking-[1%]">
       <div className="w-full flex flex-col gap-4">
         {/* Socials */}
         {footerData?.socialMedia?.isActive && (
@@ -194,7 +194,7 @@ export default function Footer() {
                   {/* Main menu item */}
                   <a 
                     href={getMenuItemUrl(item)} 
-                    className="hover:underline font-['General_Sans'] font-medium text-[12px] leading-[100%] tracking-[1%] text-[#272932]"
+                    className="font-['General_Sans'] font-medium text-[14px] leading-[100%] tracking-[1%] text-[#272932] underline decoration-solid decoration-0 decoration-auto"
                   >
                     {getMenuItemLabel(item)}
                   </a>
@@ -204,7 +204,7 @@ export default function Footer() {
                       <a 
                         key={`${index}-${menuIndex}`}
                         href={getHamburgerItemUrl(menuItem.label)} 
-                        className="hover:underline block font-['General_Sans'] font-medium text-[12px] leading-[100%] tracking-[1%] text-[#272932]"
+                        className="block font-['General_Sans'] font-medium text-[14px] leading-[100%] tracking-[1%] text-[#272932] underline decoration-solid decoration-0 decoration-auto"
                       >
                         {menuItem.label}
                       </a>
