@@ -1,9 +1,9 @@
-import CountryPageShell from '../CountryPageShell';
-import { generateStaticParams } from '../generateStaticParams';
-import DynamicOffersWrapper from '../DynamicOffersWrapper';
+import CountryPageShell, { generateStaticParams } from '../CountryPageShell';
+import DynamicOffers from '../DynamicOffers';
 import OfferDetailsInner from './OfferDetailsInner';
 import { Suspense } from "react";
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import { client } from '../../../sanity/lib/client';
 import { urlFor } from '../../../sanity/lib/image';
 import { PortableText } from '@portabletext/react';
@@ -211,6 +211,54 @@ export async function generateMetadata({ params }) {
     const singleFilter = awaitedParams.filters[0];
     
     try {
+      // First: Check if this is a Menu Page
+      const menuDoc = await client.fetch(`*[_type == "hamburgerMenu" && slug.current == $slug][0]{
+        title,
+        metaTitle,
+        metaDescription,
+        noindex,
+        nofollow,
+        canonicalUrl,
+        sitemapInclude,
+        selectedPage->{
+          _type,
+          slug
+        }
+      }`, { slug: singleFilter });
+      
+      if (menuDoc && menuDoc.selectedPage?._type === 'countryPage' && menuDoc.selectedPage?.slug?.current === awaitedParams.slug) {
+        const title = menuDoc.metaTitle || `${menuDoc.title} | Booldo`;
+        const description = menuDoc.metaDescription || `Learn more about ${menuDoc.title}.`;
+        
+        const metadata = {
+          title,
+          description,
+          openGraph: {
+            title,
+            description,
+          },
+        };
+
+        // Apply robots meta tags if specified
+        if (menuDoc.noindex === true || menuDoc.nofollow === true) {
+          const robots = [];
+          if (menuDoc.noindex === true) robots.push('noindex');
+          if (menuDoc.nofollow === true) robots.push('nofollow');
+          if (robots.length > 0) {
+            metadata.robots = robots.join(', ');
+          }
+        }
+
+        // Apply canonical URL if specified
+        if (menuDoc.canonicalUrl) {
+          metadata.alternates = { canonical: menuDoc.canonicalUrl };
+        } else {
+          metadata.alternates = { canonical: `https://booldo.com/${awaitedParams.slug}/${singleFilter}` };
+        }
+
+        return metadata;
+      }
+
       // Pretty link handling
       const affiliateLink = await client.fetch(`
         *[_type == "affiliate" && prettyLink.current == $prettyLink && isActive == true][0]{
@@ -353,9 +401,6 @@ export async function generateMetadata({ params }) {
 
 export const revalidate = 60;
 
-import Gone410Page from '../../410/Gone410Page';
-import { NextResponse } from 'next/server';
-
 export default async function CountryFiltersPage({ params }) {
   const awaitedParams = await params;
   
@@ -376,22 +421,19 @@ export default async function CountryFiltersPage({ params }) {
         bonusType->{ name }
       }
     `);
-    console.log(' DEBUG - All active affiliate links in Sanity:', allAffiliateLinks);
+    console.log('🔍 DEBUG - All active affiliate links in Sanity:', allAffiliateLinks);
   } catch (error) {
     console.error('Error fetching all affiliate links:', error);
   }
   
   // Handle affiliate pretty links FIRST - before any other logic
   const segments = awaitedParams.filters || [];
-
-  // 410 handling is now done in middleware for proper HTTP status codes
-  // This ensures expired/hidden/non-existent offers return actual 410 status
-
+  
   // Check for pretty links in different formats
   if (segments.length > 0) {
     // Try the full joined path first (e.g., "betika/welcome-bonus-2")
     const fullPath = segments.join('/');
-    console.log(' DEBUG - Checking full path:', fullPath);
+    console.log('🔍 DEBUG - Checking full path:', fullPath);
     
     // Query for active affiliate links with this pretty link
     const affiliateLink = await client.fetch(`
@@ -458,9 +500,9 @@ export default async function CountryFiltersPage({ params }) {
   
   console.log('🔍 DEBUG - No affiliate redirect found, continuing with normal processing');
   
-  // Check if this is an offer details page (has 2 or more segments: country/bonus-type/offer-slug)
+  // Check if this is an offer details page (has 3 segments: country/bonus-type/offer-slug)
   const isOfferDetailsPage = awaitedParams.filters && awaitedParams.filters.length >= 2;
-
+  
   if (isOfferDetailsPage) {
     // Extract the offer slug from the last segment
     const offerSlug = awaitedParams.filters[awaitedParams.filters.length - 1];
@@ -485,10 +527,10 @@ export default async function CountryFiltersPage({ params }) {
   const isSingleFilterPage = awaitedParams.filters && awaitedParams.filters.length === 1;
   const singleFilter = isSingleFilterPage ? awaitedParams.filters[0] : null;
   
+  // Check if this might be a pretty link (single segment that could be an affiliate link)
   if (isSingleFilterPage && singleFilter) {
-    const menuSlug = `${awaitedParams.slug}/${singleFilter}`;
+    // First: handle Menu Page at country level: /{country}/{menuSlug}
     const menuDoc = await client.fetch(`*[_type == "hamburgerMenu" && slug.current == $slug][0]{
-      _id,
       title,
       slug,
       content,
@@ -500,45 +542,39 @@ export default async function CountryFiltersPage({ params }) {
         _type,
         slug
       }
-    }`, { slug: menuSlug });
-    
-    if (menuDoc) {
-      // Check if this menu page is for the current country
-      if (menuDoc.selectedPage?._type === 'countryPage' && menuDoc.selectedPage?.slug?.current === awaitedParams.slug) {
-        // Render the menu page content within the country shell
-        if (menuDoc.noindex === true || menuDoc.sitemapInclude === false) {
-          return (
-            <CountryPageShell params={awaitedParams} hasMultipleFilters={false}>
-              <div className="min-h-[50vh] flex items-center justify-center">
-                <div className="text-center text-gray-600">This menu page is hidden.</div>
-              </div>
-            </CountryPageShell>
-          );
-        }
-        
+    }`, { slug: singleFilter });
+    if (menuDoc && menuDoc.selectedPage?._type == 'countryPage' && menuDoc.selectedPage?.slug?.current == awaitedParams.slug) {
+      // Render the menu page content within the country shell
+      if (menuDoc.noindex === true || menuDoc.sitemapInclude === false) {
         return (
-          <CountryPageShell params={awaitedParams} hasMultipleFilters={false}>
-            <div className="max-w-6xl mx-auto px-4 py-8">
-              <div className="mb-4 sm:mb-6 flex items-center gap-2 text-sm text-gray-500 flex-wrap">
-                <button onClick={() => window.history.back()} className="hover:underline flex items-center gap-1 flex-shrink-0 focus:outline-none" aria-label="Go back">
-                  <img src="/assets/back-arrow.png" alt="Back" width={24} height={24} />
-                  Home
-                </button>
-              </div>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold font-['General_Sans'] mb-6">
-                {menuDoc.title}
-              </h1>
+          <CountryPageShell params={awaitedParams} hasMultipleFilters={false} hideBannerCarousel={true}>
+            <div className="min-h-[50vh] flex items-center justify-center">
+              <div className="text-center text-gray-600">This menu page is hidden.</div>
+            </div>
+          </CountryPageShell>
+        );
+      }
+      return (
+        <CountryPageShell params={awaitedParams} hasMultipleFilters={false} hideBannerCarousel={true}>
+          <div className="max-w-7xl mx-auto px-4 py-8">
+            <div className="mb-4 sm:mb-6 flex items-center gap-2 text-sm text-gray-500 flex-wrap">
+              <Link href={`/${awaitedParams.slug}`} className="hover:underline flex items-center gap-1 flex-shrink-0 focus:outline-none" aria-label="Go back">
+                <img src="/assets/back-arrow.png" alt="Back" width={24} height={24} />
+                Home
+              </Link>
+            </div>
+            <div className="w-full">
               {Array.isArray(menuDoc.content) && menuDoc.content.length > 0 ? (
-                <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8 border border-gray-100">
+                <div className="bg-white rounded-lg shadow-sm p-6 text-gray-800 leading-relaxed font-['General_Sans']">
                   <PortableText value={menuDoc.content} components={portableTextComponents} />
                 </div>
               ) : (
                 <div className="text-center text-gray-500 py-12">No content available for this menu item.</div>
               )}
             </div>
-          </CountryPageShell>
-        );
-      }
+          </div>
+        </CountryPageShell>
+      );
     }
 
     console.log('🔍 DEBUG - Checking single filter for pretty link:', singleFilter);
@@ -686,7 +722,7 @@ export default async function CountryFiltersPage({ params }) {
           </div>
         </div>
       }>
-        <DynamicOffersWrapper 
+        <DynamicOffers 
           countrySlug={awaitedParams.slug} 
           initialFilter={singleFilter}
           filterInfo={filterInfo}

@@ -20,6 +20,7 @@ export default function Navbar() {
   const [recentSearches, setRecentSearches] = useState([]);
   const router = useRouter();
   const pathname = usePathname();
+  const currentCountrySlug = (pathname || '').split('/').filter(Boolean)[0] || null;
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState(null);
@@ -29,9 +30,6 @@ export default function Navbar() {
   const searchDebounceRef = useRef();
   const menuRef = useRef();
   const [hamburgerMenus, setHamburgerMenus] = useState([]);
-
-  // Determine current country slug from pathname
-  const currentCountrySlug = pathname ? pathname.split('/').filter(Boolean)[0] || null : null;
 
   // Load recent searches from localStorage on mount
   useEffect(() => {
@@ -134,46 +132,26 @@ export default function Navbar() {
   useEffect(() => {
     const fetchHamburgerMenus = async () => {
       try {
-        let menuData = [];
-        
-        if (currentCountrySlug) {
-          // Fetch menus for the current country
-          menuData = await client.fetch(`*[_type == "hamburgerMenu" && selectedPage->_type == "countryPage" && selectedPage->slug.current == $countrySlug]{
-            _id,
-            title,
-            slug,
-            content,
-            noindex,
-            sitemapInclude,
-            selectedPage->{
-              _type,
-              slug
-            }
-          } | order(title asc)`, { countrySlug: currentCountrySlug });
-        } else {
-          // Fetch menus for landing page (worldwide)
-          menuData = await client.fetch(`*[_type == "hamburgerMenu" && selectedPage->_type == "landingPage"]{
-            _id,
-            title,
-            slug,
-            content,
-            noindex,
-            sitemapInclude,
-            selectedPage->{
-              _type,
-              slug
-            }
-          } | order(title asc)`);
-        }
-        
+        const menuData = await client.fetch(`*[_type == "hamburgerMenu" && selectedPage->slug.current == $countrySlug]{
+          _id,
+          title,
+          slug,
+          content,
+          noindex,
+          sitemapInclude,
+          selectedPage->{
+            _type,
+            slug
+          }
+        } | order(title asc)`, { countrySlug: currentCountrySlug });
         setHamburgerMenus(menuData || []);
       } catch (e) {
         console.error('Failed to fetch hamburger menus:', e);
-        setHamburgerMenus([]);
       }
     };
     fetchHamburgerMenus();
   }, [currentCountrySlug]);
+
 
 
   // Update selected flag based on current path
@@ -187,6 +165,8 @@ export default function Navbar() {
     const match = flags.find(f => f.slug === parts[0] || f.path === `/${parts[0]}`);
     setSelectedFlag(match || WORLD_WIDE_FLAG);
   }, [pathname, flags]);
+
+  // Determine country from pathname (moved above to avoid TDZ)
 
   // Search handler
   const handleSearch = async (term) => {

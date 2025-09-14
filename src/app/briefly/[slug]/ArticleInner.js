@@ -248,9 +248,8 @@ function ArticleInner({ slug }) {
     );
   }
 
-  // Sidebar and Read More
+  // Sidebar
   const sidebarArticles = articles.slice(0, 5);
-  const readMoreArticles = articles.filter(a => a.slug.current !== article.slug.current).slice(0, 3);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#fafbfc]">
@@ -299,33 +298,6 @@ function ArticleInner({ slug }) {
               })}
             </div>
           </aside>
-        </div>
-        {/* Read More Section */}
-        <hr className="my-10 border-gray-200" />
-        <div className="flex items-center gap-2 mb-6">
-          <span className="text-green-700 text-2xl">●</span>
-          <h2 className="text-2xl font-bold">Read More</h2>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-10">
-          {readMoreArticles.map((a) => (
-            <Link
-              key={a._id}
-              href={`/briefly/${a.slug.current}`}
-              className="flex flex-col items-center bg-white rounded-lg shadow-sm p-4 transition hover:shadow-lg hover:scale-[1.03] cursor-pointer"
-            >
-              <div className="w-32 h-32 rounded overflow-hidden bg-gray-100 mb-3">
-                {a.mainImage ? (
-                  <img src={urlFor(a.mainImage)} alt={a.title} className="object-cover w-full h-full" />
-                ) : (
-                  <div className="w-full h-full bg-gray-200" />
-                )}
-              </div>
-              <div className="text-base font-semibold text-gray-900 leading-tight text-center">
-                {a.title}
-              </div>
-              <span className="mt-2 px-3 py-1 bg-green-700 text-white text-xs rounded">Briefly</span>
-            </Link>
-          ))}
         </div>
       </main>
       <Footer />

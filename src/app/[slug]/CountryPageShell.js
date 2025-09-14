@@ -1,5 +1,3 @@
-"use client";
-
 import { client } from "../../sanity/lib/client";
 import { urlFor } from "../../sanity/lib/image";
 import Navbar from "../../components/Navbar";
@@ -124,9 +122,7 @@ const portableTextComponents = {
 };
 
 // Generate static params for all active countries
-// Moved to separate file: generateStaticParams.js
-// export async function generateStaticParams() {
-  /* Moved to separate file: generateStaticParams.js
+export async function generateStaticParams() {
   try {
     const countries = await client.fetch(`
       *[_type == "countryPage" && isActive == true && (noindex != true) && (sitemapInclude != false)]{
@@ -286,7 +282,7 @@ const portableTextComponents = {
     console.error('Error generating static params:', error);
     return [];
   }
-  */
+}
 
 // Static data fetching for country page
 async function getCountryPageData(slug) {
@@ -389,7 +385,7 @@ export async function generateMetadata({ params }) {
 }
 
 // Main country page shell component
-export default async function CountryPageShell({ params, children, isOfferDetailsPage = false, filterComparison = null, filterFaqs = null, hasMultipleFilters = false }) {
+export default async function CountryPageShell({ params, children, isOfferDetailsPage = false, filterComparison = null, filterFaqs = null, hasMultipleFilters = false, hideBannerCarousel = false }) {
   const awaitedParams = await params;
   const data = await getCountryPageData(awaitedParams.slug);
   
@@ -446,8 +442,8 @@ export default async function CountryPageShell({ params, children, isOfferDetail
           </div>
         )}
         
-        {/* Static banner carousel - prerendered; hidden on offer details */}
-        {!isOfferDetailsPage && banners && banners.length > 0 && (
+        {/* Static banner carousel - prerendered; hidden on offer details and menu pages */}
+        {!isOfferDetailsPage && !hideBannerCarousel && banners && banners.length > 0 && (
           <div className="flex flex-col items-center mb-4 sm:mb-6">
             <BannerCarousel banners={banners} />
           </div>
