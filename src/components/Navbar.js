@@ -55,36 +55,60 @@ export default function Navbar() {
     });
   };
 
-  // Load most searches from Sanity
+  // Load most searches from Sanity (country-specific first, then global fallback)
   useEffect(() => {
     const fetchMostSearches = async () => {
       try {
-        const landingPageData = await client.fetch(`*[_type == "landingPage"][0]{
-          mostSearches[]{
-            searchTerm,
-            isActive,
-            order
-          }
-        }`);
+        let searches = [];
         
-        if (landingPageData?.mostSearches) {
-          // Filter active searches and sort by order
-          const activeSearches = landingPageData.mostSearches
-            .filter(search => search.isActive)
-            .sort((a, b) => (a.order || 1) - (b.order || 1))
-            .map(search => search.searchTerm);
+        // First try to get country-specific searches
+        if (currentCountrySlug) {
+          const countryData = await client.fetch(`*[_type == "countryPage" && slug.current == $countrySlug][0]{
+            mostSearches[]{
+              searchTerm,
+              isActive,
+              order
+            }
+          }`, { countrySlug: currentCountrySlug });
           
-          setPopularSearches(activeSearches);
-        } else {
-          // Fallback to default searches if none configured
-          setPopularSearches([
+          if (countryData?.mostSearches && countryData.mostSearches.length > 0) {
+            searches = countryData.mostSearches
+              .filter(search => search.isActive)
+              .sort((a, b) => (a.order || 1) - (b.order || 1))
+              .map(search => search.searchTerm);
+          }
+        }
+        
+        // If no country-specific searches found, try global searches
+        if (searches.length === 0) {
+          const landingPageData = await client.fetch(`*[_type == "landingPage"][0]{
+            mostSearches[]{
+              searchTerm,
+              isActive,
+              order
+            }
+          }`);
+          
+          if (landingPageData?.mostSearches) {
+            searches = landingPageData.mostSearches
+              .filter(search => search.isActive)
+              .sort((a, b) => (a.order || 1) - (b.order || 1))
+              .map(search => search.searchTerm);
+          }
+        }
+        
+        // If still no searches found, use default fallback
+        if (searches.length === 0) {
+          searches = [
             "Welcome bonus",
             "Deposit bonus",
             "Best bonus",
             "Best bookies",
             "Free bets"
-          ]);
+          ];
         }
+        
+        setPopularSearches(searches);
       } catch (error) {
         console.error('Error fetching most searches:', error);
         // Fallback to default searches on error
@@ -99,7 +123,7 @@ export default function Navbar() {
     };
 
     fetchMostSearches();
-  }, []);
+  }, [currentCountrySlug]);
 
   // Load countries dynamically and build flags list (keep Worldwide)
   useEffect(() => {

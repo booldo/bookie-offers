@@ -4,6 +4,7 @@ import Image from "next/image";
 import { client } from "../sanity/lib/client";
 import { urlFor } from "../sanity/lib/image";
 import { Suspense } from "react";
+import { PortableText } from "@portabletext/react";
 
 // Static data fetching for PPR
 async function getCountries() {
@@ -12,7 +13,8 @@ async function getCountries() {
       country,
       countryCode,
       slug,
-      pageFlag
+      pageFlag,
+      description
     }`;
     const countries = await client.fetch(query);
     return countries;
@@ -22,10 +24,13 @@ async function getCountries() {
   }
 }
 
-// Fetch most searches from Sanity
-async function getMostSearches() {
+// Fetch landing page data from Sanity
+async function getLandingPageData() {
   try {
     const landingPageData = await client.fetch(`*[_type == "landingPage"][0]{
+      siteHeading1,
+      siteHeading2,
+      siteDescription,
       mostSearches[]{
         searchTerm,
         isActive,
@@ -33,19 +38,13 @@ async function getMostSearches() {
       }
     }`);
     
-    if (landingPageData?.mostSearches) {
-      // Filter active searches and sort by order
-      return landingPageData.mostSearches
-        .filter(search => search.isActive)
-        .sort((a, b) => (a.order || 1) - (b.order || 1))
-        .map(search => search.searchTerm);
-    }
-    return [];
+    return landingPageData || {};
   } catch (error) {
-    console.error('Error fetching most searches:', error);
-    return [];
+    console.error('Error fetching landing page data:', error);
+    return {};
   }
 }
+
 
 // Async country cards component
 async function CountryCards() {
@@ -82,7 +81,7 @@ async function CountryCards() {
           {/* Description and View Offers Button Row */}
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-500 font-['General_Sans'] ml-11 sm:ml-12">
-              Discover local offers and bookies
+              {country.description || "Discover local offers"}
             </div>
             
             {/* View Offers Button - positioned on far right for desktop only */}
@@ -99,39 +98,44 @@ async function CountryCards() {
   );
 }
 
-// Async most searches component
-async function MostSearches() {
-  const searches = await getMostSearches();
+// Async landing page header component
+async function LandingPageHeader() {
+  const landingPageData = await getLandingPageData();
   
-  if (searches.length === 0) return null;
+  // Fallback to hardcoded values if data is not available
+  const heading1 = landingPageData?.siteHeading1 || "No Bias. No Hype.";
+  const heading2 = landingPageData?.siteHeading2 || "Just Betting Options.";
+  const description = landingPageData?.siteDescription || [
+    {
+      _type: "block",
+      _key: "description",
+      style: "normal",
+      children: [
+        {
+          _type: "span",
+          _key: "description-text",
+          text: "Booldo is built to help you bet smarter. We show you all the top bookmakers and offers, even those we don't partner with, so you can decide with confidence. No noisy tips. No clutter. Just clear, honest info.",
+          marks: []
+        }
+      ]
+    }
+  ];
   
   return (
-    <div className="w-full max-w-2xl mx-auto mb-6 sm:mb-8 px-3 sm:px-4 md:px-0">
-      <div className="text-center mb-3 sm:mb-4">
-        <h3 className="text-base sm:text-lg md:text-xl font-medium text-gray-700 mb-2 font-['General_Sans']">Popular Searches</h3>
-        <p className="text-sm text-gray-500 font-['General_Sans']">Discover what others are looking for</p>
+    <>
+      <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-center text-gray-900 mb-3 sm:mb-4 font-['General_Sans'] leading-tight">
+        {heading1}
+      </h1>
+      <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-center text-gray-900 mb-4 sm:mb-6 md:mb-8 font-['General_Sans'] leading-tight">
+        {heading2}
+      </h1>
+      <div className="text-center text-gray-600 mb-4 sm:mb-6 md:mb-8 font-['General_Sans'] text-sm sm:text-base lg:text-lg max-w-4xl leading-relaxed px-2 sm:px-0">
+        <PortableText value={description} />
       </div>
-      <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
-        {searches.map((term, index) => (
-          <button
-            key={index}
-            className="bg-white hover:bg-gray-50 text-gray-700 rounded-full px-3 sm:px-4 py-2 text-sm font-medium transition-all duration-200 border border-gray-200 hover:border-gray-300 hover:shadow-sm font-['General_Sans']"
-            onClick={() => {
-              // This will be handled by the HomeNavbar search functionality
-              const searchInput = document.querySelector('input[type="text"]');
-              if (searchInput) {
-                searchInput.value = term;
-                searchInput.focus();
-              }
-            }}
-          >
-            {term}
-          </button>
-        ))}
-      </div>
-    </div>
+    </>
   );
 }
+
 
 // Loading fallback for PPR
 function CountryCardsLoading() {
@@ -156,22 +160,20 @@ function CountryCardsLoading() {
   );
 }
 
-// Loading fallback for most searches
-function MostSearchesLoading() {
+// Loading fallback for landing page header
+function LandingPageHeaderLoading() {
   return (
-    <div className="w-full max-w-2xl mx-auto mb-6 sm:mb-8 px-3 sm:px-4 md:px-0">
-      <div className="text-center mb-3 sm:mb-4">
-        <div className="h-5 sm:h-6 bg-gray-200 rounded w-32 mx-auto mb-2 animate-pulse"></div>
-        <div className="h-4 bg-gray-200 rounded w-48 mx-auto animate-pulse"></div>
+    <>
+      <div className="h-8 sm:h-10 md:h-12 lg:h-16 bg-gray-200 rounded w-64 mx-auto mb-3 sm:mb-4 animate-pulse"></div>
+      <div className="h-8 sm:h-10 md:h-12 lg:h-16 bg-gray-200 rounded w-80 mx-auto mb-4 sm:mb-6 md:mb-8 animate-pulse"></div>
+      <div className="max-w-4xl mx-auto mb-4 sm:mb-6 md:mb-8 px-2 sm:px-0">
+        <div className="h-4 sm:h-5 lg:h-6 bg-gray-200 rounded w-full mb-2 animate-pulse"></div>
+        <div className="h-4 sm:h-5 lg:h-6 bg-gray-200 rounded w-3/4 mx-auto animate-pulse"></div>
       </div>
-      <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
-        {[1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="h-8 bg-gray-200 rounded-full w-20 animate-pulse"></div>
-        ))}
-      </div>
-    </div>
+    </>
   );
 }
+
 
 // Main page component with PPR structure
 export default function Home() {
@@ -179,23 +181,11 @@ export default function Home() {
     <div className="min-h-screen bg-[#fafbfc] flex flex-col">
       <HomeNavbar />
       <main className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8 md:py-10 flex flex-col items-center flex-1">
-        {/* Static content - prerendered */}
-        <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-center text-gray-900 mb-3 sm:mb-4 font-['General_Sans'] leading-tight">
-          No Bias. No Hype.
-        </h1>
-        <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-center text-gray-900 mb-4 sm:mb-6 md:mb-8 font-['General_Sans'] leading-tight">
-          Just Betting Options.
-        </h1>
-        <p className="text-center text-gray-600 mb-4 sm:mb-6 md:mb-8 font-['General_Sans'] text-sm sm:text-base lg:text-lg max-w-4xl leading-relaxed px-2 sm:px-0">
-          Booldo is built to help you bet smarter. We show you all the top bookmakers and offers, even those we
-          <br className="hidden sm:block" />
-          don't partner with, so you can decide with confidence. No noisy tips. No clutter. Just clear, honest info.
-        </p>
-        
-        {/* Dynamic most searches - uses PPR */}
-        <Suspense fallback={<MostSearchesLoading />}>
-          <MostSearches />
+        {/* Dynamic landing page header - uses PPR */}
+        <Suspense fallback={<LandingPageHeaderLoading />}>
+          <LandingPageHeader />
         </Suspense>
+        
         
         {/* Dynamic country cards - uses PPR */}
         <Suspense fallback={<CountryCardsLoading />}>
