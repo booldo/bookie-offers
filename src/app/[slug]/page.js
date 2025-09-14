@@ -93,7 +93,8 @@ export { generateStaticParams };
 // Provide correct metadata for hamburger menu pages; fall back to country metadata otherwise
 export async function generateMetadata({ params }) {
   const awaitedParams = await params;
-  // Fetch menu page by slug so /[slug] matches Menu Pages documents
+  
+  // First check if this is a hamburger menu page
   const menuDoc = await client.fetch(`*[_type == "hamburgerMenu" && slug.current == $slug][0]{
     title,
     slug,
@@ -104,8 +105,8 @@ export async function generateMetadata({ params }) {
     canonicalUrl,
     sitemapInclude
   }`, { slug: awaitedParams.slug });
-  const menuSlug = menuDoc?.slug?.current || null;
-  if (menuDoc && menuSlug) {
+  
+  if (menuDoc && menuDoc.slug?.current) {
     return {
       title: menuDoc.metaTitle || menuDoc.title || 'Menu',
       description: menuDoc.metaDescription || undefined,
@@ -118,6 +119,32 @@ export async function generateMetadata({ params }) {
       },
     };
   }
+  
+  // If not a menu page, check if it's a country page
+  const countryDoc = await client.fetch(`*[_type == "countryPage" && slug.current == $slug && isActive == true][0]{
+    country,
+    metaTitle,
+    metaDescription,
+    noindex,
+    nofollow,
+    canonicalUrl,
+    sitemapInclude
+  }`, { slug: awaitedParams.slug });
+  
+  if (countryDoc) {
+    return {
+      title: countryDoc.metaTitle || `Best Betting Sites ${countryDoc.country} | Booldo`,
+      description: countryDoc.metaDescription || `Discover the best betting sites in ${countryDoc.country} with exclusive bonuses and offers.`,
+      robots: [
+        countryDoc.noindex ? 'noindex' : 'index',
+        countryDoc.nofollow ? 'nofollow' : 'follow'
+      ].join(', '),
+      alternates: {
+        canonical: countryDoc.canonicalUrl || undefined,
+      },
+    };
+  }
+  
   // Fallback to landing page metadata (World Wide Page)
   const landing = await client.fetch(`*[_type == "landingPage"][0]{
     defaultMetaTitle,
