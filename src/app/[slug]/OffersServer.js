@@ -81,40 +81,54 @@ async function getOffersData({ countryName, countryId }) {
     // Fetch all bonus types and bookmakers for the country (ensure dropdowns list all, even with zero offers)
     let allBonusTypes = [];
     let allBookmakers = [];
-    const fetchAllBookmakers = client.fetch(
-      `*[_type == "bookmaker" ]{name, country->{_id, country, countryCode}}`
-    );
+      const aallBookmakers = await client.fetch(`
+      *[_type == "bookmaker"] | order(name asc) {
+        _id,
+        name,
+        country->{
+          _id,
+          country,
+          countryCode,
+          slug
+        }
+      }
+    `);
+
+      console.log("DEBUG: allBookmakers with country:", aallBookmakers);
+    // const fetchAllBookmakers = client.fetch(
+    //   `*[_type == "bookmaker" ]{name, country->{_id, country, countryCode}}`
+    // );
     if (countryId) {
       console.log("DEBUG: countryId:", countryId);
       console.log("DEBUG: countryName:", countryName);
       const [btList, bmList] = await Promise.all([
         client.fetch(
-          `*[_type == "bonusType" && country._ref == $cid && isActive == true] | order(name asc){ name }`,
+          `*[_type == "bonusType" && country._ref == $cid ] | order(name asc){ name }`,
           { cid: countryId }
         ),
-        fetchAllBookmakers,
+        // fetchAllBookmakers,
         client.fetch(
-          `*[_type == "bookmaker" && country._ref == $cid && isActive == true] | order(name asc){ name, country }`,
+          `*[_type == "bookmaker" && country._ref == $cid] | order(name asc){ name, country }`,
           { cid: countryId }
         ),
       ]);
       console.log("DEBUG: raw bmList:", bmList);
-      const allbookmaker = await fetchAllBookmakers;
-      console.log("DEBUG: allbookmaker:", allbookmaker);
+      // const allbookmaker = await fetchAllBookmakers;
+      // console.log("DEBUG: allbookmaker:", allbookmaker);
       allBonusTypes = btList?.map((b) => b.name).filter(Boolean) || [];
       allBookmakers = bmList?.map((b) => b.name).filter(Boolean) || [];
       // If bmList is empty, try alternate query by country name
       if (allBookmakers.length === 0 && countryName) {
         const bmListByName = await client.fetch(
-          `*[_type == "bookmaker" && country->country == $countryName && isActive == true] | order(name asc){ name, country }`,
+          `*[_type == "bookmaker" && country->country == $countryName ] | order(name asc){ name, country }`,
           { countryName }
         );
         console.log("DEBUG: fallback bmListByName:", bmListByName);
         allBookmakers = bmListByName?.map((b) => b.name).filter(Boolean) || [];
       }
       // Always log all bookmakers with country reference for inspection
-      const allBookmakersWithCountry = await fetchAllBookmakers;
-      console.log("DEBUG: allBookmakersWithCountry:", allBookmakersWithCountry);
+      // const allBookmakersWithCountry = await fetchAllBookmakers;
+      // console.log("DEBUG: allBookmakersWithCountry:", allBookmakersWithCountry);
     }
 
     // Compute bonus type counts and unique bonus types
@@ -135,8 +149,7 @@ async function getOffersData({ countryName, countryId }) {
       bookmakerCount[bm] = (bookmakerCount[bm] || 0) + 1;
     });
     const bookmakerSet = new Set([
-      ...Object.keys(bookmakerCount),
-      ...allBookmakers,
+      ...Object.keys(bookmakerCount), ...allBookmakers,
     ]);
     const bookmakerOptions = Array.from(bookmakerSet)
       .map((name) => ({ name, count: bookmakerCount[name] || 0 }))
