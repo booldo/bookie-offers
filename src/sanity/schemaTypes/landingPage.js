@@ -71,50 +71,6 @@ export default {
       description: "Description text displayed on the landing page"
     },
     {
-      name: "defaultMetaTitle",
-      title: "Meta Title",
-      type: "string"
-    },
-    {
-      name: "defaultMetaDescription",
-      title: "Meta Description",
-      type: "text"
-    },
-    {
-      name: "defaultNoindex",
-      title: "NoIndex",
-      type: "boolean"
-    },
-    {
-      name: "defaultNofollow",
-      title: "No Follow",
-      type: "boolean"
-    },
-    {
-      name: "defaultCanonicalUrl",
-      title: "Set Canonical URL",
-      type: "url"
-    },
-    {
-      name: "defaultSitemapInclude",
-      title: "Sitemap Inclusion",
-      type: "boolean",
-      initialValue: true
-    },
-    {
-      name: "sitemapExtraUrls",
-      title: "Additional Sitemap URLs",
-      type: "array",
-      of: [{ type: "url" }],
-      description: "Additional URLs to include in sitemap.xml"
-    },
-    {
-      name: "robotsTxt",
-      title: "Robots.txt Configuration",
-      type: "text",
-      description: "Content for robots.txt"
-    },
-    {
       name: "mostSearches",
       title: "Most Popular Searches",
       type: "array",
@@ -172,6 +128,50 @@ export default {
       title: "Calculator Page Title",
       type: "string",
       description: "Title to display on the calculators homepage"
+    },
+    {
+      name: "defaultMetaTitle",
+      title: "Meta Title",
+      type: "string"
+    },
+    {
+      name: "defaultMetaDescription",
+      title: "Meta Description",
+      type: "text"
+    },
+    {
+      name: "defaultNoindex",
+      title: "NoIndex",
+      type: "boolean"
+    },
+    {
+      name: "defaultNofollow",
+      title: "No Follow",
+      type: "boolean"
+    },
+    {
+      name: "defaultCanonicalUrl",
+      title: "Set Canonical URL",
+      type: "url"
+    },
+    {
+      name: "defaultSitemapInclude",
+      title: "Sitemap Inclusion",
+      type: "boolean",
+      initialValue: true
+    },
+    {
+      name: "sitemapExtraUrls",
+      title: "Additional Sitemap URLs",
+      type: "array",
+      of: [{ type: "url" }],
+      description: "Additional URLs to include in sitemap.xml"
+    },
+    {
+      name: "robotsTxt",
+      title: "Robots.txt Configuration",
+      type: "text",
+      description: "Content for robots.txt"
     }
 
   ]

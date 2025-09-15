@@ -71,7 +71,7 @@ export default {
             .catch(() => true); // Allow on error to prevent blocking
         }
       },
-      validation: Rule => Rule.required()
+      validation: Rule => Rule
     },
     {
       name: 'content',

@@ -18,7 +18,7 @@ export default function CalculatorsPage() {
   const [articles, setArticles] = useState([]);
   const [calculators, setCalculators] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [pageTitle, setPageTitle] = useState("Calculators");
+  const [pageTitle, setPageTitle] = useState("");
   const router = useRouter();
 
   useEffect(() => {
