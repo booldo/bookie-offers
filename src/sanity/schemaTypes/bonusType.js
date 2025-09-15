@@ -78,14 +78,6 @@ export default {
       title: "Bonus Name", 
       type: "string",
       validation: Rule => Rule.required(),
-      options: {
-        list: [
-          { title: "Free Bet", value: "Free Bet" },
-          { title: "Welcome Offer", value: "Welcome Offer" },
-          { title: "Deposit bonus", value: "Deposit bonus" },
-          { title: "ACCA Boost", value: "ACCA Boost" }
-        ]
-      }
     },
     {
       name: "country",
