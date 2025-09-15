@@ -399,7 +399,8 @@ export async function generateMetadata({ params }) {
   };
 }
 
-export const revalidate = 60;
+import Gone410Page from '../../410/Gone410Page';
+import { getVisibleDocOrNull } from '../../../sanity/lib/checkGoneStatus';
 
 export default async function CountryFiltersPage({ params }) {
   const awaitedParams = await params;
@@ -502,10 +503,14 @@ export default async function CountryFiltersPage({ params }) {
   
   // Check if this is an offer details page (has 3 segments: country/bonus-type/offer-slug)
   const isOfferDetailsPage = awaitedParams.filters && awaitedParams.filters.length >= 2;
-  
   if (isOfferDetailsPage) {
-    // Extract the offer slug from the last segment
     const offerSlug = awaitedParams.filters[awaitedParams.filters.length - 1];
+    // Server-side check for gone offer
+    const offer = await getVisibleDocOrNull('offers', offerSlug);
+    if (!offer) {
+      return <Gone410Page contentType="offer" />;
+    }
+    // Extract the offer slug from the last segment
     return (
       <CountryPageShell params={awaitedParams} isOfferDetailsPage={true}>
         <Suspense fallback={
