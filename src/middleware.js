@@ -1,10 +1,37 @@
 import { NextResponse } from 'next/server';
 import { checkRedirect } from './lib/redirects';
-import { checkOfferStatus, generate410Html } from './lib/gone410';
+import { generate410Html } from './lib/gone410';
+import { checkGoneStatus } from './lib/checkGoneStatus';
 
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
   
+  // Generic global 410 Gone logic for all dynamic content types
+  const dynamicPatterns = [
+    { regex: /^\/briefly\/([^\/]+)$/, type: 'article' },
+    { regex: /^\/footer\/([^\/]+)$/, type: 'footer' },
+    { regex: /^\/([^\/]+)\/[^\/]+\/([^\/]+)$/, type: 'offers' }, // offer details
+    // Add more patterns as needed
+  ];
+  for (const { regex, type } of dynamicPatterns) {
+    const match = pathname.match(regex);
+    if (match) {
+      // For offers, slug is in match[2], for others it's match[1]
+      const slug = type === 'offers' ? match[2] : match[1];
+      const { shouldReturn410, doc } = await checkGoneStatus(type, slug);
+      if (shouldReturn410) {
+        const html = generate410Html({ offer: doc, isExpired: false, isHidden: true });
+        return new Response(html, {
+          status: 410,
+          headers: {
+            'content-type': 'text/html; charset=utf-8',
+            'cache-control': 'no-cache, no-store, must-revalidate'
+          }
+        });
+      }
+    }
+  }
+
   // Check for offer pages that should return 410 status
   // Exclude calculator URLs from 410 checks
   const offerPageMatch = pathname.match(/^\/([^\/]+)\/[^\/]+\/([^\/]+)$/);

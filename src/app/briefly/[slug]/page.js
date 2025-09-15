@@ -23,10 +23,10 @@ import Gone410Page from '../../410/Gone410Page';
 import { getVisibleDocOrNull } from '../../../sanity/lib/checkGoneStatus';
 
 export default async function ArticlePage({ params }) {
-  const { slug } = params;
+  const awaitedParams = await params;
+  const { slug } = awaitedParams;
   const article = await getVisibleDocOrNull('article', slug);
   if (!article) {
-    // Optionally throw new Response(null, { status: 410 });
     return <Gone410Page contentType="article" />;
   }
   return <ArticleInner slug={slug} />;
