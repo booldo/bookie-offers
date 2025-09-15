@@ -24,6 +24,16 @@ export default {
       description: 'Link this menu page to an existing Landing Page or Country Page document'
     },
     {
+      name: 'url',
+      title: 'External URL (Optional)',
+      type: 'url',
+      description: 'If provided, clicking the menu title will redirect to this URL instead of showing the page content. Leave blank to use the page content.',
+      validation: Rule => Rule.uri({
+        allowRelative: true,
+        scheme: ['http', 'https', 'mailto', 'tel']
+      })
+    },
+    {
       name: 'slug',
       title: 'URL Slug',
       type: 'slug',
@@ -36,7 +46,7 @@ export default {
           // Allow duplicate slugs if they belong to different countries
           const { document } = context;
           if (!document?.selectedPage?._ref) return true; // Allow if no country selected
-          
+
           // Check if another document has the same slug but different country
           return context.getClient({ apiVersion: '2023-01-01' })
             .fetch(`*[_type == "hamburgerMenu" && slug.current == $slug && _id != $id]{
@@ -48,13 +58,13 @@ export default {
             .then(existingDocs => {
               // If no existing docs, allow
               if (!existingDocs || existingDocs.length === 0) return true;
-              
+
               // Check if any existing doc has the same country
               const currentCountryId = document.selectedPage._ref;
-              const hasSameCountry = existingDocs.some(doc => 
+              const hasSameCountry = existingDocs.some(doc =>
                 doc.selectedPage?._type === 'countryPage' && doc.selectedPage._id === currentCountryId
               );
-              
+
               // Allow if no existing doc has the same country
               return !hasSameCountry;
             })

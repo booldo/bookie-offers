@@ -161,6 +161,7 @@ export default function Navbar() {
           _id,
           title,
           slug,
+          url,
           content,
           noindex,
           sitemapInclude,
@@ -598,13 +599,25 @@ export default function Navbar() {
             </div>
             {hamburgerMenus.map((menu) => (
               menu?.title && !menu.noindex && menu.sitemapInclude !== false && (
-                <Link 
-                  key={menu._id || menu.title}
-                  href={`/${currentCountrySlug || ''}/${menu?.slug?.current || (menu.title || '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`.replace('//','/')} 
-                  className="hover:underline"
-                >
-                  {menu.title}
-                </Link>
+                menu.url ? (
+                  <a
+                    key={menu._id || menu.title}
+                    href={menu.url}
+                    className="hover:underline"
+                    target={menu.url.startsWith('http') ? '_blank' : '_self'}
+                    rel={menu.url.startsWith('http') ? 'noopener noreferrer' : undefined}
+                  >
+                    {menu.title}
+                  </a>
+                ) : (
+                  <Link
+                    key={menu._id || menu.title}
+                    href={`/${currentCountrySlug || ''}/${menu?.slug?.current || (menu.title || '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`.replace('//','/')}
+                    className="hover:underline"
+                  >
+                    {menu.title}
+                  </Link>
+                )
               )
             ))}
             

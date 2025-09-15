@@ -7,6 +7,7 @@ import imageUrlBuilder from '@sanity/image-url';
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { getLandingPageSettings } from "../../../sanity/lib/seo";
 
 const builder = imageUrlBuilder(client);
 function urlFor(source) {
@@ -17,6 +18,7 @@ export default function CalculatorsPage() {
   const [articles, setArticles] = useState([]);
   const [calculators, setCalculators] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [pageTitle, setPageTitle] = useState("Calculators");
   const router = useRouter();
 
   useEffect(() => {
@@ -48,6 +50,20 @@ export default function CalculatorsPage() {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    async function fetchTitle() {
+      try {
+        const landingPage = await getLandingPageSettings();
+        if (landingPage?.calculatorPageTitle) {
+          setPageTitle(landingPage.calculatorPageTitle);
+        }
+      } catch (error) {
+        console.error('Error fetching page title:', error);
+      }
+    }
+    fetchTitle();
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col bg-[#fafbfc]">
       <HomeNavbar />
@@ -61,7 +77,7 @@ export default function CalculatorsPage() {
             <Image src="/assets/back-arrow.png" alt="Back" width={28} height={28} />
           </button>
           <span className="text-green-700 text-2xl">●</span>
-          <h1 className="text-2xl font-bold">Calculators</h1>
+          <h1 className="text-2xl font-bold">{pageTitle}</h1>
         </div>
         
         <div className="flex flex-col lg:flex-row gap-8">

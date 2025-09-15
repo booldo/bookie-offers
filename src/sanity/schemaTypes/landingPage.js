@@ -161,6 +161,18 @@ export default {
       description: "Popular search terms to display on the landing page and in search suggestions",
       validation: Rule => Rule.max(20)
     },
+    {
+      name: "blogPageTitle",
+      title: "Blog Page Title",
+      type: "string",
+      description: "Title to display on the blog homepage"
+    },
+    {
+      name: "calculatorPageTitle",
+      title: "Calculator Page Title",
+      type: "string",
+      description: "Title to display on the calculators homepage"
+    }
 
   ]
 };
