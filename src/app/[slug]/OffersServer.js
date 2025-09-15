@@ -71,15 +71,25 @@ async function getOffersData({ countryName, countryId }) {
     // Fetch all bonus types and bookmakers for the country (ensure dropdowns list all, even with zero offers)
     let allBonusTypes = [];
     let allBookmakers = [];
-    let allBookmakersById = {};
     if (countryId) {
+      console.log('DEBUG: countryId:', countryId);
+      console.log('DEBUG: countryName:', countryName);
       const [btList, bmList] = await Promise.all([
         client.fetch(`*[_type == "bonusType" && country._ref == $cid && isActive == true] | order(name asc){ name }`, { cid: countryId }),
-        client.fetch(`*[_type == "bookmaker" && country._ref == $cid && isActive == true] | order(name asc){ _id, name }`, { cid: countryId })
+        client.fetch(`*[_type == "bookmaker" && country._ref == $cid && isActive == true] | order(name asc){ name, country }`, { cid: countryId })
       ]);
+      console.log('DEBUG: raw bmList:', bmList);
       allBonusTypes = btList?.map(b => b.name).filter(Boolean) || [];
-      allBookmakers = bmList?.map(b => ({ _id: b._id, name: b.name })).filter(b => b.name) || [];
-      allBookmakersById = Object.fromEntries(allBookmakers.map(b => [b._id, b]));
+      allBookmakers = bmList?.map(b => b.name).filter(Boolean) || [];
+      // If bmList is empty, try alternate query by country name
+      if (allBookmakers.length === 0 && countryName) {
+        const bmListByName = await client.fetch(`*[_type == "bookmaker" && country->country == $countryName && isActive == true] | order(name asc){ name, country }`, { countryName });
+        console.log('DEBUG: fallback bmListByName:', bmListByName);
+        allBookmakers = bmListByName?.map(b => b.name).filter(Boolean) || [];
+      }
+      // Always log all bookmakers with country reference for inspection
+      const allBookmakersWithCountry = await client.fetch(`*[_type == "bookmaker" && isActive == true]{name, country->{_id, country, countryCode}}`);
+      console.log('DEBUG: allBookmakersWithCountry:', allBookmakersWithCountry);
     }
     
     // Compute bonus type counts and unique bonus types
@@ -93,19 +103,18 @@ async function getOffersData({ countryName, countryId }) {
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => a.name.localeCompare(b.name));
     
-    // Compute bookmaker counts and unique bookmakers using _id for merging
-    const bookmakerCountById = {};
+    // Compute bookmaker counts and unique bookmakers
+    const bookmakerCount = {};
     offers.forEach(offer => {
-      const bmId = offer.bookmaker?._id;
-      if (bmId) {
-        bookmakerCountById[bmId] = (bookmakerCountById[bmId] || 0) + 1;
-      }
+      const bm = offer.bookmaker?.name || "Other";
+      bookmakerCount[bm] = (bookmakerCount[bm] || 0) + 1;
     });
-    // Always include all active bookmakers for the country, even if count is 0
-    const bookmakerOptions = allBookmakers.map(b => ({
-      name: b.name,
-      count: bookmakerCountById[b._id] || 0
-    })).sort((a, b) => a.name.localeCompare(b.name));
+    const bookmakerSet = new Set([...Object.keys(bookmakerCount), ...allBookmakers]);
+    const bookmakerOptions = Array.from(bookmakerSet)
+      .map(name => ({ name, count: bookmakerCount[name] || 0 }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+    console.log('DEBUG: allBookmakers:', allBookmakers);
+    console.log('DEBUG: bookmakerOptions (all, including 0 offers):', bookmakerOptions);
     
     // Compute payment method counts from actual data
     const paymentMethodCount = {};
