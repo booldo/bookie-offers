@@ -139,18 +139,7 @@ export default {
       description: "The type of bonus this offer is (e.g., 'Free Bet', 'Deposit Bonus', 'Risk-Free Bet')",
       to: [{ type: "bonusType" }],
       validation: Rule => Rule.required(),
-      options: {
-        filter: ({document}) => {
-          // If no country is selected, show all bonus types
-          if (!document?.country?._ref) return {}
-          
-          // Filter bonus types by the selected country reference
-          return {
-            filter: 'country._ref == $countryId',
-            params: { countryId: document.country._ref }
-          }
-        }
-      }
+      inputComponent: require('./BonusTypeDropdown').default
     },
     {
       name: "bookmaker",
