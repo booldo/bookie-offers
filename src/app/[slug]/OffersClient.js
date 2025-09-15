@@ -16,7 +16,8 @@ export default function OffersClient({
   bonusTypeOptions, 
   bookmakerOptions, 
   advancedOptions,
-  initialFilter 
+  initialFilter,
+  pageTitle
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -207,11 +208,11 @@ export default function OffersClient({
     <>
 
 
-      {/* Best Offers Header */}
+      {/* Page Title Header */}
       <div className="sticky top-16 z-40 bg-white sm:static sm:bg-transparent">
         <div className="flex items-center justify-between my-4">
           <h1 className="font-['General_Sans'] font-semibold text-[24px] leading-[100%] text-[#272932] whitespace-nowrap">
-            Best Offers <span className="font-['General_Sans'] font-medium text-[16px] leading-[100%] tracking-[1%] align-middle text-[#696969]">{offers.length}</span>
+            {pageTitle || 'Best Offers'} <span className="font-['General_Sans'] font-medium text-[16px] leading-[100%] tracking-[1%] align-middle text-[#696969]">{offers.length}</span>
           </h1>
           <div className="flex items-center gap-1">
             <label className="text-sm text-gray-500 mr-0">Sort By:</label>

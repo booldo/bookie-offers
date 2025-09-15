@@ -3,6 +3,23 @@
 
 export const defaultLandingPageData = {
   _type: "landingPage",
+  siteHeading1: "No Bias. No Hype.",
+  siteHeading2: "Just Betting Options.",
+  siteDescription: [
+    {
+      _type: "block",
+      _key: "description",
+      style: "normal",
+      children: [
+        {
+          _type: "span",
+          _key: "description-text",
+          text: "Booldo is built to help you bet smarter. We show you all the top bookmakers and offers, even those we don't partner with, so you can decide with confidence. No noisy tips. No clutter. Just clear, honest info.",
+          marks: []
+        }
+      ]
+    }
+  ],
   defaultMetaTitle: "Booldo - No Bias. No Hype. Just Betting Options.",
   defaultMetaDescription: "Booldo is built to help you bet smarter. We show you all the top bookmakers and offers, even those we don't partner with, so you can decide with confidence.",
   defaultNoindex: false,

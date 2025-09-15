@@ -28,9 +28,7 @@ export default function HomeNavbar() {
   const [popularSearches, setPopularSearches] = useState([]);
   const searchDebounceRef = useRef();
   const menuRef = useRef();
-  const [hamburgerMenu, setHamburgerMenu] = useState(null);
-  const [aboutPage, setAboutPage] = useState(null);
-  const [contactPage, setContactPage] = useState(null);
+  const [hamburgerMenus, setHamburgerMenus] = useState([]);
 
   // Load recent searches from localStorage on mount
   useEffect(() => {
@@ -131,45 +129,24 @@ export default function HomeNavbar() {
 
   // Load hamburger menu data from Sanity
   useEffect(() => {
-    const fetchHamburgerMenu = async () => {
+    const fetchHamburgerMenus = async () => {
       try {
-        const menuData = await client.fetch(`*[_type == "hamburgerMenu" && isActive == true][0]{
+        const menuData = await client.fetch(`*[_type == "hamburgerMenu" && selectedPage->_type == "landingPage"]{
+          _id,
           title,
+          slug,
           content,
           noindex,
-          sitemapInclude,
-          additionalMenuItems[]{
-            label,
-            content,
-            isActive,
-            noindex,
-            sitemapInclude
-          }
-        }`);
-        setHamburgerMenu(menuData);
+          sitemapInclude
+        } | order(title asc)`);
+        setHamburgerMenus(menuData || []);
       } catch (e) {
-        console.error('Failed to fetch hamburger menu:', e);
+        console.error('Failed to fetch hamburger menus:', e);
       }
     };
-    fetchHamburgerMenu();
+    fetchHamburgerMenus();
   }, []);
 
-  // Load landing page about and contact pages from Sanity
-  useEffect(() => {
-    const fetchLandingPages = async () => {
-      try {
-        const [aboutData, contactData] = await Promise.all([
-          client.fetch(`*[_type == "about" && country == "Landing Page"][0]{ noindex, sitemapInclude }`),
-          client.fetch(`*[_type == "contact" && country == "Landing Page"][0]{ noindex, sitemapInclude }`)
-        ]);
-        setAboutPage(aboutData);
-        setContactPage(contactData);
-      } catch (e) {
-        console.error('Failed to fetch landing pages:', e);
-      }
-    };
-    fetchLandingPages();
-  }, []);
 
   // Update selected flag based on current path (dynamic)
   useEffect(() => {
@@ -302,7 +279,7 @@ export default function HomeNavbar() {
       const bannersResults = await client.fetch(bannersQuery, { term: `*${q}*` });
       results = [...results, ...bannersResults];
       
-      // Search comparison content (worldwide)
+      // Search home content (worldwide)
       const comparisonQuery = `*[_type == "comparison" && (
         title match $term ||
         pt::text(content) match $term
@@ -466,11 +443,11 @@ export default function HomeNavbar() {
             </svg>
           </button>
           {dropdownOpen && (
-            <div className="absolute right-0 mt-2 w-56 bg-white border rounded shadow-xl z-[100]">
+            <div className="absolute right-0 mt-2 w-56 bg-[#FFFFFF] rounded-xl shadow-xl border border-gray-100 py-2 z-[100]">
               {countriesLoading ? (
                 // Skeleton loading for countries
                 Array.from({ length: 6 }).map((_, index) => (
-                  <div key={index} className="flex items-center justify-between w-full px-4 py-2 animate-pulse">
+                  <div key={index} className="flex items-center justify-between w-full px-3 py-2 animate-pulse">
                     <div className="flex items-center gap-2">
                       <div className="w-5 h-5 bg-gray-200 rounded"></div>
                       <div className="h-4 bg-gray-200 rounded w-20"></div>
@@ -481,12 +458,12 @@ export default function HomeNavbar() {
                 flags.map(flag => (
                                   <button
                   key={flag.name || flag.country}
-                  className="flex items-center justify-between w-full px-4 py-2 hover:bg-gray-100"
+                  className="flex items-center justify-between w-full px-3 py-2 hover:bg-gray-50 rounded-lg mx-1"
                   onClick={() => handleFlagSelect(flag)}
                 >
                   <div className="flex items-center gap-2">
                     <img src={flag.src} alt={flag.name || flag.country} className="w-5 h-5" />
-                    <span className="font-['General_Sans']">{flag.name || flag.country}</span>
+                    <span className="text-[#272932] text-[14px] leading-[24px] font-medium font-['General_Sans']">{flag.name || flag.country}</span>
                   </div>
                                       {(selectedFlag.name || selectedFlag.country) === (flag.name || flag.country) && (
                     <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="green" strokeWidth="3">
@@ -508,7 +485,7 @@ export default function HomeNavbar() {
             {/* Default Menu Items */}
             <Link 
               href={pathname.startsWith('/ng') ? '/ng' : pathname.startsWith('/gh') ? '/gh' : '/'} 
-              className="hover:underline font-['General_Sans']"
+              className="hover:underline"
             >
               Home
             </Link>
@@ -533,37 +510,21 @@ export default function HomeNavbar() {
                 </div>
               )}
             </div>
-            {aboutPage && !aboutPage.noindex && aboutPage.sitemapInclude !== false && (
-              <Link href="/about" className="hover:underline font-['General_Sans']">About Us</Link>
-            )}
-            {contactPage && !contactPage.noindex && contactPage.sitemapInclude !== false && (
-              <Link href="/contact" className="hover:underline font-['General_Sans']">Contact Us</Link>
-            )}
-            
-            {/* Additional Dynamic Menu Items */}
-            {hamburgerMenu?.additionalMenuItems?.map((item, index) => (
-              item.isActive && !item.noindex && item.sitemapInclude !== false && (
-                <Link
-                  key={index}
-                  href={`/hamburger-menu/${item.label.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`}
+            {hamburgerMenus.map((menu) => (
+              menu?.title && !menu.noindex && menu.sitemapInclude !== false && (
+                <Link 
+                  key={menu._id || menu.title}
+                  href={`/${menu?.slug?.current || (menu.title || '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`} 
                   className="hover:underline font-['General_Sans']"
                 >
-                  {item.label}
+                  {menu.title}
                 </Link>
               )
             ))}
+            
+            
           </div>
-          {/* Hamburger Menu Title - Clickable to show content */}
-          {hamburgerMenu?.title && !hamburgerMenu.noindex && hamburgerMenu.sitemapInclude !== false && (
-            <div className="px-10 py-4">
-              <Link 
-                href="/hamburger-menu/main"
-                className="text-sm text-gray-500 font-medium hover:text-gray-700 hover:underline cursor-pointer font-['General_Sans']"
-              >
-                {hamburgerMenu.title}
-              </Link>
-            </div>
-          )}
+          
         </div>
       )}
       {/* Search Suggestion Panel + Results */}
@@ -632,7 +593,7 @@ export default function HomeNavbar() {
                         case 'banner':
                           return item.title || 'Banner';
                         case 'comparison':
-                          return item.title || 'Comparison';
+                          return item.title || 'Home Content';
                         case 'faq':
                           return item.question || 'FAQ';
                         default:
@@ -836,7 +797,7 @@ export default function HomeNavbar() {
                                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
                                     <circle cx="12" cy="10" r="3"/>
                                   </svg>
-                                  {item.country}
+                                  {item.country.country}
                                 </span>
                               </div>
                             )}

@@ -79,6 +79,27 @@ export default {
       validation: Rule => Rule.required(),
     },
     {
+      name: "pageTitle",
+      title: "Page Title",
+      type: "string",
+      description: "Heading shown above the offers list on the country page",
+      initialValue: "Best Offers"
+    },
+    {
+      name: "description",
+      title: "Page Description",
+      type: "string",
+      description: "Short description for country cards (max 5 words)",
+      validation: Rule => Rule.required().custom((value) => {
+        if (!value) return true; // Let required validation handle empty values
+        const wordCount = value.trim().split(/\s+/).length;
+        if (wordCount > 5) {
+          return `Description must be 5 words or less (currently ${wordCount} words)`;
+        }
+        return true;
+      })
+    },
+    {
       name: "pageFlag",
       title: "Page Flag",
       type: "image",
@@ -172,6 +193,53 @@ export default {
       initialValue: true,
       description: "Whether this country page should be displayed"
     },
+    {
+      name: "mostSearches",
+      title: "Most Popular Searches",
+      type: "array",
+      of: [
+        {
+          type: "object",
+          fields: [
+            {
+              name: "searchTerm",
+              title: "Search Term",
+              type: "string",
+              validation: Rule => Rule.required().min(1).max(100)
+            },
+            {
+              name: "isActive",
+              title: "Active",
+              type: "boolean",
+              initialValue: true,
+              description: "Whether this search term should be displayed"
+            },
+            {
+              name: "order",
+              title: "Display Order",
+              type: "number",
+              initialValue: 1,
+              description: "Order in which this search term appears (lower numbers appear first)"
+            }
+          ],
+          preview: {
+            select: {
+              title: "searchTerm",
+              subtitle: "isActive",
+              order: "order"
+            },
+            prepare({ title, subtitle, order }) {
+              return {
+                title: title || "Untitled",
+                subtitle: `${subtitle ? 'Active' : 'Inactive'} - Order: ${order || 1}`
+              };
+            }
+          }
+        }
+      ],
+      description: "Popular search terms specific to this country (overrides global popular searches)",
+      validation: Rule => Rule.max(20)
+    }
 
   ]
 };

@@ -1,9 +1,9 @@
 "use client";
 import { useParams } from "next/navigation";
-import HomeNavbar from "../../../components/HomeNavbar";
-import Footer from "../../../components/Footer";
+import HomeNavbar from "../../../../components/HomeNavbar";
+import Footer from "../../../../components/Footer";
 import Link from "next/link";
-import { client } from "../../../sanity/lib/client";
+import { client } from "../../../../sanity/lib/client";
 import imageUrlBuilder from '@sanity/image-url';
 import { useEffect, useState } from "react";
 import { PortableText } from '@portabletext/react';
@@ -79,7 +79,7 @@ const portableTextComponents = {
   types: {
     image: ({ value }) => {
       const src = value ? imageUrlBuilder(client).image(value).width(1200).url() : '';
-      const alt = value?.alt || value?.asset?._ref || 'Article image';
+      const alt = value?.alt || value?.asset?._ref || 'Calculator image';
       if (!src) return null;
       return (
         <figure className="my-6">
@@ -140,10 +140,11 @@ const portableTextComponents = {
   },
 };
 
-function ArticleInner({ slug }) {
+function CalculatorInner({ slug }) {
   const router = useRouter();
-  const [article, setArticle] = useState(null);
+  const [calculator, setCalculator] = useState(null);
   const [articles, setArticles] = useState([]);
+  const [otherCalculators, setOtherCalculators] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -151,37 +152,46 @@ function ArticleInner({ slug }) {
     async function fetchData() {
       setLoading(true);
       try {
-        const [articleData, allArticles] = await Promise.all([
-          client.fetch(`*[_type == "article" && slug.current == $slug][0]{
+        const [calculatorData, allArticles, otherCalculatorsData] = await Promise.all([
+          client.fetch(`*[_type == "calculator" && slug.current == $slug][0]{
             _id,
             title,
-            slug,
-            mainImage,
-            content,
+            calculatorImage,
+            calculatorImageAlt,
+            briefDescription,
+            codeOutput,
             noindex,
             sitemapInclude
           }`, { slug }),
-          client.fetch(`*[_type == "article" && (noindex != true) && (sitemapInclude != false)]|order(_createdAt desc){
+          client.fetch(`*[_type == "article"]|order(_createdAt desc)[0...5]{
             _id,
             title,
-            slug,
+            "slug": slug.current,
             mainImage
-          }`)
+          }`),
+          client.fetch(`*[_type == "calculator" && slug.current != $slug && isActive == true]|order(_createdAt desc)[0...3]{
+            _id,
+            title,
+            "slug": slug.current,
+            calculatorImage,
+            briefDescription
+          }`, { slug })
         ]);
         
-        // Check if article is hidden and set state
-        if (articleData && (articleData.noindex === true || articleData.sitemapInclude === false)) {
-          console.log('Article is hidden, setting hidden state');
-          setError('This article has been removed or is no longer available.');
+        // Check if calculator is hidden and set state
+        if (calculatorData && (calculatorData.noindex === true || calculatorData.sitemapInclude === false)) {
+          console.log('Calculator is hidden, setting hidden state');
+          setError('This calculator has been removed or is no longer available.');
           setLoading(false);
           return;
         }
         
-        setArticle(articleData);
+        setCalculator(calculatorData);
         setArticles(allArticles);
+        setOtherCalculators(otherCalculatorsData);
         setLoading(false);
       } catch (err) {
-        setError("Failed to load article");
+        setError("Failed to load calculator");
         setLoading(false);
       }
     }
@@ -225,21 +235,22 @@ function ArticleInner({ slug }) {
       </div>
     );
   }
-  if (error || !article) {
+
+  if (error || !calculator) {
     return (
       <div className="min-h-screen flex flex-col bg-[#fafbfc]">
         <HomeNavbar />
         <main className="flex-1 max-w-4xl mx-auto py-16 px-4">
           <div className="text-center">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">Content No Longer Available</h1>
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">Calculator No Longer Available</h1>
             <p className="text-gray-600 mb-8">
-              {error || 'This article has been removed or is no longer available.'}
+              {error || 'This calculator has been removed or is no longer available.'}
             </p>
             <button
-              onClick={() => router.push('/briefly')}
+              onClick={() => router.push('/briefly/calculators')}
               className="bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg px-6 py-3 transition"
             >
-              Back to Blog
+              Back to Calculators
             </button>
           </div>
         </main>
@@ -257,35 +268,37 @@ function ArticleInner({ slug }) {
       <main className="flex-1 max-w-6xl mx-auto py-10 px-4 w-full">
         <div className="flex items-center gap-2 mb-4">
           <button
-            onClick={() => router.push('/briefly')}
+            onClick={() => router.push('/briefly/calculators')}
             className="focus:outline-none"
             aria-label="Go back"
           >
             <Image src="/assets/back-arrow.png" alt="Back" width={28} height={28} />
           </button>
-          <h1 className="text-3xl font-bold">{article.title}</h1>
+          <h1 className="text-3xl font-bold">{calculator.title}</h1>
         </div>
         <div className="flex flex-col md:flex-row gap-8">
-          {/* Main Article Content */}
+          {/* Main Calculator Content */}
           <div className="flex-1">
             <div className="text-gray-800 text-base space-y-6 mb-8">
-              <PortableText value={article.content} components={portableTextComponents} />
+              {calculator.codeOutput && (
+                <PortableText value={calculator.codeOutput} components={portableTextComponents} />
+              )}
             </div>
           </div>
           {/* Sidebar */}
           <aside className="w-full md:w-80 flex-shrink-0">
             <div className="flex flex-col gap-4">
               {sidebarArticles.map((a) => {
-                const isActive = a.slug.current === article.slug.current;
+                const isActive = a.slug === calculator.slug?.current;
                 return (
                   <Link
                     key={a._id}
-                    href={`/briefly/${a.slug.current}`}
+                    href={`/briefly/${a.slug}`}
                     className={`flex gap-3 items-center bg-white rounded-lg shadow-sm p-2 transition hover:shadow-lg hover:scale-[1.03] cursor-pointer ${isActive ? "border-2 border-green-600" : ""}`}
                   >
                     <div className="w-16 h-16 flex-shrink-0 rounded overflow-hidden bg-gray-100">
                       {a.mainImage ? (
-                        <img src={urlFor(a.mainImage)} alt={a.title} className="object-cover w-full h-full" />
+                        <img src={urlFor(a.mainImage).width(64).height(64).url()} alt={a.title} className="object-cover w-full h-full" />
                       ) : (
                         <div className="w-full h-full bg-gray-200" />
                       )}
@@ -305,4 +318,4 @@ function ArticleInner({ slug }) {
   );
 }
 
-export default ArticleInner; 
+export default CalculatorInner;

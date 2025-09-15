@@ -68,7 +68,7 @@ export async function getAllSitemapEntries() {
 
     // Fetch basic filter options (bonus types and bookmakers) with proper country reference
     const basicFiltersQuery = `{
-      "bonusTypes": *[_type == "bonusType"]{
+      "bonusTypes": *[_type == "bonusType" && (isActive == true || !defined(isActive)) && (sitemapInclude == true || !defined(sitemapInclude))]{
         name,
         slug,
         sitemapInclude,
@@ -79,7 +79,7 @@ export async function getAllSitemapEntries() {
         },
         _updatedAt
       },
-      "bookmakers": *[_type == "bookmaker"]{
+      "bookmakers": *[_type == "bookmaker" && (isActive == true || !defined(isActive)) && (sitemapInclude == true || !defined(sitemapInclude))]{
         name,
         slug,
         sitemapInclude,

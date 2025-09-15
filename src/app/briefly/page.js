@@ -50,7 +50,7 @@ export default function BrieflyPage() {
             <Image src="/assets/back-arrow.png" alt="Back" width={28} height={28} />
           </button>
           <span className="text-green-700 text-2xl">●</span>
-          <h2 className="text-xl sm:text-2xl font-bold font-['General_Sans']">Blog</h2>
+          <h1 className="text-xl sm:text-2xl font-bold font-['General_Sans']">Blog</h1>
         </div>
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">

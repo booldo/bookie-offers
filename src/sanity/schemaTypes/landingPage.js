@@ -1,6 +1,6 @@
 export default {
   name: "landingPage",
-  title: "Landing Page Metadata",
+  title: "World Wide Page",
   type: "document",
   preview: {
     select: {
@@ -9,39 +9,95 @@ export default {
     prepare({ title }) {
       return {
         title: title || "Untitled",
-        subtitle: "Landing page SEO settings"
+        subtitle: "Global landing page SEO settings"
       };
     }
   },
   fields: [
     {
+      name: "siteHeading1",
+      title: "Site Heading 1",
+      type: "string",
+      description: "Main heading displayed on the landing page"
+    },
+    {
+      name: "siteHeading2",
+      title: "Site Heading 2",
+      type: "string",
+      description: "Secondary heading displayed on the landing page"
+    },
+    {
+      name: "siteDescription",
+      title: "Site Description",
+      type: "array",
+      of: [
+        {
+          type: "block",
+          styles: [
+            { title: "Normal", value: "normal" },
+            { title: "H1", value: "h1" },
+            { title: "H2", value: "h2" },
+            { title: "H3", value: "h3" },
+            { title: "H4", value: "h4" },
+            { title: "Quote", value: "blockquote" }
+          ],
+          lists: [
+            { title: "Bullet", value: "bullet" },
+            { title: "Number", value: "number" }
+          ],
+          marks: {
+            decorators: [
+              { title: "Strong", value: "strong" },
+              { title: "Emphasis", value: "em" },
+              { title: "Code", value: "code" }
+            ],
+            annotations: [
+              {
+                title: "URL",
+                name: "link",
+                type: "object",
+                fields: [
+                  {
+                    title: "URL",
+                    name: "href",
+                    type: "url"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      description: "Description text displayed on the landing page"
+    },
+    {
       name: "defaultMetaTitle",
-      title: "Default Page Title",
+      title: "Meta Title",
       type: "string"
     },
     {
       name: "defaultMetaDescription",
-      title: "Default Page Description",
+      title: "Meta Description",
       type: "text"
     },
     {
       name: "defaultNoindex",
-      title: "Default Search Engine Indexing",
+      title: "NoIndex",
       type: "boolean"
     },
     {
       name: "defaultNofollow",
-      title: "Default Link Following",
+      title: "No Follow",
       type: "boolean"
     },
     {
       name: "defaultCanonicalUrl",
-      title: "Default Canonical URL",
+      title: "Set Canonical URL",
       type: "url"
     },
     {
       name: "defaultSitemapInclude",
-      title: "Default Sitemap Inclusion",
+      title: "Sitemap Inclusion",
       type: "boolean",
       initialValue: true
     },
