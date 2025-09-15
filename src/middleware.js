@@ -6,8 +6,9 @@ export async function middleware(request) {
   const { pathname } = request.nextUrl;
   
   // Check for offer pages that should return 410 status
+  // Exclude calculator URLs from 410 checks
   const offerPageMatch = pathname.match(/^\/([^\/]+)\/[^\/]+\/([^\/]+)$/);
-  if (offerPageMatch) {
+  if (offerPageMatch && !pathname.includes('/calculator/')) {
     const [, countrySlug, offerSlug] = offerPageMatch;
     console.log('🔍 Checking offer for 410 status:', { countrySlug, offerSlug });
     

@@ -93,15 +93,7 @@ export function ExpiredOffersTool() {
           _id, _type, title, "path": "/briefly/calculator/" + slug.current, isActive, sitemapInclude, noindex, _updatedAt
         },
         "hamburgerMenu": *[_type == "hamburgerMenu" && !(_id in path("drafts.**"))]{ 
-          _id, _type, title, slug, sitemapInclude, noindex, _updatedAt,
-          "additionalMenuItems": additionalMenuItems[]{
-            _id,
-            label,
-            isActive,
-            sitemapInclude,
-            noindex,
-            _updatedAt
-          }
+          _id, _type, title, slug, sitemapInclude, noindex, _updatedAt
         },
         "footer": *[_type == "footer" && !(_id in path("drafts.**"))][0]{
           _id, _type, sitemapInclude, noindex, _updatedAt,
@@ -245,25 +237,6 @@ export function ExpiredOffersTool() {
             contentType: 'Hamburger Menu',
             displayTitle: menu.title || 'Hamburger Menu'
           });
-          
-          // Add additional menu items
-          if (menu.additionalMenuItems) {
-            menu.additionalMenuItems.forEach(item => {
-              if (item.isActive) {
-                flattenedPages.push({
-                  _id: item._id,
-                  _type: 'hamburgerMenuItem',
-                  title: item.label,
-                  path: `/hamburger-menu/${item.label?.toLowerCase().replace(/\s+/g, '-')}`,
-                  sitemapInclude: item.sitemapInclude,
-                  noindex: item.noindex,
-                  _updatedAt: item._updatedAt,
-                  contentType: 'Hamburger Menu Item',
-                  displayTitle: item.label || 'Menu Item'
-                });
-              }
-            });
-          }
         });
       }
       

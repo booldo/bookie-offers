@@ -153,28 +153,19 @@ export default {
       ],
       description: 'The content that will be displayed when the hamburger menu title is clicked'
     },
-    
-    // Metadata fields for SEO
     {
       name: 'metaTitle',
       title: 'Meta Title',
       type: 'string',
-      description: 'Title for SEO (appears in browser tab and search results)',
+      description: 'SEO: Custom meta title for this page',
       validation: Rule => Rule.max(60).warning('Should be under 60 characters')
     },
     {
       name: 'metaDescription',
       title: 'Meta Description',
       type: 'text',
-      description: 'Description for SEO (appears in search results)',
+      description: 'SEO: Custom meta description for this page',
       validation: Rule => Rule.max(160).warning('Should be under 160 characters')
-    },
-    {
-      name: 'sitemapInclude',
-      title: 'Include in Sitemap',
-      type: 'boolean',
-      description: 'SEO: Should this page be included in sitemap.xml?',
-      initialValue: true
     },
     {
       name: 'noindex',
@@ -194,7 +185,13 @@ export default {
       type: 'url',
       description: 'SEO: Canonical URL for this page (leave blank for default)'
     },
-
+    {
+      name: 'sitemapInclude',
+      title: 'Include in Sitemap',
+      type: 'boolean',
+      description: 'SEO: Should this page be included in sitemap.xml?',
+      initialValue: true
+    },
     {
       name: 'updatedAt',
       title: 'Last Updated',

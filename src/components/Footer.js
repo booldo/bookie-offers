@@ -107,11 +107,7 @@ export default function Footer() {
                 type,
                 hamburgerMenuItem->{
                   _id,
-                  title,
-                  additionalMenuItems[]{
-                    label,
-                    isActive
-                  }
+                  title
                 },
                 isActive
               }
@@ -198,18 +194,6 @@ export default function Footer() {
                   >
                     {getMenuItemLabel(item)}
                   </a>
-                  {/* Additional hamburger menu items */}
-                  {item.type === 'hamburger' && item.hamburgerMenuItem?.additionalMenuItems?.map((menuItem, menuIndex) => (
-                    menuItem.isActive && (
-                      <a 
-                        key={`${index}-${menuIndex}`}
-                        href={getHamburgerItemUrl(menuItem.label)} 
-                        className="block font-['General_Sans'] font-medium text-[14px] leading-[100%] tracking-[1%] text-[#272932] underline decoration-solid decoration-0 decoration-auto"
-                      >
-                        {menuItem.label}
-                      </a>
-                    )
-                  ))}
                 </div>
               )
             ))}

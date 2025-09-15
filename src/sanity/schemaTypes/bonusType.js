@@ -196,6 +196,13 @@ export default {
       description: "SEO: Should this page be included in sitemap.xml?",
       initialValue: true
     },
+    {
+      name: "isActive",
+      title: "Is Active",
+      type: "boolean",
+      initialValue: true,
+      description: "Whether this bonus type is currently active and should be displayed"
+    }
 
   ]
 }; 

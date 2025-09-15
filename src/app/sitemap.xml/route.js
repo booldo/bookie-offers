@@ -64,26 +64,30 @@ export async function GET() {
       });
 
       // Fetch hamburger menu pages
-      const hamburgerPages = await client.fetch(`*[_type == "hamburgerMenu" && isActive == true]{
+      const hamburgerPages = await client.fetch(`*[_type == "hamburgerMenu"]{
         noindex,
         sitemapInclude,
         _updatedAt,
         updatedAt,
-        slug,
-        additionalMenuItems[]{
-          label,
-          isActive,
-          noindex,
-          sitemapInclude,
-          _updatedAt,
-          updatedAt
-        }
+        slug
       }`);
+      
+      console.log('Fetched hamburger menu pages:', hamburgerPages.length);
+      console.log('Hamburger menu pages data:', JSON.stringify(hamburgerPages, null, 2));
 
       // Add hamburger menu pages to sitemap
       hamburgerPages.forEach(menu => {
-        // Check if main menu is hidden
-        if (!menu.noindex && menu.sitemapInclude !== false) {
+        console.log('Processing hamburger menu:', {
+          slug: menu.slug,
+          noindex: menu.noindex,
+          sitemapInclude: menu.sitemapInclude
+        });
+        
+        // Check if main menu should be included in sitemap
+        const shouldInclude = !menu.noindex && (menu.sitemapInclude === true || menu.sitemapInclude === undefined);
+        console.log('Should include in sitemap:', shouldInclude);
+        
+        if (shouldInclude) {
           // Add main hamburger menu page
           urls.push({
             loc: `${baseUrl}/hamburger-menu/main`,
@@ -93,26 +97,19 @@ export async function GET() {
 
           // Add the top-level Menu Page at /[slug]
           const menuSlug = typeof menu.slug === 'string' ? menu.slug : menu.slug?.current;
+          console.log('Menu slug extracted:', menuSlug);
           if (menuSlug) {
+            const menuUrl = `${baseUrl}/${menuSlug}`;
+            console.log('Adding menu URL to sitemap:', menuUrl);
             urls.push({
-              loc: `${baseUrl}/${menuSlug}`,
+              loc: menuUrl,
               lastmod: (menu.updatedAt || menu._updatedAt) ? new Date(menu.updatedAt || menu._updatedAt).toISOString() : new Date().toISOString(),
               priority: "0.6"
             });
+          } else {
+            console.log('No valid slug found for menu:', menu);
           }
         }
-        
-        // Add additional menu items
-        menu.additionalMenuItems?.forEach(item => {
-          if (item.isActive && item.label && !item.noindex && item.sitemapInclude !== false) {
-            const slug = item.label.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-            urls.push({
-              loc: `${baseUrl}/hamburger-menu/${slug}`,
-              lastmod: (item.updatedAt || item._updatedAt) ? new Date(item.updatedAt || item._updatedAt).toISOString() : new Date().toISOString(),
-              priority: "0.6"
-            });
-          }
-        });
       });
 
     } catch (error) {
@@ -270,6 +267,9 @@ export async function GET() {
     // Remove duplicates based on loc
     const uniqueUrls = urls
       .filter((url, index, self) => index === self.findIndex(u => u.loc === url.loc));
+
+    console.log('Total URLs in sitemap:', uniqueUrls.length);
+    console.log('Hamburger menu URLs:', uniqueUrls.filter(url => url.loc.includes('/hamburger-menu/') || url.loc.includes('/stack') || url.loc.includes('/about')).map(url => url.loc));
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

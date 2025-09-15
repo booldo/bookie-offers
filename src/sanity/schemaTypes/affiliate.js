@@ -246,13 +246,24 @@ export default {
         return true;
       })
     },
-
     {
-      name: "sitemapInclude",
-      title: "Include in Sitemap",
+      name: "isActive",
+      title: "Active",
       type: "boolean",
-      description: "SEO: Should this page be included in sitemap.xml?",
-      initialValue: true
+      initialValue: true,
+      description: "Whether this affiliate link is currently active"
+    },
+    {
+      name: "metaTitle",
+      title: "Meta Title",
+      type: "string",
+      description: "SEO: Custom meta title for this page"
+    },
+    {
+      name: "metaDescription",
+      title: "Meta Description",
+      type: "text",
+      description: "SEO: Custom meta description for this page"
     },
     {
       name: "noindex",
@@ -273,12 +284,12 @@ export default {
       description: "SEO: Canonical URL for this page (leave blank for default)"
     },
     {
-      name: "isActive",
-      title: "Active",
+      name: "sitemapInclude",
+      title: "Include in Sitemap",
       type: "boolean",
-      initialValue: true,
-      description: "Whether this affiliate link is currently active"
-    },
+      description: "SEO: Should this page be included in sitemap.xml?",
+      initialValue: true
+    }
 
   ]
 }; 
