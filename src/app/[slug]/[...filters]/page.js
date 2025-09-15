@@ -1,11 +1,92 @@
+export const dynamic = 'force-dynamic';
+
 import CountryPageShell, { generateStaticParams } from '../CountryPageShell';
 import DynamicOffers from '../DynamicOffers';
 import OfferDetailsInner from './OfferDetailsInner';
 import { Suspense } from "react";
-import { redirect, notFound } from 'next/navigation';
+import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import { client } from '../../../sanity/lib/client';
 import { urlFor } from '../../../sanity/lib/image';
-import Gone410Page from './Gone410Page';
+import { PortableText } from '@portabletext/react';
+
+// Custom components for PortableText rendering
+const portableTextComponents = {
+  block: {
+    h1: ({ children }) => (
+      <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">{children}</h1>
+    ),
+    h2: ({ children }) => (
+      <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3">{children}</h2>
+    ),
+    h3: ({ children }) => (
+      <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">{children}</h3>
+    ),
+    h4: ({ children }) => (
+      <h4 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">{children}</h4>
+    ),
+    normal: ({ children }) => (
+      <p className="mb-4 text-gray-800 leading-relaxed">{children}</p>
+    ),
+    blockquote: ({ children }) => (
+      <blockquote className="border-l-4 border-blue-500 pl-4 italic text-gray-700 mb-4">{children}</blockquote>
+    ),
+  },
+  list: {
+    bullet: ({ children }) => (
+      <ul className="list-disc list-inside mb-4 space-y-1">{children}</ul>
+    ),
+    number: ({ children }) => (
+      <ol className="list-decimal list-inside mb-4 space-y-1">{children}</ol>
+    ),
+  },
+  listItem: {
+    bullet: ({ children }) => (
+      <li className="text-gray-800">{children}</li>
+    ),
+    number: ({ children }) => (
+      <li className="text-gray-800">{children}</li>
+    ),
+  },
+  marks: {
+    strong: ({ children }) => (
+      <strong className="font-semibold text-gray-900">{children}</strong>
+    ),
+    em: ({ children }) => (
+      <em className="italic">{children}</em>
+    ),
+    code: ({ children }) => (
+      <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono">{children}</code>
+    ),
+    link: ({ children, value }) => (
+      <a 
+        href={value?.href} 
+        target={value?.blank ? '_blank' : '_self'}
+        rel={value?.blank ? 'noopener noreferrer' : undefined}
+        className="text-blue-600 hover:text-blue-800 underline"
+      >
+        {children}
+      </a>
+    ),
+  },
+  types: {
+    image: ({ value }) => {
+      if (!value?.asset) return null;
+      return (
+        <div className="my-4">
+          <img 
+            src={urlFor(value).width(800).height(400).url()} 
+            alt={value.alt || ''} 
+            className="w-full h-auto rounded-lg shadow-sm"
+          />
+          {value.caption && (
+            <p className="text-sm text-gray-600 mt-2 text-center italic">{value.caption}</p>
+          )}
+        </div>
+      );
+    },
+  },
+};
 
 // Use the same static generation functions from CountryPageShell
 export { generateStaticParams };
@@ -132,6 +213,54 @@ export async function generateMetadata({ params }) {
     const singleFilter = awaitedParams.filters[0];
     
     try {
+      // First: Check if this is a Menu Page
+      const menuDoc = await client.fetch(`*[_type == "hamburgerMenu" && slug.current == $slug][0]{
+        title,
+        metaTitle,
+        metaDescription,
+        noindex,
+        nofollow,
+        canonicalUrl,
+        sitemapInclude,
+        selectedPage->{
+          _type,
+          slug
+        }
+      }`, { slug: singleFilter });
+      
+      if (menuDoc && menuDoc.selectedPage?._type === 'countryPage' && menuDoc.selectedPage?.slug?.current === awaitedParams.slug) {
+        const title = menuDoc.metaTitle || `${menuDoc.title} | Booldo`;
+        const description = menuDoc.metaDescription || `Learn more about ${menuDoc.title}.`;
+        
+        const metadata = {
+          title,
+          description,
+          openGraph: {
+            title,
+            description,
+          },
+        };
+
+        // Apply robots meta tags if specified
+        if (menuDoc.noindex === true || menuDoc.nofollow === true) {
+          const robots = [];
+          if (menuDoc.noindex === true) robots.push('noindex');
+          if (menuDoc.nofollow === true) robots.push('nofollow');
+          if (robots.length > 0) {
+            metadata.robots = robots.join(', ');
+          }
+        }
+
+        // Apply canonical URL if specified
+        if (menuDoc.canonicalUrl) {
+          metadata.alternates = { canonical: menuDoc.canonicalUrl };
+        } else {
+          metadata.alternates = { canonical: `https://booldo.com/${awaitedParams.slug}/${singleFilter}` };
+        }
+
+        return metadata;
+      }
+
       // Pretty link handling
       const affiliateLink = await client.fetch(`
         *[_type == "affiliate" && prettyLink.current == $prettyLink && isActive == true][0]{
@@ -272,7 +401,8 @@ export async function generateMetadata({ params }) {
   };
 }
 
-export const revalidate = 60;
+import Gone410Page from '../../410/Gone410Page';
+import { getVisibleDocOrNull } from '../../../sanity/lib/checkGoneStatus';
 
 export default async function CountryFiltersPage({ params }) {
   const awaitedParams = await params;
@@ -375,77 +505,14 @@ export default async function CountryFiltersPage({ params }) {
   
   // Check if this is an offer details page (has 3 segments: country/bonus-type/offer-slug)
   const isOfferDetailsPage = awaitedParams.filters && awaitedParams.filters.length >= 2;
-  
   if (isOfferDetailsPage) {
-    // Extract the offer slug from the last segment
     const offerSlug = awaitedParams.filters[awaitedParams.filters.length - 1];
-    const countrySlug = awaitedParams.slug;
-    
-    // Check if offer exists and its status for 410 handling
-    try {
-      const countryDoc = await client.fetch(`*[_type == "countryPage" && slug.current == $slug][0]{country}`, { slug: countrySlug });
-      const countryName = countryDoc?.country;
-      
-      if (countryName) {
-        const offerData = await client.fetch(`
-          *[_type == "offers" && country->country == $countryName && slug.current == $offerSlug][0]{
-            _id,
-            title,
-            expires,
-            noindex,
-            sitemapInclude,
-            bookmaker->{name}
-          }
-        `, { offerSlug, countryName });
-        
-        // Return 410 for expired offers
-        if (offerData?.expires && new Date(offerData.expires) < new Date()) {
-          return (
-            <Gone410Page 
-              offer={{
-                title: offerData.title,
-                bookmaker: offerData.bookmaker?.name,
-                expires: offerData.expires
-              }}
-              embedded={false}
-              countrySlug={countrySlug}
-            />
-          );
-        }
-        
-        // Return 410 for hidden content
-        if (offerData && (offerData.noindex === true || offerData.sitemapInclude === false)) {
-          return (
-            <Gone410Page 
-              offer={null}
-              embedded={false}
-              countrySlug={countrySlug}
-              isCountryEmpty={false}
-              countryName={countryName}
-              isHidden={true}
-              contentType="offer"
-            />
-          );
-        }
-        
-        // Return 410 for non-existent offers
-        if (!offerData) {
-          return (
-            <Gone410Page 
-              offer={null}
-              embedded={false}
-              countrySlug={countrySlug}
-              isCountryEmpty={false}
-              countryName={countryName}
-              contentType="offer"
-            />
-          );
-        }
-      }
-    } catch (error) {
-      console.error('Error checking offer status for 410:', error);
+    // Server-side check for gone offer
+    const offer = await getVisibleDocOrNull('offers', offerSlug);
+    if (!offer) {
+      return <Gone410Page contentType="offer" />;
     }
-    
+    // Extract the offer slug from the last segment
     return (
       <CountryPageShell params={awaitedParams} isOfferDetailsPage={true}>
         <Suspense fallback={
@@ -469,6 +536,54 @@ export default async function CountryFiltersPage({ params }) {
   
   // Check if this might be a pretty link (single segment that could be an affiliate link)
   if (isSingleFilterPage && singleFilter) {
+    // First: handle Menu Page at country level: /{country}/{menuSlug}
+    const menuDoc = await client.fetch(`*[_type == "hamburgerMenu" && slug.current == $slug][0]{
+      title,
+      slug,
+      content,
+      noindex,
+      nofollow,
+      canonicalUrl,
+      sitemapInclude,
+      selectedPage->{
+        _type,
+        slug
+      }
+    }`, { slug: singleFilter });
+    if (menuDoc && menuDoc.selectedPage?._type == 'countryPage' && menuDoc.selectedPage?.slug?.current == awaitedParams.slug) {
+      // Render the menu page content within the country shell
+      if (menuDoc.noindex === true || menuDoc.sitemapInclude === false) {
+        return (
+          <CountryPageShell params={awaitedParams} hasMultipleFilters={false} hideBannerCarousel={true}>
+            <div className="min-h-[50vh] flex items-center justify-center">
+              <div className="text-center text-gray-600">This menu page is hidden.</div>
+            </div>
+          </CountryPageShell>
+        );
+      }
+      return (
+        <CountryPageShell params={awaitedParams} hasMultipleFilters={false} hideBannerCarousel={true}>
+          <div className="max-w-7xl mx-auto px-4 py-8">
+            <div className="mb-4 sm:mb-6 flex items-center gap-2 text-sm text-gray-500 flex-wrap">
+              <Link href={`/${awaitedParams.slug}`} className="hover:underline flex items-center gap-1 flex-shrink-0 focus:outline-none" aria-label="Go back">
+                <img src="/assets/back-arrow.png" alt="Back" width={24} height={24} />
+                Home
+              </Link>
+            </div>
+            <div className="w-full">
+              {Array.isArray(menuDoc.content) && menuDoc.content.length > 0 ? (
+                <div className="bg-white rounded-lg shadow-sm p-6 text-gray-800 leading-relaxed font-['General_Sans']">
+                  <PortableText value={menuDoc.content} components={portableTextComponents} />
+                </div>
+              ) : (
+                <div className="text-center text-gray-500 py-12">No content available for this menu item.</div>
+              )}
+            </div>
+          </div>
+        </CountryPageShell>
+      );
+    }
+
     console.log('🔍 DEBUG - Checking single filter for pretty link:', singleFilter);
     
       // Check if this is a pretty link for an affiliate
@@ -539,7 +654,7 @@ export default async function CountryFiltersPage({ params }) {
     };
   }
   
-  // For single filter pages, try to load comparison/faq for bookmaker or bonus type
+  // For single filter pages, try to load home content/faq for bookmaker or bonus type
   let filterComparison = null;
   let filterFaqs = null;
   if (isSingleFilterPage && singleFilter) {
@@ -572,7 +687,12 @@ export default async function CountryFiltersPage({ params }) {
   }
 
   return (
-    <CountryPageShell params={awaitedParams} filterComparison={filterComparison} filterFaqs={filterFaqs}>
+    <CountryPageShell 
+      params={awaitedParams} 
+      filterComparison={filterComparison} 
+      filterFaqs={filterFaqs}
+      hasMultipleFilters={isCombinationFilterPage}
+    >
       <Suspense fallback={
         <div className="space-y-4">
           {/* Filter skeleton */}

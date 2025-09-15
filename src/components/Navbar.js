@@ -213,7 +213,8 @@ export default function Navbar() {
           title match $term ||
           bonusType->name match $term ||
           bookmaker->name match $term ||
-          pt::text(description) match $term
+          pt::text(description) match $term ||
+          title match $term
       )] | order(_createdAt desc) {
         _id,
         slug,
