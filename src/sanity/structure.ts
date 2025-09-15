@@ -13,11 +13,11 @@ export const structure: StructureResolver = (S) =>
             .title('Countries')
             .child((countryId) =>
           S.list()
-                .title('Country Management')
+                .title('Country Page Management')
             .items([
                   // Country Settings
                   S.listItem()
-                    .title('Add Country')
+                    .title('Country Page')
                     .child(
                       S.document()
                         .documentId(countryId)
@@ -66,15 +66,6 @@ export const structure: StructureResolver = (S) =>
                         .params({countryId})
                 ),
                   
-                  // Homepage Content
-              S.listItem()
-                .title('Homepage Content')
-                .child(
-                  S.documentList()
-                        .title('Homepage Content')
-                        .filter('_type == "comparison" && country._ref == $countryId')
-                        .params({countryId})
-                ),
                   
                   // Pretty Links
               S.listItem()
@@ -94,10 +85,10 @@ export const structure: StructureResolver = (S) =>
 
       // Page Contents (all documents)
       S.listItem()
-        .title('Page Contents')
+        .title('Home Content')
         .child(
           S.list()
-            .title('Page Contents')
+            .title('Home Content')
             .items(S.documentTypeListItems())
         ),
     ])

@@ -9,7 +9,7 @@ import { PortableText } from "@portabletext/react";
 // Skeleton loading component for footer
 function FooterSkeleton() {
   return (
-    <footer className="bg-[#f6f7f9] w-full px-4 pt-8 pb-4 text-gray-700 text-sm border-t mt-8">
+    <footer className="bg-[#f6f7f9] w-full px-4 pt-8 pb-4 text-gray-700 text-sm mt-8">
       <div className="w-full flex flex-col gap-4">
         {/* Social Media Skeleton */}
         <div className="md:text-center">
@@ -58,8 +58,7 @@ function FooterSkeleton() {
 export default function Footer() {
   const [footerData, setFooterData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [aboutPage, setAboutPage] = useState(null);
-  const [contactPage, setContactPage] = useState(null);
+  
 
   // Helper function to get hamburger menu item URL
   const getHamburgerItemUrl = (label) => {
@@ -75,8 +74,7 @@ export default function Footer() {
     const urls = {
       home: '/',
       blog: '/briefly',
-      about: aboutPage && !aboutPage.noindex && aboutPage.sitemapInclude !== false ? '/about' : null,
-      contact: contactPage && !contactPage.noindex && contactPage.sitemapInclude !== false ? '/contact' : null,
+      calculators: '/calculators',
       faq: '/faq'
     };
     
@@ -92,8 +90,7 @@ export default function Footer() {
     const labels = {
       home: 'Home',
       blog: 'Blog',
-      about: 'About Us',
-      contact: 'Contact Us',
+      calculators: 'Calculators',
       faq: 'FAQ'
     };
     
@@ -103,19 +100,14 @@ export default function Footer() {
   useEffect(() => {
     const fetchFooterData = async () => {
       try {
-        const [data, aboutData, contactData] = await Promise.all([
-          client.fetch(`*[_type == "footer" && isActive == true][0]{
+        const data = await client.fetch(`*[_type == "footer" && isActive == true][0]{
             socialMedia,
             navigationLinks{
               menuItems[]{
                 type,
                 hamburgerMenuItem->{
                   _id,
-                  title,
-                  additionalMenuItems[]{
-                    label,
-                    isActive
-                  }
+                  title
                 },
                 isActive
               }
@@ -134,14 +126,9 @@ export default function Footer() {
               },
               copyrightText
             }
-          }`),
-          client.fetch(`*[_type == "about" && !(_id in path("drafts.**"))][0]{ noindex, sitemapInclude }`),
-          client.fetch(`*[_type == "contact" && !(_id in path("drafts.**"))][0]{ noindex, sitemapInclude }`)
-        ]);
+          }`);
         
         setFooterData(data);
-        setAboutPage(aboutData);
-        setContactPage(contactData);
       } catch (error) {
         console.error('Error fetching footer data:', error);
       } finally {
@@ -157,7 +144,7 @@ export default function Footer() {
   }
 
   return (
-    <footer className="bg-[#f6f7f9] w-full px-4 pt-8 pb-4 text-gray-700 text-sm border-t mt-8 font-['General_Sans'] tracking-[1%]">
+    <footer className="bg-[#f6f7f9] w-full px-4 pt-8 pb-4 text-gray-700 text-sm mt-8 font-['General_Sans'] tracking-[1%]">
       <div className="w-full flex flex-col gap-4">
         {/* Socials */}
         {footerData?.socialMedia?.isActive && (
@@ -203,22 +190,10 @@ export default function Footer() {
                   {/* Main menu item */}
                   <a 
                     href={getMenuItemUrl(item)} 
-                    className="hover:underline font-['General_Sans'] font-medium text-[12px] leading-[100%] tracking-[1%] text-[#272932]"
+                    className="font-['General_Sans'] font-medium text-[14px] leading-[100%] tracking-[1%] text-[#272932] underline decoration-solid decoration-0 decoration-auto"
                   >
                     {getMenuItemLabel(item)}
                   </a>
-                  {/* Additional hamburger menu items */}
-                  {item.type === 'hamburger' && item.hamburgerMenuItem?.additionalMenuItems?.map((menuItem, menuIndex) => (
-                    menuItem.isActive && (
-                      <a 
-                        key={`${index}-${menuIndex}`}
-                        href={getHamburgerItemUrl(menuItem.label)} 
-                        className="hover:underline block font-['General_Sans'] font-medium text-[12px] leading-[100%] tracking-[1%] text-[#272932]"
-                      >
-                        {menuItem.label}
-                      </a>
-                    )
-                  ))}
                 </div>
               )
             ))}

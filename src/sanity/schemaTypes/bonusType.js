@@ -131,10 +131,10 @@ export default {
     },
     {
       name: "comparison",
-      title: "Comparison Section",
+      title: "Bonus Content",
       type: "array",
       of: [{ type: 'block' }],
-      description: "Portable text comparison content for this bonus type"
+      description: "Portable text bonus content for this bonus type"
     },
     {
       name: "faqs",
@@ -196,6 +196,13 @@ export default {
       description: "SEO: Should this page be included in sitemap.xml?",
       initialValue: true
     },
+    {
+      name: "isActive",
+      title: "Is Active",
+      type: "boolean",
+      initialValue: true,
+      description: "Whether this bonus type is currently active and should be displayed"
+    }
 
   ]
 }; 

@@ -105,20 +105,19 @@ export default {
                     list: [
                       {title: 'Home', value: 'home'},
                       {title: 'Blog', value: 'blog'},
-                      {title: 'About Us', value: 'about'},
-                      {title: 'Contact Us', value: 'contact'},
+                      {title: 'Calculators', value: 'calculators'},
                       {title: 'FAQ', value: 'faq'},
-                      {title: 'Hamburger Menu Item', value: 'hamburger'}
+                      {title: 'Other pages', value: 'hamburger'}
                     ]
                   },
                   validation: Rule => Rule.required()
                 },
                 {
                   name: 'hamburgerMenuItem',
-                  title: 'Hamburger Menu Item',
+                  title: 'Other pages item',
                   type: 'reference',
                   to: [{ type: 'hamburgerMenu' }],
-                  description: 'Select specific hamburger menu item to display',
+                  description: 'Select a specific item from Other pages to display',
                   hidden: ({parent}) => parent?.type !== 'hamburger'
                 },
                 {
@@ -140,10 +139,9 @@ export default {
                   const labels = {
                     home: 'Home',
                     blog: 'Blog',
-                    about: 'About Us',
-                    contact: 'Contact Us',
+                    calculators: 'Calculators',
                     faq: 'FAQ',
-                    hamburger: subtitle || 'Hamburger Menu Item'
+                    hamburger: subtitle || 'Other pages'
                   };
                   return {
                     title: labels[title] || title,

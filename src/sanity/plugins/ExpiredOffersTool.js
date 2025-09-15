@@ -81,8 +81,6 @@ export function ExpiredOffersTool() {
 
       // Fetch other pages for redirection management
       const otherPagesQuery = `{
-        "about": *[_type == "about" && !(_id in path("drafts.**"))]{ _id, _type, title, "path": "/about", sitemapInclude, noindex, _updatedAt },
-        "contact": *[_type == "contact" && !(_id in path("drafts.**"))]{ _id, _type, title, "path": "/contact", sitemapInclude, noindex, _updatedAt },
         "brieflyHomepage": *[_type == "brieflyHomepage" && !(_id in path("drafts.**"))]{ _id, _type, title, "path": "/briefly", sitemapInclude, noindex, _updatedAt },
         "calculatorHomepage": *[_type == "calculatorHomepage" && !(_id in path("drafts.**"))]{ _id, _type, title, "path": "/briefly/calculators", sitemapInclude, noindex, _updatedAt },
         "country": *[_type == "countryPage" && !(_id in path("drafts.**"))]{ _id, _type, country, slug, sitemapInclude, noindex, _updatedAt }{
@@ -95,15 +93,7 @@ export function ExpiredOffersTool() {
           _id, _type, title, "path": "/briefly/calculator/" + slug.current, isActive, sitemapInclude, noindex, _updatedAt
         },
         "hamburgerMenu": *[_type == "hamburgerMenu" && !(_id in path("drafts.**"))]{ 
-          _id, _type, title, sitemapInclude, noindex, _updatedAt,
-          "additionalMenuItems": additionalMenuItems[]{
-            _id,
-            label,
-            isActive,
-            sitemapInclude,
-            noindex,
-            _updatedAt
-          }
+          _id, _type, title, slug, sitemapInclude, noindex, _updatedAt
         },
         "footer": *[_type == "footer" && !(_id in path("drafts.**"))][0]{
           _id, _type, sitemapInclude, noindex, _updatedAt,
@@ -151,50 +141,6 @@ export function ExpiredOffersTool() {
       
       // Process and flatten the other pages data
       const flattenedPages = [];
-      
-      // Add about pages
-      if (otherPagesResult?.about && otherPagesResult.about.length > 0) {
-        flattenedPages.push(...otherPagesResult.about.map(page => ({
-          ...page,
-          contentType: 'About Page',
-          displayTitle: page.title || 'About Us'
-        })));
-      } else {
-        // Add placeholder for missing About document
-        flattenedPages.push({
-          _id: 'about-placeholder',
-          _type: 'about',
-          title: 'About Us',
-          path: '/about',
-          contentType: 'About Page',
-          displayTitle: 'About Us',
-          isMissing: true,
-          noindex: false,
-          sitemapInclude: true
-        });
-      }
-      
-      // Add contact pages
-      if (otherPagesResult?.contact && otherPagesResult.contact.length > 0) {
-        flattenedPages.push(...otherPagesResult.contact.map(page => ({
-          ...page,
-          contentType: 'Contact Page',
-          displayTitle: page.title || 'Contact Us'
-        })));
-         } else {
-        // Add placeholder for missing Contact document
-        flattenedPages.push({
-          _id: 'contact-placeholder',
-          _type: 'contact',
-          title: 'Contact Us',
-          path: '/contact',
-          contentType: 'Contact Page',
-          displayTitle: 'Contact Us',
-          isMissing: true,
-          noindex: false,
-          sitemapInclude: true
-        });
-      }
       
       // Add briefly homepage
       if (otherPagesResult?.brieflyHomepage) {
@@ -279,36 +225,18 @@ export function ExpiredOffersTool() {
       if (otherPagesResult?.hamburgerMenu) {
         otherPagesResult.hamburgerMenu.forEach(menu => {
           // Add main menu item
+          const menuPath = menu.slug?.current ? `/${menu.slug.current}` : `/${menu.title?.toLowerCase().replace(/\s+/g, '-')}`;
           flattenedPages.push({
             _id: menu._id,
             _type: menu._type,
             title: menu.title,
-            path: `/hamburger-menu/${menu.title?.toLowerCase().replace(/\s+/g, '-')}`,
+            path: menuPath,
             sitemapInclude: menu.sitemapInclude,
             noindex: menu.noindex,
             _updatedAt: menu._updatedAt,
             contentType: 'Hamburger Menu',
             displayTitle: menu.title || 'Hamburger Menu'
           });
-          
-          // Add additional menu items
-          if (menu.additionalMenuItems) {
-            menu.additionalMenuItems.forEach(item => {
-              if (item.isActive) {
-                flattenedPages.push({
-                  _id: item._id,
-                  _type: 'hamburgerMenuItem',
-                  title: item.label,
-                  path: `/hamburger-menu/${item.label?.toLowerCase().replace(/\s+/g, '-')}`,
-                  sitemapInclude: item.sitemapInclude,
-                  noindex: item.noindex,
-                  _updatedAt: item._updatedAt,
-                  contentType: 'Hamburger Menu Item',
-                  displayTitle: item.label || 'Menu Item'
-                });
-              }
-            });
-          }
         });
       }
       
@@ -668,9 +596,9 @@ export function ExpiredOffersTool() {
 
   const getPageVisibilityButtonProps = (page) => {
     if (isPageHidden(page)) {
-      return { text: 'Remove from 410', tone: 'critical', title: 'Show this page (indexable, in sitemap)' };
+      return { text: 'Show', tone: 'critical', title: 'Show this page (indexable, in sitemap)' };
     }
-    return { text: 'Redirect to 410', tone: 'positive', title: 'Hide this page (noindex, exclude from sitemap)' };
+    return { text: 'Hide', tone: 'positive', title: 'Hide this page (noindex, exclude from sitemap) and Show 410 code' };
   };
 
   const togglePageVisibility = async (page) => {
@@ -785,13 +713,13 @@ export function ExpiredOffersTool() {
   const getVisibilityButtonProps = (offer) => {
     if (isOfferHidden(offer)) {
       return {
-        text: 'Remove from 410',
+        text: 'Unhide',
         tone: 'critical',
-        title: 'Show this offer in offer cards and sitemap'
+        title: 'Unhide this offer (make visible)'
       };
     } else {
       return {
-        text: 'Redirect to 410',
+        text: 'Hide',
         tone: 'positive',
         title: 'Hide this offer from offer cards and sitemap (noindex)'
       };

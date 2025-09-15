@@ -7,6 +7,7 @@ import { client } from "../sanity/lib/client";
 import { urlFor } from "../sanity/lib/image";
 import Link from "next/link";
 import { formatDate } from "../utils/dateFormatter";
+import { PortableText } from "@portabletext/react";
 
 const WORLD_WIDE_FLAG = { src: "/assets/flags.png", name: "World Wide", path: "/", topIcon: "/assets/dropdown.png" };
 
@@ -20,6 +21,7 @@ export default function Navbar() {
   const [recentSearches, setRecentSearches] = useState([]);
   const router = useRouter();
   const pathname = usePathname();
+  const currentCountrySlug = (pathname || '').split('/').filter(Boolean)[0] || null;
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState(null);
@@ -28,11 +30,7 @@ export default function Navbar() {
   const [popularSearches, setPopularSearches] = useState([]);
   const searchDebounceRef = useRef();
   const menuRef = useRef();
-  const [hamburgerMenu, setHamburgerMenu] = useState(null);
-  const [aboutPage, setAboutPage] = useState(null);
-  const [contactPage, setContactPage] = useState(null);
-  const [aboutCountryPage, setAboutCountryPage] = useState(null);
-  const [contactCountryPage, setContactCountryPage] = useState(null);
+  const [hamburgerMenus, setHamburgerMenus] = useState([]);
 
   // Load recent searches from localStorage on mount
   useEffect(() => {
@@ -58,36 +56,60 @@ export default function Navbar() {
     });
   };
 
-  // Load most searches from Sanity
+  // Load most searches from Sanity (country-specific first, then global fallback)
   useEffect(() => {
     const fetchMostSearches = async () => {
       try {
-        const landingPageData = await client.fetch(`*[_type == "landingPage"][0]{
-          mostSearches[]{
-            searchTerm,
-            isActive,
-            order
-          }
-        }`);
+        let searches = [];
         
-        if (landingPageData?.mostSearches) {
-          // Filter active searches and sort by order
-          const activeSearches = landingPageData.mostSearches
-            .filter(search => search.isActive)
-            .sort((a, b) => (a.order || 1) - (b.order || 1))
-            .map(search => search.searchTerm);
+        // First try to get country-specific searches
+        if (currentCountrySlug) {
+          const countryData = await client.fetch(`*[_type == "countryPage" && slug.current == $countrySlug][0]{
+            mostSearches[]{
+              searchTerm,
+              isActive,
+              order
+            }
+          }`, { countrySlug: currentCountrySlug });
           
-          setPopularSearches(activeSearches);
-        } else {
-          // Fallback to default searches if none configured
-          setPopularSearches([
+          if (countryData?.mostSearches && countryData.mostSearches.length > 0) {
+            searches = countryData.mostSearches
+              .filter(search => search.isActive)
+              .sort((a, b) => (a.order || 1) - (b.order || 1))
+              .map(search => search.searchTerm);
+          }
+        }
+        
+        // If no country-specific searches found, try global searches
+        if (searches.length === 0) {
+          const landingPageData = await client.fetch(`*[_type == "landingPage"][0]{
+            mostSearches[]{
+              searchTerm,
+              isActive,
+              order
+            }
+          }`);
+          
+          if (landingPageData?.mostSearches) {
+            searches = landingPageData.mostSearches
+              .filter(search => search.isActive)
+              .sort((a, b) => (a.order || 1) - (b.order || 1))
+              .map(search => search.searchTerm);
+          }
+        }
+        
+        // If still no searches found, use default fallback
+        if (searches.length === 0) {
+          searches = [
             "Welcome bonus",
             "Deposit bonus",
             "Best bonus",
             "Best bookies",
             "Free bets"
-          ]);
+          ];
         }
+        
+        setPopularSearches(searches);
       } catch (error) {
         console.error('Error fetching most searches:', error);
         // Fallback to default searches on error
@@ -102,7 +124,7 @@ export default function Navbar() {
     };
 
     fetchMostSearches();
-  }, []);
+  }, [currentCountrySlug]);
 
   // Load countries dynamically and build flags list (keep Worldwide)
   useEffect(() => {
@@ -133,83 +155,29 @@ export default function Navbar() {
 
   // Load hamburger menu data from Sanity
   useEffect(() => {
-    const fetchHamburgerMenu = async () => {
+    const fetchHamburgerMenus = async () => {
       try {
-        const menuData = await client.fetch(`*[_type == "hamburgerMenu" && isActive == true][0]{
+        const menuData = await client.fetch(`*[_type == "hamburgerMenu" && selectedPage->slug.current == $countrySlug]{
+          _id,
           title,
+          slug,
           content,
           noindex,
           sitemapInclude,
-          additionalMenuItems[]{
-            label,
-            content,
-            isActive,
-            noindex,
-            sitemapInclude
+          selectedPage->{
+            _type,
+            slug
           }
-        }`);
-        setHamburgerMenu(menuData);
+        } | order(title asc)`, { countrySlug: currentCountrySlug });
+        setHamburgerMenus(menuData || []);
       } catch (e) {
-        console.error('Failed to fetch hamburger menu:', e);
+        console.error('Failed to fetch hamburger menus:', e);
       }
     };
-    fetchHamburgerMenu();
-  }, []);
-
-  // Load default about and contact pages from Sanity (fallback)
-  useEffect(() => {
-    const fetchDefaultPages = async () => {
-      try {
-        const [aboutData, contactData] = await Promise.all([
-          client.fetch(`*[_type == "about" && country == "Landing Page"][0]{ noindex, sitemapInclude }`),
-          client.fetch(`*[_type == "contact" && country == "Landing Page"][0]{ noindex, sitemapInclude }`)
-        ]);
-        setAboutPage(aboutData);
-        setContactPage(contactData);
-      } catch (e) {
-        console.error('Failed to fetch default pages:', e);
-      }
-    };
-    fetchDefaultPages();
-  }, []);
-
-  // Determine country from pathname
-  const currentCountrySlug = pathname.split('/').filter(Boolean)[0] || null;
-
-  // Load country-scoped about/contact when country changes
-  useEffect(() => {
-    const fetchCountryScoped = async () => {
-      try {
-        if (!currentCountrySlug) {
-          setAboutCountryPage(null);
-          setContactCountryPage(null);
-          return;
-        }
-        
-        // First get the country name from the slug
-        const countryData = await client.fetch(`*[_type == "countryPage" && slug.current == $countrySlug][0]{ country }`, { countrySlug: currentCountrySlug });
-        
-        if (!countryData) {
-          setAboutCountryPage(null);
-          setContactCountryPage(null);
-          return;
-        }
-        
-        // Fetch country-specific pages based on the country name
-        const [aboutForCountry, contactForCountry] = await Promise.all([
-          client.fetch(`*[_type == "about" && country == $countryName][0]{ noindex, sitemapInclude }`, { countryName: countryData.country }),
-          client.fetch(`*[_type == "contact" && country == $countryName][0]{ noindex, sitemapInclude }`, { countryName: countryData.country })
-        ]);
-        setAboutCountryPage(aboutForCountry || null);
-        setContactCountryPage(contactForCountry || null);
-      } catch (e) {
-        console.error('Failed to fetch country-scoped static pages:', e);
-        setAboutCountryPage(null);
-        setContactCountryPage(null);
-      }
-    };
-    fetchCountryScoped();
+    fetchHamburgerMenus();
   }, [currentCountrySlug]);
+
+
 
   // Update selected flag based on current path
   useEffect(() => {
@@ -222,6 +190,8 @@ export default function Navbar() {
     const match = flags.find(f => f.slug === parts[0] || f.path === `/${parts[0]}`);
     setSelectedFlag(match || WORLD_WIDE_FLAG);
   }, [pathname, flags]);
+
+  // Determine country from pathname (moved above to avoid TDZ)
 
   // Search handler
   const handleSearch = async (term) => {
@@ -240,12 +210,15 @@ export default function Navbar() {
       // Search offers (filtered by current country only)
       if (currentCountrySlug) {
         const offersQuery = `*[_type == "offers" && country->slug.current == $countrySlug && (
-        bonusType->name match $term ||
+          title match $term ||
+          bonusType->name match $term ||
           bookmaker->name match $term ||
           pt::text(description) match $term
       )] | order(_createdAt desc) {
         _id,
         slug,
+        title,
+        offerSummary,
           bonusType->{
             _id,
             name
@@ -385,7 +358,7 @@ export default function Navbar() {
         results = [...results, ...bannersResults];
       }
       
-      // Search comparison content (current country only)
+      // Search home content (current country only)
       if (currentCountrySlug) {
         const comparisonQuery = `*[_type == "comparison" && country->slug.current == $countrySlug && (
           title match $term ||
@@ -555,11 +528,11 @@ export default function Navbar() {
             </svg>
           </button>
           {dropdownOpen && (
-            <div className="absolute right-0 mt-2 w-56 bg-white border rounded shadow-xl z-[100]">
+            <div className="absolute right-0 mt-2 w-56 bg-[#FFFFFF] rounded-xl shadow-xl border border-gray-100 py-2 z-[100]">
               {countriesLoading ? (
                 // Skeleton loading for countries
                 Array.from({ length: 6 }).map((_, index) => (
-                  <div key={index} className="flex items-center justify-between w-full px-4 py-2 animate-pulse">
+                  <div key={index} className="flex items-center justify-between w-full px-3 py-2 animate-pulse">
                     <div className="flex items-center gap-2">
                       <div className="w-5 h-5 bg-gray-200 rounded"></div>
                       <div className="h-4 bg-gray-200 rounded w-20"></div>
@@ -570,12 +543,12 @@ export default function Navbar() {
                 flags.map(flag => (
                   <button
                     key={flag.name}
-                    className="flex items-center justify-between w-full px-4 py-2 hover:bg-gray-100"
+                    className="flex items-center justify-between w-full px-3 py-2 hover:bg-gray-50 rounded-lg mx-1"
                     onClick={() => handleFlagSelect(flag)}
                   >
                     <div className="flex items-center gap-2">
                       <img src={flag.src} alt={flag.name} className="w-5 h-5" />
-                      <span>{flag.name}</span>
+                      <span className="text-[#272932] text-[14px] leading-[24px] font-medium font-['General_Sans']">{flag.name}</span>
                     </div>
                     {selectedFlag.name === flag.name && (
                       <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="green" strokeWidth="3">
@@ -622,45 +595,21 @@ export default function Navbar() {
                 </div>
               )}
             </div>
-            {(() => {
-              const aboutDoc = (aboutCountryPage || aboutPage);
-              const aboutHref = currentCountrySlug && aboutCountryPage ? `/${currentCountrySlug}/about` : "/about";
-              return aboutDoc && !aboutDoc.noindex && aboutDoc.sitemapInclude !== false ? (
-                <Link href={aboutHref} className="hover:underline">About Us</Link>
-              ) : null;
-            })()}
-            {(() => {
-              const contactDoc = (contactCountryPage || contactPage);
-              const contactHref = currentCountrySlug && contactCountryPage ? `/${currentCountrySlug}/contact` : "/contact";
-              return contactDoc && !contactDoc.noindex && contactDoc.sitemapInclude !== false ? (
-                <Link href={contactHref} className="hover:underline">Contact Us</Link>
-              ) : null;
-            })()}
-            
-            {/* Additional Dynamic Menu Items */}
-            {hamburgerMenu?.additionalMenuItems?.map((item, index) => (
-              item.isActive && !item.noindex && item.sitemapInclude !== false && (
-                <Link
-                  key={index}
-                  href={`/hamburger-menu/${item.label.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`}
+            {hamburgerMenus.map((menu) => (
+              menu?.title && !menu.noindex && menu.sitemapInclude !== false && (
+                <Link 
+                  key={menu._id || menu.title}
+                  href={`/${currentCountrySlug || ''}/${menu?.slug?.current || (menu.title || '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`.replace('//','/')} 
                   className="hover:underline"
                 >
-                  {item.label}
+                  {menu.title}
                 </Link>
               )
             ))}
+            
+            
           </div>
-          {/* Hamburger Menu Title - Clickable to show content */}
-          {hamburgerMenu?.title && !hamburgerMenu.noindex && hamburgerMenu.sitemapInclude !== false && (
-            <div className="px-10 py-4">
-              <Link 
-                href="/hamburger-menu/main"
-                className="text-sm text-gray-500 font-medium hover:text-gray-700 hover:underline cursor-pointer"
-              >
-                {hamburgerMenu.title}
-              </Link>
-            </div>
-          )}
+          
         </div>
       )}
       {/* Search Suggestion Panel + Results */}
@@ -671,12 +620,15 @@ export default function Navbar() {
             // Prevent clicks on the overlay from interfering with card clicks
             if (e.target === e.currentTarget) {
               setSearchOpen(false);
+              setSearchValue("");
+              setSearchResults([]);
+              setSearchLoading(false);
             }
           }}
         >
           <div className="max-w-5xl mx-auto px-4">
             <div className="flex items-center gap-4 mb-6">
-                <Image src="/assets/logo.png" alt="Booldo Logo" width={110} height={40} className="hidden sm:block" />
+                <img src="/assets/logo.png" alt="Booldo Logo" className="hidden md:block w-[120px] h-[41px]" />
               <div className="flex-1 flex items-center bg-[#f6f7f9] border border-[#E3E3E3] rounded-lg px-3 py-2">
                 <svg className="text-gray-400 mr-2" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <circle cx="11" cy="11" r="8" />
@@ -691,7 +643,7 @@ export default function Navbar() {
                   autoFocus
                 />
               </div>
-              <button className="ml-4 text-gray-500 text-base font-medium hover:underline" onClick={() => setSearchOpen(false)}>Cancel</button>
+              <button className="ml-4 text-gray-500 text-base font-medium hover:underline" onClick={() => { setSearchOpen(false); setSearchValue(""); setSearchResults([]); setSearchLoading(false); }}>Cancel</button>
             </div>
             {/* Search Results */}
             <div>
@@ -710,13 +662,19 @@ export default function Navbar() {
                     const getItemTitle = () => {
                       switch (item._type) {
                         case 'offers':
+                          // Prioritize the actual offer title if available
+                          if (item.title && item.title.trim()) {
+                            return item.title;
+                          }
+                          // Fallback to generated title from bonus type and bookmaker
                           const bonusTypeName = item.bonusType?.name || 'Bonus';
                           const bookmakerName = item.bookmaker?.name || 'Bookmaker';
-                          console.log('Offer item data:', { 
-                            bonusType: item.bonusType, 
+                          console.log('Offer item data:', {
+                            title: item.title,
+                            bonusType: item.bonusType,
                             bookmaker: item.bookmaker,
                             bonusTypeName,
-                            bookmakerName 
+                            bookmakerName
                           }); // Debug log
                           // If we have both names, show them, otherwise show what we have
                           if (bonusTypeName && bookmakerName && bonusTypeName !== 'Bonus' && bookmakerName !== 'Bookmaker') {
@@ -737,7 +695,7 @@ export default function Navbar() {
                         case 'banner':
                           return item.title || 'Banner';
                         case 'comparison':
-                          return item.title || 'Comparison';
+                          return item.title || 'Home Content';
                         case 'faq':
                           return item.question || 'FAQ';
                         default:
@@ -748,12 +706,13 @@ export default function Navbar() {
                     const getItemDescription = () => {
                       switch (item._type) {
                         case 'offers':
-                          // Handle PortableText or string
-                          if (typeof item.description === 'string') {
-                            return item.description;
-                          } else if (item.description && Array.isArray(item.description)) {
+                          // Prioritize offerSummary like home page cards
+                          const summaryContent = item.offerSummary || item.description;
+                          if (typeof summaryContent === 'string') {
+                            return summaryContent;
+                          } else if (summaryContent && Array.isArray(summaryContent)) {
                             // Extract text from PortableText blocks
-                            return item.description
+                            return summaryContent
                               .map(block => {
                                 if (block.children) {
                                   return block.children.map(child => child.text).join('');
@@ -761,7 +720,7 @@ export default function Navbar() {
                                 return '';
                               })
                               .join(' ')
-                              .substring(0, 150) + (item.description.length > 150 ? '...' : '');
+                              .substring(0, 150) + (summaryContent.length > 150 ? '...' : '');
                           }
                           return '';
                         case 'article':
@@ -950,17 +909,37 @@ export default function Navbar() {
                             </div>
                         )}
                         <div>
-                            <div className="font-semibold text-gray-900 text-base group-hover:text-green-600 transition-colors">{getItemTitle()}</div>
-                            <div className="text-sm text-gray-500 mt-1">{getItemDescription()}</div>
-                            {item._type === 'offers' && item.expires && (
-                          <div className="flex items-center gap-2 text-xs text-gray-500 mt-2">
-                                <span className="inline-flex items-center gap-1">
-                                  <img src="/assets/calendar.png" alt="Calendar" width="16" height="16" className="flex-shrink-0" />
-                                  Expires: {formatDate(item.expires)}
-                                </span>
-                              </div>
-                            )}
-                          </div>
+                           {item._type === 'offers' ? (
+                             <>
+                               {/* Bookmaker name */}
+                               <div className="font-semibold text-gray-900 text-sm mb-1 font-['General_Sans']">{item.bookmaker?.name || 'Bookmaker'}</div>
+                               {/* Offer title - main display like country home page */}
+                               <div className="font-medium text-[16px] leading-[100%] tracking-[1%] text-[#272932] group-hover:text-[#018651] transition-colors font-['General_Sans'] mb-1">{item.title || getItemTitle()}</div>
+                               {/* Offer summary/description */}
+                               <div className="text-sm text-gray-500 mt-1 font-['General_Sans']">
+                                 {item.offerSummary ? (
+                                   <PortableText value={item.offerSummary} />
+                                 ) : (
+                                   getItemDescription()
+                                 )}
+                               </div>
+                               {/* Expires date */}
+                               {item.expires && (
+                                 <div className="flex items-center gap-2 text-xs text-gray-500 mt-2">
+                                   <span className="inline-flex items-center gap-1">
+                                     <img src="/assets/calendar.png" alt="Calendar" width="16" height="16" className="flex-shrink-0" />
+                                     Expires: {formatDate(item.expires)}
+                                   </span>
+                                 </div>
+                               )}
+                             </>
+                           ) : (
+                             <>
+                               <div className="font-semibold text-gray-900 text-base group-hover:text-green-600 transition-colors">{getItemTitle()}</div>
+                               <div className="text-sm text-gray-500 mt-1">{getItemDescription()}</div>
+                             </>
+                           )}
+                         </div>
                         </div>
                         <div className="flex flex-col items-end mt-4 sm:mt-0">
                           <span className="text-xs text-gray-400 mb-2">

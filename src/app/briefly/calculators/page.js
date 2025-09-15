@@ -61,7 +61,7 @@ export default function CalculatorsPage() {
             <Image src="/assets/back-arrow.png" alt="Back" width={28} height={28} />
           </button>
           <span className="text-green-700 text-2xl">●</span>
-          <h2 className="text-2xl font-bold">Calculators</h2>
+          <h1 className="text-2xl font-bold">Calculators</h1>
         </div>
         
         <div className="flex flex-col lg:flex-row gap-8">

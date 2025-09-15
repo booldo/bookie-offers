@@ -110,6 +110,7 @@ export default function DynamicOffers({ countrySlug, initialFilter = null, filte
   const [bonusTypeOptions, setBonusTypeOptions] = useState([]);
   const [bookmakerOptions, setBookmakerOptions] = useState([]);
   const [advancedOptions, setAdvancedOptions] = useState([]);
+  const [countryId, setCountryId] = useState(null);
   const [loadingStage, setLoadingStage] = useState('initial');
   const [currentPage, setCurrentPage] = useState(1);
   const [offersPerPage] = useState(10);
@@ -258,7 +259,9 @@ export default function DynamicOffers({ countrySlug, initialFilter = null, filte
         setLoadingStage('country');
         const data = await client.fetch(`
           *[_type == "countryPage" && slug.current == $slug && isActive == true][0]{
+            _id,
             country,
+            pageTitle,
             slug
           }
         `, { slug: countrySlug });
@@ -268,6 +271,7 @@ export default function DynamicOffers({ countrySlug, initialFilter = null, filte
         }
         
         setCountryData(data);
+        setCountryId(data._id);
         return data;
       } catch (error) {
         console.error('Error fetching country data:', error);
@@ -307,13 +311,29 @@ export default function DynamicOffers({ countrySlug, initialFilter = null, filte
         setOffers(offersData);
         setLoadingStage('complete');
         
+        // Fetch all bonus types and bookmakers for the country to ensure dropdown completeness
+        let allBonusTypes = [];
+        let allBookmakers = [];
+        if (data?._id) {
+          try {
+            const [btList, bmList] = await Promise.all([
+              client.fetch(`*[_type == "bonusType" && country._ref == $cid && isActive == true] | order(name asc){ name }`, { cid: data._id }),
+              client.fetch(`*[_type == "bookmaker" && country._ref == $cid && isActive == true] | order(name asc){ name }`, { cid: data._id })
+            ]);
+            allBonusTypes = btList?.map(b => b.name).filter(Boolean) || [];
+            allBookmakers = bmList?.map(b => b.name).filter(Boolean) || [];
+          } catch (e) {
+            console.error('Failed fetching full lists:', e);
+          }
+        }
+
         // Compute bonus type counts and unique bonus types
         const bonusTypeCount = {};
         offersData.forEach(offer => {
           const bt = offer.bonusType?.name || "Other";
           bonusTypeCount[bt] = (bonusTypeCount[bt] || 0) + 1;
         });
-        const bonusOptions = Object.entries(bonusTypeCount).map(([name, count]) => ({ name, count }));
+        const bonusOptions = Object.entries(bonusTypeCount).map(([name, count]) => ({ name, count })).sort((a, b) => a.name.localeCompare(b.name));
         setBonusTypeOptions(bonusOptions);
         
         // Compute bookmaker counts and unique bookmakers
@@ -322,7 +342,11 @@ export default function DynamicOffers({ countrySlug, initialFilter = null, filte
           const bm = offer.bookmaker?.name || "Other";
           bookmakerCount[bm] = (bookmakerCount[bm] || 0) + 1;
         });
-        const bmOptions = Object.entries(bookmakerCount).map(([name, count]) => ({ name, count }));
+        // Bookmakers include full country list (include zero-offer items)
+        const bookmakerSet = new Set([...(Object.keys(bookmakerCount)), ...allBookmakers]);
+        const bmOptions = Array.from(bookmakerSet)
+          .map(name => ({ name, count: bookmakerCount[name] || 0 }))
+          .sort((a, b) => a.name.localeCompare(b.name));
         setBookmakerOptions(bmOptions);
         
             // Compute payment method counts from actual data
@@ -739,7 +763,7 @@ export default function DynamicOffers({ countrySlug, initialFilter = null, filte
       <div className="sticky top-16 z-40 bg-white sm:static sm:bg-transparent">
         <div className="flex items-center justify-between my-4">
           <h1 className="font-['General_Sans'] font-semibold text-[24px] leading-[100%] text-[#272932] whitespace-nowrap">
-            Best Offers <span className="font-['General_Sans'] font-medium text-[16px] leading-[100%] tracking-[1%] align-middle text-[#696969]">{offers.length}</span>
+            {countryData?.pageTitle || 'Best Offers'} <span className="font-['General_Sans'] font-medium text-[16px] leading-[100%] tracking-[1%] align-middle text-[#696969]">{offers.length}</span>
             {totalPages > 1 && (
               <span className="font-['General_Sans'] font-medium text-[16px] leading-[100%] tracking-[1%] align-middle text-[#696969] ml-2">
                 (Page {currentPage} of {totalPages})

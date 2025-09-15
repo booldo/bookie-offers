@@ -1,6 +1,6 @@
 export default {
   name: 'hamburgerMenu',
-  title: 'Hamburger Menu',
+  title: 'Menu Pages',
   type: 'document',
   fields: [
     {
@@ -8,6 +8,59 @@ export default {
       title: 'Title',
       type: 'string',
       description: 'The title that appears at the bottom of the hamburger menu',
+      validation: Rule => Rule.required()
+    },
+    {
+      name: 'selectedPage',
+      title: 'Select Page',
+      type: 'reference',
+      to: [
+        { type: 'landingPage' },
+        { type: 'countryPage' }
+      ],
+      options: {
+        disableNew: true
+      },
+      description: 'Link this menu page to an existing Landing Page or Country Page document'
+    },
+    {
+      name: 'slug',
+      title: 'URL Slug',
+      type: 'slug',
+      description: 'URL path for this menu (e.g., \'stack\'). Multiple entries can have the same slug if they belong to different countries.',
+      options: {
+        source: 'title',
+        maxLength: 96,
+        slugify: input => (input || '').toString().toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-'),
+        isUnique: (slug, context) => {
+          // Allow duplicate slugs if they belong to different countries
+          const { document } = context;
+          if (!document?.selectedPage?._ref) return true; // Allow if no country selected
+          
+          // Check if another document has the same slug but different country
+          return context.getClient({ apiVersion: '2023-01-01' })
+            .fetch(`*[_type == "hamburgerMenu" && slug.current == $slug && _id != $id]{
+              selectedPage->{
+                _type,
+                _id
+              }
+            }`, { slug: slug.current, id: document._id })
+            .then(existingDocs => {
+              // If no existing docs, allow
+              if (!existingDocs || existingDocs.length === 0) return true;
+              
+              // Check if any existing doc has the same country
+              const currentCountryId = document.selectedPage._ref;
+              const hasSameCountry = existingDocs.some(doc => 
+                doc.selectedPage?._type === 'countryPage' && doc.selectedPage._id === currentCountryId
+              );
+              
+              // Allow if no existing doc has the same country
+              return !hasSameCountry;
+            })
+            .catch(() => true); // Allow on error to prevent blocking
+        }
+      },
       validation: Rule => Rule.required()
     },
     {
@@ -23,17 +76,24 @@ export default {
             {title: 'H2', value: 'h2'},
             {title: 'H3', value: 'h3'},
             {title: 'H4', value: 'h4'},
-            {title: 'Quote', value: 'blockquote'}
+            {title: 'H5', value: 'h5'},
+            {title: 'H6', value: 'h6'},
+            {title: 'Quote', value: 'blockquote'},
+            {title: 'Code Block', value: 'code'}
           ],
           lists: [
             {title: 'Bullet', value: 'bullet'},
-            {title: 'Number', value: 'number'}
+            {title: 'Number', value: 'number'},
+            {title: 'Checkmarks', value: 'checkmarks'}
           ],
           marks: {
             decorators: [
               {title: 'Strong', value: 'strong'},
               {title: 'Emphasis', value: 'em'},
-              {title: 'Code', value: 'code'}
+              {title: 'Code', value: 'code'},
+              {title: 'Underline', value: 'underline'},
+              {title: 'Strike', value: 'strike-through'},
+              {title: 'Highlight', value: 'highlight'}
             ],
             annotations: [
               {
@@ -54,6 +114,18 @@ export default {
                     title: 'Open in new tab',
                     name: 'blank',
                     type: 'boolean'
+                  }
+                ]
+              },
+              {
+                title: 'Email',
+                name: 'email',
+                type: 'object',
+                fields: [
+                  {
+                    title: 'Email',
+                    name: 'href',
+                    type: 'email'
                   }
                 ]
               }
@@ -82,146 +154,18 @@ export default {
       description: 'The content that will be displayed when the hamburger menu title is clicked'
     },
     {
-      name: 'additionalMenuItems',
-      title: 'Additional Menu Items',
-      type: 'array',
-      of: [
-        {
-          type: 'object',
-          fields: [
-            {
-              name: 'label',
-              title: 'Menu Label',
-              type: 'string',
-              validation: Rule => Rule.required()
-            },
-            {
-              name: 'content',
-              title: 'Content',
-              type: 'array',
-              of: [
-                {
-                  type: 'block',
-                  styles: [
-                    {title: 'Normal', value: 'normal'},
-                    {title: 'H1', value: 'h1'},
-                    {title: 'H2', value: 'h2'},
-                    {title: 'H3', value: 'h3'},
-                    {title: 'H4', value: 'h4'},
-                    {title: 'Quote', value: 'blockquote'}
-                  ],
-                  lists: [
-                    {title: 'Bullet', value: 'bullet'},
-                    {title: 'Number', value: 'number'}
-                  ],
-                  marks: {
-                    decorators: [
-                      {title: 'Strong', value: 'strong'},
-                      {title: 'Emphasis', value: 'em'},
-                      {title: 'Code', value: 'code'}
-                    ],
-                    annotations: [
-                      {
-                        title: 'URL',
-                        name: 'link',
-                        type: 'object',
-                        fields: [
-                          {
-                            title: 'URL',
-                            name: 'href',
-                            type: 'url',
-                            validation: Rule => Rule.uri({
-                              allowRelative: true,
-                              scheme: ['http', 'https', 'mailto', 'tel']
-                            })
-                          },
-                          {
-                            title: 'Open in new tab',
-                            name: 'blank',
-                            type: 'boolean'
-                          }
-                        ]
-                      }
-                    ]
-                  }
-                },
-                {
-                  type: 'image',
-                  options: { hotspot: true },
-                  fields: [
-                    {
-                      name: 'alt',
-                      type: 'string',
-                      title: 'Alternative Text',
-                      description: 'Important for SEO and accessibility.',
-                      validation: Rule => Rule.required()
-                    },
-                    {
-                      name: 'caption',
-                      type: 'string',
-                      title: 'Caption'
-                    }
-                  ]
-                }
-              ],
-              description: 'The content that will be displayed when this menu item is clicked'
-            },
-            {
-              name: 'isActive',
-              title: 'Active',
-              type: 'boolean',
-              description: 'Whether this menu item should be displayed',
-              initialValue: true
-            }
-          ],
-          preview: {
-            select: {
-              title: 'label',
-              subtitle: 'isActive'
-            },
-            prepare(selection) {
-              const {title, subtitle} = selection;
-              return {
-                title: title || 'Menu Item',
-                subtitle: subtitle ? 'Active' : 'Inactive'
-              };
-            }
-          }
-        }
-      ],
-      description: 'Additional menu items that will appear below the default menu items'
-    },
-    // Metadata fields for SEO
-    {
       name: 'metaTitle',
       title: 'Meta Title',
       type: 'string',
-      description: 'Title for SEO (appears in browser tab and search results)',
+      description: 'SEO: Custom meta title for this page',
       validation: Rule => Rule.max(60).warning('Should be under 60 characters')
     },
     {
       name: 'metaDescription',
       title: 'Meta Description',
       type: 'text',
-      description: 'Description for SEO (appears in search results)',
+      description: 'SEO: Custom meta description for this page',
       validation: Rule => Rule.max(160).warning('Should be under 160 characters')
-    },
-    {
-      name: 'keywords',
-      title: 'Keywords',
-      type: 'array',
-      of: [{ type: 'string' }],
-      description: 'Keywords for SEO (comma separated)',
-      options: {
-        layout: 'tags'
-      }
-    },
-    {
-      name: 'sitemapInclude',
-      title: 'Include in Sitemap',
-      type: 'boolean',
-      description: 'SEO: Should this page be included in sitemap.xml?',
-      initialValue: true
     },
     {
       name: 'noindex',
@@ -241,12 +185,11 @@ export default {
       type: 'url',
       description: 'SEO: Canonical URL for this page (leave blank for default)'
     },
-
     {
-      name: 'isActive',
-      title: 'Active',
+      name: 'sitemapInclude',
+      title: 'Include in Sitemap',
       type: 'boolean',
-      description: 'Whether the hamburger menu is active',
+      description: 'SEO: Should this page be included in sitemap.xml?',
       initialValue: true
     },
     {
@@ -259,15 +202,12 @@ export default {
   ],
   preview: {
     select: {
-      title: 'title',
-      subtitle: 'additionalMenuItems'
+      title: 'title'
     },
     prepare(selection) {
-      const {title, subtitle} = selection;
-      const itemCount = subtitle ? subtitle.length : 0;
+      const {title} = selection;
       return {
-        title: title || 'Hamburger Menu',
-        subtitle: `${itemCount} additional menu item${itemCount !== 1 ? 's' : ''}`
+        title: title || 'Hamburger Menu'
       };
     }
   }
