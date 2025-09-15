@@ -72,12 +72,24 @@ async function getOffersData({ countryName, countryId }) {
     let allBonusTypes = [];
     let allBookmakers = [];
     if (countryId) {
+      console.log('DEBUG: countryId:', countryId);
+      console.log('DEBUG: countryName:', countryName);
       const [btList, bmList] = await Promise.all([
         client.fetch(`*[_type == "bonusType" && country._ref == $cid && isActive == true] | order(name asc){ name }`, { cid: countryId }),
-        client.fetch(`*[_type == "bookmaker" && country._ref == $cid && isActive == true] | order(name asc){ name }`, { cid: countryId })
+        client.fetch(`*[_type == "bookmaker" && country._ref == $cid && isActive == true] | order(name asc){ name, country }`, { cid: countryId })
       ]);
+      console.log('DEBUG: raw bmList:', bmList);
       allBonusTypes = btList?.map(b => b.name).filter(Boolean) || [];
       allBookmakers = bmList?.map(b => b.name).filter(Boolean) || [];
+      // If bmList is empty, try alternate query by country name
+      if (allBookmakers.length === 0 && countryName) {
+        const bmListByName = await client.fetch(`*[_type == "bookmaker" && country->country == $countryName && isActive == true] | order(name asc){ name, country }`, { countryName });
+        console.log('DEBUG: fallback bmListByName:', bmListByName);
+        allBookmakers = bmListByName?.map(b => b.name).filter(Boolean) || [];
+      }
+      // Always log all bookmakers with country reference for inspection
+      const allBookmakersWithCountry = await client.fetch(`*[_type == "bookmaker" && isActive == true]{name, country->{_id, country, countryCode}}`);
+      console.log('DEBUG: allBookmakersWithCountry:', allBookmakersWithCountry);
     }
     
     // Compute bonus type counts and unique bonus types
@@ -101,6 +113,8 @@ async function getOffersData({ countryName, countryId }) {
     const bookmakerOptions = Array.from(bookmakerSet)
       .map(name => ({ name, count: bookmakerCount[name] || 0 }))
       .sort((a, b) => a.name.localeCompare(b.name));
+    console.log('DEBUG: allBookmakers:', allBookmakers);
+    console.log('DEBUG: bookmakerOptions (all, including 0 offers):', bookmakerOptions);
     
     // Compute payment method counts from actual data
     const paymentMethodCount = {};
