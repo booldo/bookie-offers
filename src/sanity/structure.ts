@@ -80,15 +80,6 @@ export const structure: StructureResolver = (S) =>
             )
         ),
 
-      // Worldwide Page
-      S.listItem()
-        .title('Worldwide Page')
-        .child(
-          S.document()
-            .schemaType('worldwidePage')
-            .documentId('worldwidePage')
-        ),
-
       // Divider
       S.divider(),
 
