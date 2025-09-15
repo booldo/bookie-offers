@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { checkRedirect } from './lib/redirects';
-import { generate410Html } from './lib/gone410';
+import { generate410Html, checkOfferStatus } from './lib/gone410';
 import { checkGoneStatus } from './lib/checkGoneStatus';
 
 export async function middleware(request) {
