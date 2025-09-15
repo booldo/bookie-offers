@@ -5,17 +5,25 @@ export default async function Gone410Layout({
 }: {
   children: React.ReactNode;
 }) {
-  // This layout ensures the 410 status code is set
+  // Set 410 status code for this route
   const headersList = headers();
   
   return (
-    <>
-      {children}
-    </>
+    <html>
+      <head>
+        <meta httpEquiv="status" content="410" />
+      </head>
+      <body>
+        {children}
+      </body>
+    </html>
   );
 }
 
-// This function will be called by Next.js to set the status code
-export async function generateStaticParams() {
-  return [];
-}
+// This ensures the page returns a 410 status code
+export const metadata = {
+  other: {
+    'http-equiv': 'status',
+    content: '410'
+  }
+};

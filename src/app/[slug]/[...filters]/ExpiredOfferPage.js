@@ -5,7 +5,6 @@ import Footer from "../../../components/Footer";
 import Link from "next/link";
 import Image from "next/image";
 
-
 function ExpiredOfferPage({ offer, embedded = false, countrySlug = "", isCountryEmpty = false, countryName = "", isHidden = false, contentType = "offer" }) {
   // Handle back button click without router dependency
   const handleBackClick = () => {

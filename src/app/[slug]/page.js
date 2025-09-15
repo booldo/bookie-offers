@@ -166,6 +166,10 @@ export async function generateMetadata({ params }) {
   };
 }
 
+// Force dynamic rendering so middleware can intercept and return 410 when needed
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function CountryPage({ params }) {
   const awaitedParams = await params;
   // Render Menu Page if a matching slug exists
