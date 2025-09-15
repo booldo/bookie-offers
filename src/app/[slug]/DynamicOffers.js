@@ -763,7 +763,7 @@ export default function DynamicOffers({ countrySlug, initialFilter = null, filte
       <div className="sticky top-16 z-40 bg-white sm:static sm:bg-transparent">
         <div className="flex items-center justify-between my-4">
           <h1 className="font-['General_Sans'] font-semibold text-[24px] leading-[100%] text-[#272932] whitespace-nowrap">
-            {countryData?.pageTitle || 'Best Offers'} <span className="font-['General_Sans'] font-medium text-[16px] leading-[100%] tracking-[1%] align-middle text-[#696969]">{offers.length}</span>
+            {countryData?.pageTitle || 'Best Offers'} <span className="font-['General_Sans'] font-medium text-[16px] leading-[100%] tracking-[1%] align-middle text-[#696969]">{filteredOffers.length}</span>
             {totalPages > 1 && (
               <span className="font-['General_Sans'] font-medium text-[16px] leading-[100%] tracking-[1%] align-middle text-[#696969] ml-2">
                 (Page {currentPage} of {totalPages})
