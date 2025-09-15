@@ -22,6 +22,10 @@ export default async function Gone410Layout({
 
 // This ensures the page returns a 410 status code
 export const metadata = {
+  title: "410 - Content Not Available | Booldo",
+  icons: {
+    icon: "/assets/favicon.ico",
+  },
   other: {
     'http-equiv': 'status',
     content: '410'

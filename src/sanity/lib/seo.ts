@@ -9,7 +9,10 @@ export async function getLandingPageSettings() {
     defaultNoindex,
     defaultNofollow,
     defaultCanonicalUrl,
-    defaultSitemapInclude
+    defaultSitemapInclude,
+    blogPageTitle,
+    calculatorPageTitle,
+    mostSearches
   }`;
   return client.fetch(query);
 }

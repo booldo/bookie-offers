@@ -7,6 +7,7 @@ import imageUrlBuilder from '@sanity/image-url';
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { getLandingPageSettings } from "../../sanity/lib/seo";
 
 const builder = imageUrlBuilder(client);
 function urlFor(source) {
@@ -16,6 +17,7 @@ function urlFor(source) {
 export default function BrieflyPage() {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [pageTitle, setPageTitle] = useState("");
   const router = useRouter();
 
   useEffect(() => {
@@ -37,6 +39,20 @@ export default function BrieflyPage() {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    async function fetchTitle() {
+      try {
+        const landingPage = await getLandingPageSettings();
+        if (landingPage?.blogPageTitle) {
+          setPageTitle(landingPage.blogPageTitle);
+        }
+      } catch (error) {
+        console.error('Error fetching page title:', error);
+      }
+    }
+    fetchTitle();
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col bg-[#fafbfc]">
       <HomeNavbar />
@@ -50,7 +66,7 @@ export default function BrieflyPage() {
             <Image src="/assets/back-arrow.png" alt="Back" width={28} height={28} />
           </button>
           <span className="text-green-700 text-2xl">●</span>
-          <h1 className="text-xl sm:text-2xl font-bold font-['General_Sans']">Blog</h1>
+          <h1 className="text-xl sm:text-2xl font-bold font-['General_Sans']">{pageTitle}</h1>
         </div>
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
@@ -70,7 +86,7 @@ export default function BrieflyPage() {
                     href={`/briefly/${article.slug}`}
                 className="flex flex-col items-center bg-white rounded-lg shadow-sm p-4 transition hover:shadow-lg hover:scale-[1.03] cursor-pointer"
                   >
-                <div className="w-32 h-32 rounded overflow-hidden bg-gray-100 mb-3">
+                <div className="w-40 h-40 md:w-56 md:h-56 rounded overflow-hidden bg-gray-100 mb-3">
                       {article.mainImage ? (
                     <img 
                       src={urlFor(article.mainImage)} 
