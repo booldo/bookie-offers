@@ -1,17 +1,21 @@
 import { NextResponse } from 'next/server';
 import { checkRedirect } from './lib/redirects';
-import { generate410Html } from './lib/gone410';
+import { generate410Html, checkOfferStatus } from './lib/gone410';
 import { checkGoneStatus } from './lib/checkGoneStatus';
 
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
   
   // Generic global 410 Gone logic for all dynamic content types
+  const excludedRoutes = ['/briefly', '/faq', '/footer', '/analytics', '/robots.txt', '/sitemap.xml', '/sitemap-index.xml'];
+  if (excludedRoutes.includes(pathname)) {
+    return NextResponse.next();
+  }
   const dynamicPatterns = [
     { regex: /^\/briefly\/([^\/]+)$/, type: 'article' },
     { regex: /^\/footer\/([^\/]+)$/, type: 'footer' },
     { regex: /^\/([^\/]+)\/[^\/]+\/([^\/]+)$/, type: 'offers' }, // offer details
-    { regex: /^\/([^\/]+)$/, type: 'page' }, // single-segment top-level pages
+    { regex: /^\/([^\/]+)$/, type: 'countryPage' }, // country slugs like /ng
     // Add more patterns as needed
   ];
   for (const { regex, type } of dynamicPatterns) {

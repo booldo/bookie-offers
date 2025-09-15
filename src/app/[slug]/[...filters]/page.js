@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import CountryPageShell, { generateStaticParams } from '../CountryPageShell';
 import DynamicOffers from '../DynamicOffers';
 import OfferDetailsInner from './OfferDetailsInner';
