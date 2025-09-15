@@ -1,5 +1,16 @@
 import { headers } from 'next/headers';
 
+export async function generateMetadata() {
+  return {
+    title: "410 - Content No Longer Available | Booldo",
+    description: "This content has been intentionally removed or hidden and is no longer accessible.",
+    robots: "noindex, nofollow",
+    icons: {
+      icon: "/assets/favicon.ico",
+    },
+  };
+}
+
 export default async function Gone410Layout({
   children,
 }: {
@@ -9,9 +20,14 @@ export default async function Gone410Layout({
   const headersList = headers();
   
   return (
-    <>
-      {children}
-    </>
+    <html lang="en">
+      <head>
+        <link rel="icon" href="/assets/favicon.ico" type="image/x-icon" />
+      </head>
+      <body>
+        {children}
+      </body>
+    </html>
   );
 }
 

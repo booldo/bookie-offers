@@ -6,13 +6,7 @@ import Image from "next/image";
 import { headers } from 'next/headers';
 
 // This function sets the HTTP status to 410
-export async function generateMetadata() {
-  return {
-    title: "410 - Content No Longer Available | Booldo",
-    description: "This content has been intentionally removed or hidden and is no longer accessible.",
-    robots: "noindex, nofollow"
-  };
-}
+// Metadata is now handled in layout.tsx
 
 export default async function Gone410Page({ searchParams }) {
   // Get search params for offer details

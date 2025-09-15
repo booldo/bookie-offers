@@ -7,6 +7,7 @@ import { client } from "../sanity/lib/client";
 import { urlFor } from "../sanity/lib/image";
 import Link from "next/link";
 import { formatDate } from "../utils/dateFormatter";
+import { PortableText } from "@portabletext/react";
 
 const WORLD_WIDE_FLAG = { src: "/assets/flags.png", name: "World Wide", path: "/", topIcon: "/assets/dropdown.png" };
 
@@ -176,12 +177,15 @@ export default function HomeNavbar() {
       
       // Search offers (worldwide - both countries)
       const offersQuery = `*[_type == "offers" && (
+        title match $term ||
         bonusType->name match $term ||
         bookmaker->name match $term ||
         pt::text(description) match $term
       )] | order(_createdAt desc) {
         _id,
         slug,
+        title,
+        offerSummary,
         bonusType->{
           _id,
           name
@@ -535,6 +539,9 @@ export default function HomeNavbar() {
             // Prevent clicks on the overlay from interfering with card clicks
             if (e.target === e.currentTarget) {
               setSearchOpen(false);
+              setSearchValue("");
+              setSearchResults([]);
+              setSearchLoading(false);
             }
           }}
         >
@@ -555,7 +562,7 @@ export default function HomeNavbar() {
                   autoFocus
                 />
               </div>
-              <button className="ml-2 md:ml-4 text-gray-500 text-sm md:text-base font-medium hover:underline font-['General_Sans'] flex-shrink-0" onClick={() => setSearchOpen(false)}>Cancel</button>
+              <button className="ml-2 md:ml-4 text-gray-500 text-sm md:text-base font-medium hover:underline font-['General_Sans'] flex-shrink-0" onClick={() => { setSearchOpen(false); setSearchValue(""); setSearchResults([]); setSearchLoading(false); }}>Cancel</button>
             </div>
             {/* Search Results */}
             <div>
@@ -788,24 +795,47 @@ export default function HomeNavbar() {
                             </div>
                           )}
                           <div>
-                            <div className="font-semibold text-gray-900 text-base group-hover:text-green-600 transition-colors font-['General_Sans']">{getItemTitle()}</div>
-                            <div className="text-sm text-gray-500 mt-1 font-['General_Sans']">{getItemDescription()}</div>
-                            {item._type === 'offers' && item.country && (
-                              <div className="flex items-center gap-2 text-xs text-gray-500 mt-2">
-                                <span className="inline-flex items-center gap-1">
-                                  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                                    <circle cx="12" cy="10" r="3"/>
-                                  </svg>
-                                  {item.country.country}
-                                </span>
-                              </div>
-                            )}
-                            {item._type === 'offers' && item.expires && (
-                              <div className="flex items-center gap-2 text-xs text-gray-500 mt-2">
-                                <img src="/assets/calendar.png" alt="Calendar" width="16" height="16" className="flex-shrink-0" />
-                                Expires: {formatDate(item.expires)}
-                              </div>
+                            {item._type === 'offers' ? (
+                              <>
+                                {/* Bookmaker name */}
+                                <div className="font-semibold text-gray-900 text-sm mb-1 font-['General_Sans']">{item.bookmaker?.name || 'Bookmaker'}</div>
+                                {/* Offer title - main display like country home page */}
+                                <div className="font-medium text-[16px] leading-[100%] tracking-[1%] text-[#272932] group-hover:text-[#018651] transition-colors font-['General_Sans'] mb-1">{item.title || getItemTitle()}</div>
+                                {/* Offer summary/description */}
+                                <div className="text-sm text-gray-500 mt-1 font-['General_Sans']">
+                                  {item.offerSummary ? (
+                                    <PortableText value={item.offerSummary} />
+                                  ) : (
+                                    getItemDescription()
+                                  )}
+                                </div>
+                                {/* Expires date */}
+                                {item.expires && (
+                                  <div className="flex items-center gap-2 text-xs text-gray-500 mt-2">
+                                    <span className="inline-flex items-center gap-1">
+                                      <img src="/assets/calendar.png" alt="Calendar" width="16" height="16" className="flex-shrink-0" />
+                                      Expires: {formatDate(item.expires)}
+                                    </span>
+                                  </div>
+                                )}
+                                {/* Country badge */}
+                                {item.country && (
+                                  <div className="flex items-center gap-2 text-xs text-gray-500 mt-2">
+                                    <span className="inline-flex items-center gap-1">
+                                      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                                        <circle cx="12" cy="10" r="3"/>
+                                      </svg>
+                                      {item.country.country}
+                                    </span>
+                                  </div>
+                                )}
+                              </>
+                            ) : (
+                              <>
+                                <div className="font-semibold text-gray-900 text-base group-hover:text-green-600 transition-colors font-['General_Sans']">{getItemTitle()}</div>
+                                <div className="text-sm text-gray-500 mt-1 font-['General_Sans']">{getItemDescription()}</div>
+                              </>
                             )}
                           </div>
                         </div>
