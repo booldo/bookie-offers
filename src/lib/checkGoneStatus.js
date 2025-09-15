@@ -14,6 +14,8 @@ export async function checkGoneStatus(type, slug) {
       query = `*[_type == "article" && slug.current == $slug][0]{ title, noindex, sitemapInclude }`;
     } else if (type === 'footer') {
       query = `*[_type == "footer" && isActive == true][0]{ bottomRowLinks{ links[]{ label, slug, content, noindex, sitemapInclude } } }`;
+    } else if (type === 'page') {
+      query = `*[_type == "page" && slug.current == $slug][0]{ title, noindex, sitemapInclude }`;
     } else {
       // Default: just check for noindex/sitemapInclude
       query = `*[_type == $type && slug.current == $slug][0]{ title, noindex, sitemapInclude }`;

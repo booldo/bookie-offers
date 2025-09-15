@@ -11,6 +11,7 @@ export async function middleware(request) {
     { regex: /^\/briefly\/([^\/]+)$/, type: 'article' },
     { regex: /^\/footer\/([^\/]+)$/, type: 'footer' },
     { regex: /^\/([^\/]+)\/[^\/]+\/([^\/]+)$/, type: 'offers' }, // offer details
+    { regex: /^\/([^\/]+)$/, type: 'page' }, // single-segment top-level pages
     // Add more patterns as needed
   ];
   for (const { regex, type } of dynamicPatterns) {
