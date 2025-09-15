@@ -86,7 +86,7 @@ export default function BrieflyPage() {
                     href={`/briefly/${article.slug}`}
                 className="flex flex-col items-center bg-white rounded-lg shadow-sm p-4 transition hover:shadow-lg hover:scale-[1.03] cursor-pointer"
                   >
-                <div className="w-48 h-48 md:w-64 md:h-64 rounded overflow-hidden bg-gray-100 mb-3">
+                <div className="w-40 h-40 md:w-56 md:h-56 rounded overflow-hidden bg-gray-100 mb-3">
                       {article.mainImage ? (
                     <img 
                       src={urlFor(article.mainImage)} 

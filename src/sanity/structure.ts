@@ -83,12 +83,37 @@ export const structure: StructureResolver = (S) =>
       // Divider
       S.divider(),
 
-      // Page Contents (all documents)
+      // World Wide Pages
       S.listItem()
-        .title('Home Content')
+        .title('World Wide Pages')
         .child(
           S.list()
-            .title('Home Content')
+            .title('World Wide Pages')
+            .items([
+              S.listItem()
+                .title('Menu Pages')
+                .child(S.documentTypeList('hamburgerMenu').title('Menu Pages')),
+              S.listItem()
+                .title('Blog')
+                .child(S.documentTypeList('article').title('Blog')),
+              S.listItem()
+                .title('Calculators')
+                .child(S.documentTypeList('calculator').title('Calculators')),
+              S.listItem()
+                .title('Redirects')
+                .child(S.documentTypeList('redirects').title('Redirects')),
+              S.listItem()
+                .title('Footer')
+                .child(S.documentTypeList('footer').title('Footer')),
+            ])
+        ),
+
+      // Page Contents (all documents)
+      S.listItem()
+        .title('All Pages')
+        .child(
+          S.list()
+            .title('All Pages')
             .items(S.documentTypeListItems())
         ),
     ])
