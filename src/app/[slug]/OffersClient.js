@@ -547,77 +547,7 @@ export default function OffersClient({
         )}
 
         {/* Offers list */}
-        {sortedOffers.length > 0 && (
-          <div className="flex flex-col gap-3 mb-6">
-            {sortedOffers.map((offer) => (
-              <div
-                key={offer._id}
-                className="group relative bg-white rounded-xl border border-gray-100 shadow-sm p-3 flex flex-col transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:border-gray-200 hover:bg-[#F5F5F7] cursor-pointer w-full h-auto min-h-[174px] gap-[12px] opacity-100 border-radius-[12px] border-width-[1px]"
-              >
-                {countrySlug &&
-                  offer.bonusType?.name &&
-                  offer.slug?.current && (
-                    <Link
-                      href={`/${countrySlug}/${slugify(offer.bonusType.name)}/${offer.slug.current}`}
-                      aria-label={offer.title}
-                      className="absolute inset-0 z-10"
-                    />
-                  )}
-                {/* Top row */}
-                <div className="flex justify-between items-center mb-1">
-                  <div className="flex items-center gap-2">
-                    {offer.bookmaker?.logo ? (
-                      <img
-                        src={urlFor(offer.bookmaker.logo)
-                          .width(44)
-                          .height(44)
-                          .url()}
-                        alt={offer.bookmaker.name}
-                        width="44"
-                        height="44"
-                        className="rounded-md transition-transform duration-200 group-hover:scale-105"
-                      />
-                    ) : (
-                      <div className="w-11 h-11 bg-gray-100 rounded-md transition-transform duration-200 group-hover:scale-105" />
-                    )}
-                    <span className="font-semibold text-gray-900 font-['General_Sans']">
-                      {offer.bookmaker?.name}
-                    </span>
-                  </div>
-                  <span className="font-['General_Sans'] font-medium text-[14px] leading-[100%] tracking-[0.01em] text-[#696969]">
-                    Published: {formatDate(offer.published)}
-                  </span>
-                </div>
-
-                {/* Title */}
-                <h3 className="font-['General_Sans'] font-medium text-[16px] leading-[100%] tracking-[1%] text-[#272932] cursor-pointer mb-1 transition-all duration-200 group-hover:text-[#018651] group-hover:text-[20px] group-hover:font-medium group-hover:leading-[100%] group-hover:tracking-[1%]">
-                  {offer.title}
-                </h3>
-
-                {/* Description */}
-                <div className="font-['General_Sans'] font-normal text-[16px] leading-[20px] tracking-[0.01em] text-[#696969] mb-1">
-                  {offer.offerSummary && (
-                    <PortableText value={offer.offerSummary} />
-                  )}
-                </div>
-
-                {/* Expires */}
-                <div className="flex items-center gap-1 text-[#272932] mt-auto mb-2">
-                  <img
-                    src="/assets/calendar.png"
-                    alt="Calendar"
-                    width="16"
-                    height="16"
-                    className="flex-shrink-0"
-                  />
-                  <span className="font-['General_Sans'] font-medium text-[14px] leading-[100%] tracking-[0.01em] text-[#272932]">
-                    Expires: {formatDate(offer.expires)}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+       
       </div>
     </>
   );
