@@ -60,9 +60,12 @@ async function CountryCards() {
           {/* Flag and Country Name Row */}
           <div className="flex items-center gap-3 mb-2">
             {country.pageFlag ? (
-              <img
-                src={urlFor(country.pageFlag).width(32).height(32).url()}
+              <Image
+                src={urlFor(country.pageFlag).width(64).height(64).url()}
+                width={32}
+                height={32}
                 alt={`${country.country} flag`}
+
                 className="w-8 h-8 sm:w-9 sm:h-9 object-cover rounded"
               />
             ) : (

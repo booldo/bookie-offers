@@ -1324,14 +1324,16 @@ export default function DynamicOffers({
                 <div className="flex justify-between items-center mb-1">
                   <div className="flex items-center gap-2">
                     {offer.bookmaker?.logo ? (
-                      <img
+                      <Image
                         src={urlFor(offer.bookmaker.logo)
-                          .width(44)
-                          .height(44)
+                          .width(440)
+                          .height(440)
                           .url()}
                         alt={offer.bookmaker.name}
                         width="44"
                         height="44"
+                        priority
+                        quality={100}
                         className="rounded-md transition-transform duration-200 group-hover:scale-105"
                       />
                     ) : (
