@@ -301,7 +301,7 @@ async function getCountryPageData(slug) {
       nofollow,
       canonicalUrl,
       sitemapInclude,
-      pageContent,
+      comparison,
       faqs
     }`;
     
@@ -457,11 +457,11 @@ export default async function CountryPageShell({ params, children, isOfferDetail
         {/* Static home content + FAQ section - prerendered */}
         {((filterComparison) || (filterFaqs && filterFaqs.length > 0) || (!filterComparison && countryData.pageContent) || (countryData.faqs && countryData.faqs.length > 0)) && (
           <section className="bg-white rounded-xl p-4 sm:p-6 mb-8 sm:mb-10 shadow-sm border border-gray-100">
-            {(filterComparison || (!filterComparison && countryData.pageContent)) && (
+            {(filterComparison || (!filterComparison && countryData.comparison)) && (
               <div className="mb-4 sm:mb-6">
                 <div className="text-gray-600 text-sm sm:text-base font-['General_Sans']">
-                  <PortableText 
-                    value={filterComparison || countryData.pageContent} 
+                  <PortableText
+                    value={filterComparison || countryData.comparison}
                     components={portableTextComponents}
                   />
                 </div>
