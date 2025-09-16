@@ -547,6 +547,141 @@ function OfferDetailsInner({ slug }) {
               {offer.affiliateLink?.affiliateUrl &&
                 offer.affiliateLink?.isActive && <div className="hidden"></div>}
 
+              {/* More Offers Section */}
+              {moreOffers.length > 0 && (
+                <div className="bg-white p-1 sm:p-6 mb-4">
+                  <div className="font-semibold text-gray-900 mb-4">
+                    More Offers
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-1 sm:gap-4">
+                    {moreOffers.map((moreOffer) => (
+                      <div
+                        key={moreOffer._id}
+                        className="relative border   border-gray-200 rounded-lg p-1 hover:border-gray-300 transition-colors cursor-pointer  min-w-0"
+                      >
+                        {moreOffer.slug?.current && (
+                          <Link
+                            href={`/${getCountrySlug()}/${moreOffer.bonusType?.name?.toLowerCase().replace(/\s+/g, "-")}/${moreOffer.slug?.current}`}
+                            aria-label={moreOffer.title}
+                            className="absolute inset-0 z-10"
+                          />
+                        )}
+                        <div className="flex flex-col justify-between gap-1 p-1 ">
+                          {/* Top row: Logo, Bookmaker Name, and Published Date */}
+                          <div className="flex items-center justify-between min-w-0">
+                            {/* <div className="flex items-center gap-2 min-w-0 flex-1">
+                            {moreOffer.bookmaker?.logo ? (
+                              <Image
+                                src={urlFor(moreOffer.bookmaker.logo)
+                                  .width(36)
+                                  .height(36)
+                                  .url()}
+                                alt={moreOffer.bookmaker.name}
+                                width={36}
+                                height={36}
+                                className="rounded-[6px] flex-shrink-0"
+                              />
+                            ) : (
+                              <div className="w-11 h-11 bg-gray-100 rounded-[6px] flex-shrink-0" />
+                            )}
+                            <div className=" font-semibold text-[16px] leading-[100%] tracking-[1%] text-[#272932] min-w-0">
+                              {moreOffer.bookmaker?.name}
+                            </div>
+                          </div> */}
+                            <div className="flex justify-between items-center mb-1">
+                              <div className="flex items-center gap-1">
+                                {offer.bookmaker?.logo ? (
+                                  <img
+                                    src={urlFor(moreOffer.bookmaker.logo)
+                                      .width(36)
+                                      .height(36)
+                                      .url()}
+                                    alt={moreOffer.bookmaker.name}
+                                    width={36}
+                                    height={36}
+                                    //className="rounded-[6px] flex-shrink-0"
+                                    className="rounded-md transition-transform duration-200 group-hover:scale-105"
+                                  />
+                                ) : (
+                                  <div className="w-11 h-11 bg-gray-100 rounded-md transition-transform duration-200 group-hover:scale-105" />
+                                )}
+                                {/* <span className=" font-medium text-[14px] leading-[100%] tracking-[0.01em] text-[#272932] align-middle">
+                                {offer.bookmaker?.name}
+                              </span> */}
+                                <div className=" font-semibold text-[14px] leading-[100%] tracking-[1%] text-[#272932] min-w-0">
+                                  {moreOffer.bookmaker?.name}
+                                </div>
+                              </div>
+                              {/* <span className=" font-medium text-[14px] leading-[100%] tracking-[0.01em] text-[#696969]">
+                                              Published: {formatDate(offer.published)}
+                                            </span> */}
+                            </div>
+
+                            {/* Published Date - positioned on the far right */}
+                            {moreOffer.published && (
+                              <div className="md:text-sm text-xs text-gray-500 flex-shrink-0">
+                                <span className=" font-medium leading-[100%] tracking-[1%] text-[#696969]">
+                                  Published: {formatDate(moreOffer.published)}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Offer Title */}
+                          <div className="font-medium md:text-base leading-[100%] tracking-[1%] text-[#272932] cursor-pointer mb-1 transition-all duration-200 group-hover:text-[#018651] group-hover:text-[20px] group-hover:font-medium group-hover:leading-[100%] group-hover:tracking-[1%">
+                            <h1>{moreOffer.title}</h1>
+                          </div>
+                          {/* Bonus Type Badge */}
+                          {moreOffer.bonusType?.name && (
+                            <div className="flex items-center  gap-2 md:hidden">
+                              <h2 className="flex items-center px-[12px] py-1 rounded-full text-[14px] font-medium bg-[#F5F5F7] text-black">
+                                {moreOffer.bonusType.name}
+                              </h2>
+                            </div>
+                          )}
+                          {/* Offer Summary */}
+                          {moreOffer.offerSummary && (
+                            <div className=" font-normal text-[14px] leading-[20px] tracking-[1%] text-[#696969] line-clamp-2">
+                              <PortableText
+                                value={moreOffer.offerSummary}
+                                components={portableTextComponents}
+                              />
+                            </div>
+                          )}
+
+                          {/* Expiry Date */}
+                          {moreOffer.expires && (
+                            <div className="flex items-center gap-1 text-sm text-black font-medium  mt-auto">
+                              <img
+                                src="/assets/calendar.png"
+                                alt="Calendar"
+                                width="16"
+                                height="16"
+                                className="flex-shrink-0"
+                              />
+                              <span className="text-xs">
+                                Expires: {formatDate(moreOffer.expires)}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {totalOffers > loadMoreCount && (
+                    <div className="mt-4 text-center">
+                      <button
+                        onClick={handleLoadMore}
+                        disabled={isLoadingMore}
+                        className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-6 py-3 rounded-full font-medium transition-all duration-200 border border-gray-200 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isLoadingMore ? "Loading..." : "Load More"}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* FAQ Section */}
               {offer && offer.faq && offer.faq.length > 0 && (
                 <div>
@@ -567,112 +702,6 @@ function OfferDetailsInner({ slug }) {
                 </div>
               )}
             </div>
-
-            {/* More Offers Section */}
-            {moreOffers.length > 0 && (
-              <div className="bg-white p-1 sm:p-6 mb-4">
-                <div className="font-semibold text-gray-900 mb-4">
-                  More Offers
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-1 sm:gap-4">
-                  {moreOffers.map((moreOffer) => (
-                    <div
-                      key={moreOffer._id}
-                      className="relative border flex justify-between border-gray-200 rounded-lg p-1 sm:p-4 hover:border-gray-300 transition-colors cursor-pointer  min-w-0"
-                    >
-                      {moreOffer.slug?.current && (
-                        <Link
-                          href={`/${getCountrySlug()}/${moreOffer.bonusType?.name?.toLowerCase().replace(/\s+/g, "-")}/${moreOffer.slug?.current}`}
-                          aria-label={moreOffer.title}
-                          className="absolute inset-0 z-10"
-                        />
-                      )}
-                      <div className="flex flex-col justify-between sm:gap-3 md:p-0 md: sm:p-1 sm:py-2">
-                        {/* Top row: Logo, Bookmaker Name, and Published Date */}
-                        <div className="flex items-center justify-between min-w-0">
-                          <div className="flex items-center gap-3 min-w-0 flex-1">
-                            {moreOffer.bookmaker?.logo ? (
-                              <Image
-                                src={urlFor(moreOffer.bookmaker.logo)
-                                  .width(44)
-                                  .height(44)
-                                  .url()}
-                                alt={moreOffer.bookmaker.name}
-                                width={44}
-                                height={44}
-                                className="rounded-[6px] flex-shrink-0"
-                              />
-                            ) : (
-                              <div className="w-11 h-11 bg-gray-100 rounded-[6px] flex-shrink-0" />
-                            )}
-                            <div className=" font-semibold text-[16px] leading-[100%] tracking-[1%] text-[#272932] min-w-0">
-                              {moreOffer.bookmaker?.name}
-                            </div>
-                          </div>
-                          {/* Published Date - positioned on the far right */}
-                          {moreOffer.published && (
-                            <div className="text-sm text-gray-500 flex-shrink-0">
-                              <span className=" font-medium text-[14px] leading-[100%] tracking-[1%] text-[#696969]">
-                                Published: {formatDate(moreOffer.published)}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Offer Title */}
-                        <div className=" text-[16px] font-medium tracking-[1%] text-[#272932]">
-                          <h1>{moreOffer.title}</h1>
-                        </div>
-                        {/* Bonus Type Badge */}
-                        {moreOffer.bonusType?.name && (
-                          <div className="flex items-center px-12 py-2 gap-2 md:hidden">
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-[#F5F5F7] text-black">
-                              {moreOffer.bonusType.name}
-                            </span>
-                          </div>
-                        )}
-                        {/* Offer Summary */}
-                        {moreOffer.offerSummary && (
-                          <div className=" font-normal text-[16px] leading-[20px] tracking-[1%] text-[#696969] line-clamp-2">
-                            <PortableText
-                              value={moreOffer.offerSummary}
-                              components={portableTextComponents}
-                            />
-                          </div>
-                        )}
-
-                        {/* Expiry Date */}
-                        {moreOffer.expires && (
-                          <div className="flex items-center gap-1 text-sm text-black font-medium  mt-auto">
-                            <img
-                              src="/assets/calendar.png"
-                              alt="Calendar"
-                              width="16"
-                              height="16"
-                              className="flex-shrink-0"
-                            />
-                            <span className="text-xs">
-                              Expires: {formatDate(moreOffer.expires)}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                {totalOffers > loadMoreCount && (
-                  <div className="mt-4 text-center">
-                    <button
-                      onClick={handleLoadMore}
-                      disabled={isLoadingMore}
-                      className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-6 py-3 rounded-full font-medium transition-all duration-200 border border-gray-200 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isLoadingMore ? "Loading..." : "Load More"}
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
           </>
         )}
       </main>
