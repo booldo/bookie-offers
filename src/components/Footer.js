@@ -22,7 +22,7 @@ function FooterSkeleton() {
               ></div>
             ))}
           </div>
-          <hr className="my-2 border-gray-200" />
+          {/* <hr className="my-2 border-gray-200" /> */}
         </div>
 
         {/* Navigation Links Skeleton */}
@@ -34,7 +34,7 @@ function FooterSkeleton() {
             ></div>
           ))}
         </div>
-        <hr className="my-2 border-gray-200" />
+        {/* <hr className="my-2 border-gray-200" /> */}
 
         {/* Content Sections Skeleton */}
         {[1, 2, 3].map((section) => (
@@ -45,7 +45,7 @@ function FooterSkeleton() {
               <div className="h-3 bg-gray-200 rounded w-3/4 mx-auto animate-pulse"></div>
               <div className="h-3 bg-gray-200 rounded w-1/2 mx-auto animate-pulse"></div>
             </div>
-            <hr className="my-2 border-gray-200" />
+            {/* <hr className="my-2 border-gray-200" /> */}
           </div>
         ))}
 
@@ -195,7 +195,7 @@ export default function Footer() {
                   )
               )}
             </div>
-            <hr className="my-2 border-gray-200" />
+            {/* <hr className="my-2 border-gray-200" /> */}
           </div>
         )}
 
@@ -219,7 +219,7 @@ export default function Footer() {
             )}
           </div>
         )}
-        <hr className="my-2 border-gray-200" />
+        {/* <hr className="my-2 border-gray-200" /> */}
 
         {/* Affiliate Disclosure */}
         {footerData?.affiliateDisclosure?.isActive && (
@@ -245,7 +245,7 @@ export default function Footer() {
             </div>
           </div>
         )}
-        <hr className="my-2 border-gray-200" />
+        {/* <hr className="my-2 border-gray-200" /> */}
 
         {/* Responsible Gambling */}
         {footerData?.responsibleGambling?.isActive && (
@@ -267,7 +267,7 @@ export default function Footer() {
             </div>
           </div>
         )}
-        <hr className="my-2 border-gray-200" />
+        {/* <hr className="my-2 border-gray-200" /> */}
 
         {/* Resources */}
         {footerData?.gamblingResources && (
