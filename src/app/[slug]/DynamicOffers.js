@@ -8,6 +8,7 @@ import { urlFor } from "../../sanity/lib/image";
 import MultiSelectDropdown from "../../components/BonusTypeDropdown";
 import { formatDate } from '../../utils/dateFormatter';
 import { PortableText } from '@portabletext/react';
+import { fetchBookmakersForCountry, processBookmakerOptions, fetchBonusTypesForCountry } from '../../lib/bookmakerFetcher';
 
 const sortOptions = ["Latest", "A-Z"];
 
@@ -311,17 +312,17 @@ export default function DynamicOffers({ countrySlug, initialFilter = null, filte
         setOffers(offersData);
         setLoadingStage('complete');
         
-        // Fetch all bonus types and bookmakers for the country to ensure dropdown completeness
+        // Fetch all bonus types and bookmakers for the country using enhanced fetcher
         let allBonusTypes = [];
         let allBookmakers = [];
         if (data?._id) {
           try {
             const [btList, bmList] = await Promise.all([
-              client.fetch(`*[_type == "bonusType" && country._ref == $cid && isActive == true] | order(name asc){ name }`, { cid: data._id }),
-              client.fetch(`*[_type == "bookmaker" && country._ref == $cid && isActive == true] | order(name asc){ name }`, { cid: data._id })
+              fetchBonusTypesForCountry(data._id),
+              fetchBookmakersForCountry(data._id, data.country)
             ]);
-            allBonusTypes = btList?.map(b => b.name).filter(Boolean) || [];
-            allBookmakers = bmList?.map(b => b.name).filter(Boolean) || [];
+            allBonusTypes = btList || [];
+            allBookmakers = bmList || [];
           } catch (e) {
             console.error('Failed fetching full lists:', e);
           }
@@ -336,17 +337,8 @@ export default function DynamicOffers({ countrySlug, initialFilter = null, filte
         const bonusOptions = Object.entries(bonusTypeCount).map(([name, count]) => ({ name, count })).sort((a, b) => a.name.localeCompare(b.name));
         setBonusTypeOptions(bonusOptions);
         
-        // Compute bookmaker counts and unique bookmakers
-        const bookmakerCount = {};
-        offersData.forEach(offer => {
-          const bm = offer.bookmaker?.name || "Other";
-          bookmakerCount[bm] = (bookmakerCount[bm] || 0) + 1;
-        });
-        // Bookmakers include full country list (include zero-offer items)
-        const bookmakerSet = new Set([...(Object.keys(bookmakerCount)), ...allBookmakers]);
-        const bmOptions = Array.from(bookmakerSet)
-          .map(name => ({ name, count: bookmakerCount[name] || 0 }))
-          .sort((a, b) => a.name.localeCompare(b.name));
+        // Process bookmaker options using enhanced utility
+        const bmOptions = processBookmakerOptions(offersData, allBookmakers);
         setBookmakerOptions(bmOptions);
         
             // Compute payment method counts from actual data
