@@ -286,9 +286,9 @@ export default function OffersClient({
       {/* Page Title Header */}
       <div className="sticky top-16 z-40 bg-white sm:static sm:bg-transparent">
         <div className="flex items-center justify-between my-4">
-          <h1 className="font-['General_Sans'] font-semibold text-[24px] leading-[100%] text-[#272932] whitespace-nowrap">
+          <h1 className=" font-semibold text-[24px] leading-[100%] text-[#272932] whitespace-nowrap">
             {pageTitle || "Best Offers"}{" "}
-            <span className="font-['General_Sans'] font-medium text-[16px] leading-[100%] tracking-[1%] align-middle text-[#696969]">
+            <span className=" font-medium text-[16px] leading-[100%] tracking-[1%] align-middle text-[#696969]">
               {filteredOffers.length}
             </span>
           </h1>
@@ -296,7 +296,7 @@ export default function OffersClient({
             <label className="text-sm text-gray-500 mr-0">Sort By:</label>
             <div className="relative" ref={sortByRef}>
               <button
-                className="flex items-center gap-1 text-[#272932] text-[14px] leading-[24px] font-medium font-['General_Sans'] hover:text-gray-600 focus:outline-none"
+                className="flex items-center gap-1 text-[#272932] text-[14px] leading-[24px] font-medium  hover:text-gray-600 focus:outline-none"
                 onClick={() => setSortByOpen((p) => !p)}
               >
                 <span className="truncate">{sortBy}</span>
@@ -584,18 +584,18 @@ export default function OffersClient({
                       {offer.bookmaker?.name}
                     </span>
                   </div>
-                  <span className="font-['General_Sans'] font-medium text-[14px] leading-[100%] tracking-[0.01em] text-[#696969]">
+                  <span className=" font-medium text-[14px] leading-[100%] tracking-[0.01em] text-[#696969]">
                     Published: {formatDate(offer.published)}
                   </span>
                 </div>
 
                 {/* Title */}
-                <h3 className="font-['General_Sans'] font-medium text-[16px] leading-[100%] tracking-[1%] text-[#272932] cursor-pointer mb-1 transition-all duration-200 group-hover:text-[#018651] group-hover:text-[20px] group-hover:font-medium group-hover:leading-[100%] group-hover:tracking-[1%]">
+                <h3 className=" font-medium text-[16px] leading-[100%] tracking-[1%] text-[#272932] cursor-pointer mb-1 transition-all duration-200 group-hover:text-[#018651] group-hover:text-[20px] group-hover:font-medium group-hover:leading-[100%] group-hover:tracking-[1%]">
                   {offer.title}
                 </h3>
 
                 {/* Description */}
-                <div className="font-['General_Sans'] font-normal text-[16px] leading-[20px] tracking-[0.01em] text-[#696969] mb-1">
+                <div className=" font-normal text-[16px] leading-[20px] tracking-[0.01em] text-[#696969] mb-1">
                   {offer.offerSummary && (
                     <PortableText value={offer.offerSummary} />
                   )}
@@ -610,7 +610,7 @@ export default function OffersClient({
                     height="16"
                     className="flex-shrink-0"
                   />
-                  <span className="font-['General_Sans'] font-medium text-[14px] leading-[100%] tracking-[0.01em] text-[#272932]">
+                  <span className=" font-medium text-[14px] leading-[100%] tracking-[0.01em] text-[#272932]">
                     Expires: {formatDate(offer.expires)}
                   </span>
                 </div>
