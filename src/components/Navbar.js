@@ -524,7 +524,7 @@ export default function Navbar() {
             className="flex items-center gap-1 p-2 rounded hover:bg-gray-100"
             onClick={() => setDropdownOpen((v) => !v)}
           >
-            <img src={selectedFlag.topIcon} alt={selectedFlag.name} className="w-6 h-6 rounded-full" />
+            <img src={selectedFlag.topIcon} alt={selectedFlag.name} className="w-6 h-6 rounded-full object-cover" />
             <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path d="M6 9l6 6 6-6" />
             </svg>
@@ -549,7 +549,7 @@ export default function Navbar() {
                     onClick={() => handleFlagSelect(flag)}
                   >
                     <div className="flex items-center gap-2">
-                      <img src={flag.src} alt={flag.name} className="w-5 h-5" />
+                      <img src={flag.src} alt={flag.name} className="w-5 h-5 object-cover" />
                       <span className="text-[#272932] text-[14px] leading-[24px] font-medium font-['General_Sans']">{flag.name}</span>
                     </div>
                     {selectedFlag.name === flag.name && (

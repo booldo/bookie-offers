@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { urlFor } from "../../sanity/lib/image";
@@ -79,21 +79,43 @@ export default function OfferDetailsClient({ offer, moreOffers, totalOffers, cou
   const [openFAQIndex, setOpenFAQIndex] = useState(null);
   const [loadMoreCount, setLoadMoreCount] = useState(4);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasClickedLoadMore, setHasClickedLoadMore] = useState(false);
+  const sentinelRef = useRef(null);
 
   const handleFAQToggle = (index) => {
     setOpenFAQIndex(openFAQIndex === index ? null : index);
   };
 
-  const handleLoadMore = async (e) => {
-    // Prevent default button behavior to avoid scroll issues
-    e.preventDefault();
-    e.stopPropagation();
-    
+  const handleLoadMore = async () => {
+    if (isLoadingMore || loadMoreCount >= moreOffers.length) return;
+
     setIsLoadingMore(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
+    setHasClickedLoadMore(true);
+    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate loading delay
     setLoadMoreCount(prev => prev + 4);
     setIsLoadingMore(false);
   };
+
+  // Infinite scroll effect
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !isLoadingMore && loadMoreCount < moreOffers.length && hasClickedLoadMore) {
+          handleLoadMore();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(sentinel);
+
+    return () => {
+      if (sentinel) observer.unobserve(sentinel);
+    };
+  }, [isLoadingMore, loadMoreCount, moreOffers.length]);
 
   // Check if offer is expired
   const isExpired = offer?.expires ? new Date(offer.expires) < new Date() : false;
@@ -370,14 +392,14 @@ export default function OfferDetailsClient({ offer, moreOffers, totalOffers, cou
                   <div className="flex items-center gap-3">
                       {moreOffer.bookmaker?.logo ? (
                       <Image
-                          src={urlFor(moreOffer.bookmaker.logo).width(44).height(44).url()}
+                          src={urlFor(moreOffer.bookmaker.logo).width(25).height(25).url()}
                         alt={moreOffer.bookmaker.logoAlt || moreOffer.bookmaker.name}
-                          width={44}
-                          height={44}
-                          className="w-11 h-11 rounded-[6px] object-contain flex-shrink-0"
+                          width={25}
+                          height={25}
+                          className="w-[25px] h-[25px] rounded-[6px] object-contain flex-shrink-0"
                         />
                       ) : (
-                        <div className="w-11 h-11 bg-gray-100 rounded-[6px] flex-shrink-0" />
+                        <div className="w-[25px] h-[25px] bg-gray-100 rounded-[6px] flex-shrink-0" />
                       )}
                       <div className="font-['General_Sans'] font-semibold text-[16px] leading-[100%] tracking-[1%] text-[#272932]">
                         {moreOffer.bookmaker?.name}
@@ -397,7 +419,21 @@ export default function OfferDetailsClient({ offer, moreOffers, totalOffers, cou
                   <div className="font-['General_Sans'] font-medium text-[20px] leading-[100%] tracking-[1%] text-[#272932]">
                     {moreOffer.title}
                   </div>
-                  
+
+                  {/* Bookmaker and Bonus Type */}
+                  <div className="flex gap-2 mb-3">
+                    {moreOffer.bookmaker?.name && (
+                      <span className="bg-gray-100 rounded-xl px-3 py-2 text-sm font-medium text-gray-700 inline-block">
+                        {moreOffer.bookmaker.name}
+                      </span>
+                    )}
+                    {moreOffer.bonusType?.name && (
+                      <span className="bg-gray-100 rounded-xl px-3 py-2 text-sm font-medium text-gray-700 inline-block">
+                        {moreOffer.bonusType.name}
+                      </span>
+                    )}
+                  </div>
+
                   {/* Offer Summary */}
                   {moreOffer.offerSummary && (
                     <div className="font-['General_Sans'] font-normal text-[16px] leading-[20px] tracking-[1%] text-[#696969] line-clamp-2 mb-3">
@@ -446,8 +482,9 @@ export default function OfferDetailsClient({ offer, moreOffers, totalOffers, cou
               </div>
             ))}
           </div>
-          
-          {loadMoreCount < moreOffers.length && (
+
+          {/* Load More Button - shown initially */}
+          {!hasClickedLoadMore && loadMoreCount < moreOffers.length && (
             <div className="text-center pt-4">
               <button
                 onClick={handleLoadMore}
@@ -456,6 +493,15 @@ export default function OfferDetailsClient({ offer, moreOffers, totalOffers, cou
               >
                 {isLoadingMore ? 'Loading...' : 'Load More'}
               </button>
+            </div>
+          )}
+
+          {/* Sentinel for infinite scroll - shown after first load more click */}
+          {hasClickedLoadMore && loadMoreCount < moreOffers.length && (
+            <div ref={sentinelRef} className="text-center pt-4">
+              {isLoadingMore && (
+                <div className="text-gray-500">Loading more offers...</div>
+              )}
             </div>
           )}
         </div>

@@ -93,11 +93,13 @@ function OfferDetailsInner({ slug }) {
   const [error, setError] = useState(null);
   const [loadMoreCount, setLoadMoreCount] = useState(4);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasClickedLoadMore, setHasClickedLoadMore] = useState(false);
   const [shouldRestoreScroll, setShouldRestoreScroll] = useState(false);
   const [totalOffers, setTotalOffers] = useState(0);
   const [openFAQIndex, setOpenFAQIndex] = useState(null);
   const [isContentHidden, setIsContentHidden] = useState(false);
   const scrollPositionRef = useRef(0);
+  const sentinelRef = useRef(null);
 
 
 
@@ -218,17 +220,16 @@ function OfferDetailsInner({ slug }) {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, []);
 
-  const handleLoadMore = async (e) => {
-    // Prevent default button behavior to avoid scroll issues
-    e.preventDefault();
-    e.stopPropagation();
-    
+  const handleLoadMore = async () => {
+    if (isLoadingMore || loadMoreCount >= totalOffers) return;
+
     const countryName = getCountryName();
     if (!countryName) return;
 
     setIsLoadingMore(true);
+    setHasClickedLoadMore(true);
     try {
-      const moreOffersQuery = `*[_type == "offers" && country == $countryName && slug.current != $slug] | order(_createdAt desc) [0...$count] {
+      const moreOffersQuery = `*[_type == "offers" && country->country == $countryName && slug.current != $slug && (noindex != true) && (sitemapInclude != false)] | order(_createdAt desc) [0...$count] {
         _id,
         bonusType->{name},
         slug,
@@ -252,6 +253,27 @@ function OfferDetailsInner({ slug }) {
       setIsLoadingMore(false);
     }
   };
+
+  // Infinite scroll effect
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !isLoadingMore && loadMoreCount < totalOffers && hasClickedLoadMore) {
+          handleLoadMore();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(sentinel);
+
+    return () => {
+      if (sentinel) observer.unobserve(sentinel);
+    };
+  }, [isLoadingMore, loadMoreCount, totalOffers]);
 
   const handleFAQToggle = (index) => {
     setOpenFAQIndex(openFAQIndex === index ? null : index);
@@ -526,15 +548,15 @@ function OfferDetailsInner({ slug }) {
                       <div className="flex items-center justify-between min-w-0">
                       <div className="flex items-center gap-3 min-w-0 flex-1">
                         {moreOffer.bookmaker?.logo ? (
-                            <Image 
-                              src={urlFor(moreOffer.bookmaker.logo).width(44).height(44).url()} 
-                              alt={moreOffer.bookmaker.name} 
-                              width={44} 
-                              height={44} 
-                              className="rounded-[6px] flex-shrink-0" 
+                            <Image
+                              src={urlFor(moreOffer.bookmaker.logo).width(25).height(25).url()}
+                              alt={moreOffer.bookmaker.name}
+                              width={25}
+                              height={25}
+                              className="w-[25px] h-[25px] rounded-[6px] flex-shrink-0"
                             />
                           ) : (
-                            <div className="w-11 h-11 bg-gray-100 rounded-[6px] flex-shrink-0" />
+                            <div className="w-[25px] h-[25px] bg-gray-100 rounded-[6px] flex-shrink-0" />
                           )}
                           <div className="font-['General_Sans'] font-semibold text-[16px] leading-[100%] tracking-[1%] text-[#272932] min-w-0">
                             {moreOffer.bookmaker?.name}
@@ -554,7 +576,21 @@ function OfferDetailsInner({ slug }) {
                       <div className="font-['General_Sans'] font-medium text-[20px] leading-[100%] tracking-[1%] text-[#272932]">
                         {moreOffer.title}
                       </div>
-                      
+
+                      {/* Bookmaker and Bonus Type */}
+                      <div className="flex gap-2 mb-3">
+                        {moreOffer.bookmaker?.name && (
+                          <span className="bg-gray-100 rounded-xl px-3 py-2 text-sm font-medium text-gray-700 inline-block">
+                            {moreOffer.bookmaker.name}
+                          </span>
+                        )}
+                        {moreOffer.bonusType?.name && (
+                          <span className="bg-gray-100 rounded-xl px-3 py-2 text-sm font-medium text-gray-700 inline-block">
+                            {moreOffer.bonusType.name}
+                          </span>
+                        )}
+                      </div>
+
                       {/* Offer Summary */}
                     {moreOffer.offerSummary && (
                         <div className="font-['General_Sans'] font-normal text-[16px] leading-[20px] tracking-[1%] text-[#696969] line-clamp-2">
@@ -573,15 +609,26 @@ function OfferDetailsInner({ slug }) {
                   </div>
                 ))}
               </div>
-              {totalOffers > loadMoreCount && (
+
+              {/* Load More Button - shown initially */}
+              {!hasClickedLoadMore && totalOffers > loadMoreCount && (
                 <div className="mt-4 text-center">
-                  <button 
+                  <button
                     onClick={handleLoadMore}
                     disabled={isLoadingMore}
                     className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-6 py-3 rounded-full font-medium transition-all duration-200 border border-gray-200 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isLoadingMore ? 'Loading...' : 'Load More'}
                   </button>
+                </div>
+              )}
+
+              {/* Sentinel for infinite scroll - shown after first load more click */}
+              {hasClickedLoadMore && totalOffers > loadMoreCount && (
+                <div ref={sentinelRef} className="mt-4 text-center">
+                  {isLoadingMore && (
+                    <div className="text-gray-500">Loading more offers...</div>
+                  )}
                 </div>
               )}
             </div>
