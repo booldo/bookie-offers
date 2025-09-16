@@ -86,7 +86,7 @@ export default function BrieflyPage() {
                     href={`/briefly/${article.slug}`}
                 className="flex flex-col items-center bg-white rounded-lg shadow-sm p-4 transition hover:shadow-lg hover:scale-[1.03] cursor-pointer"
                   >
-                <div className="w-40 h-40 md:w-56 md:h-56 rounded overflow-hidden bg-gray-100 mb-3">
+                <div className="w-full h-40 md:w-56 md:h-56 rounded overflow-hidden bg-gray-100 mb-3">
                       {article.mainImage ? (
                     <img 
                       src={urlFor(article.mainImage)} 
@@ -104,7 +104,7 @@ export default function BrieflyPage() {
                 <div className="text-sm sm:text-base font-semibold text-gray-900 leading-tight text-center font-['General_Sans']">
                   {article.title}
                     </div>
-                <span className="mt-2 px-3 py-1 bg-green-700 text-white text-xs rounded font-['General_Sans']">Briefly</span>
+                {/* <span className="mt-2 px-3 py-1 bg-green-700 text-white text-xs rounded font-['General_Sans']">Briefly</span> */}
                   </Link>
                 ))}
               </div>

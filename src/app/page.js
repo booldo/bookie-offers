@@ -19,7 +19,7 @@ async function getCountries() {
     const countries = await client.fetch(query);
     return countries;
   } catch (error) {
-    console.error('Error fetching countries:', error);
+    console.error("Error fetching countries:", error);
     return [];
   }
 }
@@ -37,19 +37,18 @@ async function getLandingPageData() {
         order
       }
     }`);
-    
+
     return landingPageData || {};
   } catch (error) {
-    console.error('Error fetching landing page data:', error);
+    console.error("Error fetching landing page data:", error);
     return {};
   }
 }
 
-
 // Async country cards component
 async function CountryCards() {
   const countries = await getCountries();
-  
+
   return (
     <div className="flex flex-col gap-3 sm:gap-4 w-full max-w-4xl mx-auto px-2 sm:px-0">
       {countries.map((country) => (
@@ -61,15 +60,20 @@ async function CountryCards() {
           {/* Flag and Country Name Row */}
           <div className="flex items-center gap-3 mb-2">
             {country.pageFlag ? (
-              <img
-                src={urlFor(country.pageFlag).width(32).height(32).url()}
+              <Image
+                src={urlFor(country.pageFlag).width(64).height(64).url()}
+                width={32}
+                height={32}
                 alt={`${country.country} flag`}
+
                 className="w-8 h-8 sm:w-9 sm:h-9 object-cover rounded"
               />
             ) : (
               <div className="w-8 h-8 sm:w-9 sm:h-9 bg-gray-300 flex items-center justify-center rounded">
                 <span className="text-xs font-bold text-gray-600 font-['General_Sans']">
-                  {country.countryCode?.toUpperCase() || country.country?.charAt(0) || '?'}
+                  {country.countryCode?.toUpperCase() ||
+                    country.country?.charAt(0) ||
+                    "?"}
                 </span>
               </div>
             )}
@@ -77,17 +81,23 @@ async function CountryCards() {
               {country.country}
             </div>
           </div>
-          
+
           {/* Description and View Offers Button Row */}
           <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-500 font-['General_Sans'] ml-11 sm:ml-12">
+            <div className="text-sm text-gray-500  ml-11 sm:ml-12">
               {country.description || "Discover local offers"}
             </div>
-            
+
             {/* View Offers Button - positioned on far right for desktop only */}
-            <div className="inline-flex items-center text-sm font-semibold text-gray-900 font-['General_Sans'] ml-0 sm:ml-auto">
+            <div className="inline-flex items-center text-sm font-semibold text-gray-900  ml-0 sm:ml-auto">
               View Offers
-              <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <svg
+                className="ml-2 w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
                 <path d="M5 12h14M12 5l7 7-7 7" />
               </svg>
             </div>
@@ -101,7 +111,7 @@ async function CountryCards() {
 // Async landing page header component
 async function LandingPageHeader() {
   const landingPageData = await getLandingPageData();
-  
+
   // Fallback to hardcoded values if data is not available
   const heading1 = landingPageData?.siteHeading1 || "No Bias. No Hype.";
   const heading2 = landingPageData?.siteHeading2 || "Just Betting Options.";
@@ -115,40 +125,42 @@ async function LandingPageHeader() {
           _type: "span",
           _key: "description-text",
           text: "Booldo is built to help you bet smarter. We show you all the top bookmakers and offers, even those we don't partner with, so you can decide with confidence. No noisy tips. No clutter. Just clear, honest info.",
-          marks: []
-        }
-      ]
-    }
+          marks: [],
+        },
+      ],
+    },
   ];
-  
+
   return (
     <>
-      <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-center text-gray-900 mb-3 sm:mb-4 font-['General_Sans'] leading-tight">
+      <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-center text-gray-900 mb-3 sm:mb-4  leading-tight">
         {heading1}
       </h1>
-      <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-center text-gray-900 mb-4 sm:mb-6 md:mb-8 font-['General_Sans'] leading-tight">
+      <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-center text-gray-900 mb-4 sm:mb-6 md:mb-8  leading-tight">
         {heading2}
       </h1>
-      <div className="text-center text-gray-600 mb-4 sm:mb-6 md:mb-8 font-['General_Sans'] text-sm sm:text-base lg:text-lg max-w-4xl leading-relaxed px-2 sm:px-0">
+      <div className="text-center text-gray-600 mb-4 sm:mb-6 md:mb-8  text-sm sm:text-base lg:text-lg max-w-4xl leading-relaxed px-2 sm:px-0">
         <PortableText value={description} />
       </div>
     </>
   );
 }
 
-
 // Loading fallback for PPR
 function CountryCardsLoading() {
   return (
     <div className="flex flex-col gap-3 sm:gap-4 w-full max-w-4xl mx-auto px-2 sm:px-0">
       {[1, 2, 3, 4, 5, 6].map((i) => (
-        <div key={i} className="flex flex-col bg-[#F5F5F7] rounded-xl p-3 sm:p-4 shadow-sm border border-gray-100 animate-pulse">
+        <div
+          key={i}
+          className="flex flex-col bg-[#F5F5F7] rounded-xl p-3 sm:p-4 shadow-sm border border-gray-100 animate-pulse"
+        >
           {/* Flag and Country Name Row */}
           <div className="flex items-center gap-3 mb-2">
             <div className="w-8 h-8 sm:w-9 sm:h-9 bg-gray-300 rounded"></div>
             <div className="h-5 sm:h-6 bg-gray-300 rounded w-24"></div>
           </div>
-          
+
           {/* Description and View Offers Button Row */}
           <div className="flex items-center justify-between">
             <div className="h-4 bg-gray-300 rounded w-32 ml-11 sm:ml-12"></div>
@@ -174,7 +186,6 @@ function LandingPageHeaderLoading() {
   );
 }
 
-
 // Main page component with PPR structure
 export default function Home() {
   return (
@@ -185,8 +196,7 @@ export default function Home() {
         <Suspense fallback={<LandingPageHeaderLoading />}>
           <LandingPageHeader />
         </Suspense>
-        
-        
+
         {/* Dynamic country cards - uses PPR */}
         <Suspense fallback={<CountryCardsLoading />}>
           <CountryCards />

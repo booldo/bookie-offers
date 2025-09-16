@@ -146,7 +146,12 @@ export default function MultiSelectDropdown({ label, options, selected, setSelec
         onClick={() => setOpen((v) => !v)}
       >
         <span className="truncate align-middle text-[#272932] text-[14px] leading-[24px] font-medium font-['General_Sans']">
-          {selected.length === 0 ? label : selected.join(", ")}
+          {label}
+          {/* {selected.length > 0 && (
+            <span className="ml-1 bg-[#018651] text-white text-xs px-1.5 py-0.5 rounded-full font-semibold">
+              {selected.length}
+            </span>
+          )} */}
         </span>
         <svg className={`ml-1 sm:ml-2 w-4 h-4 transition-transform ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7" /></svg>
       </button>
