@@ -604,8 +604,7 @@ export default function Navbar() {
                     key={menu._id || menu.title}
                     href={menu.url}
                     className="hover:underline"
-                    target={menu.url.startsWith('http') ? '_blank' : '_self'}
-                    rel={menu.url.startsWith('http') ? 'noopener noreferrer' : undefined}
+                    target="_self"
                   >
                     {menu.title}
                   </a>

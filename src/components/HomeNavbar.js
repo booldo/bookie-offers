@@ -522,8 +522,7 @@ export default function HomeNavbar() {
                     key={menu._id || menu.title}
                     href={menu.url}
                     className="hover:underline font-['General_Sans']"
-                    target={menu.url.startsWith('http') ? '_blank' : '_self'}
-                    rel={menu.url.startsWith('http') ? 'noopener noreferrer' : undefined}
+                    target="_self"
                   >
                     {menu.title}
                   </a>
