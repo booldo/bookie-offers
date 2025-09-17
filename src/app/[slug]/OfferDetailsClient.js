@@ -103,8 +103,8 @@ export default function OfferDetailsClient({
 
     setIsLoadingMore(true);
     setHasClickedLoadMore(true);
-    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate loading delay
-    setLoadMoreCount(prev => prev + 4);
+    await new Promise((resolve) => setTimeout(resolve, 500)); // Simulate loading delay
+    setLoadMoreCount((prev) => prev + 4);
     setIsLoadingMore(false);
   };
 
@@ -115,7 +115,12 @@ export default function OfferDetailsClient({
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && !isLoadingMore && loadMoreCount < moreOffers.length && hasClickedLoadMore) {
+        if (
+          entries[0].isIntersecting &&
+          !isLoadingMore &&
+          loadMoreCount < moreOffers.length &&
+          hasClickedLoadMore
+        ) {
           handleLoadMore();
         }
       },
@@ -346,7 +351,7 @@ export default function OfferDetailsClient({
           <div className="flex items-center gap-4">
             {offer.bookmaker?.logo && (
               <Image
-                src={urlFor(offer.bookmaker.logo).width(128).height(128).url()}
+                src={urlFor(offer.bookmaker.logo).width(640).height(640).url()}
                 alt={offer.bookmaker.logoAlt || offer.bookmaker.name}
                 width={64}
                 height={64}
@@ -379,10 +384,12 @@ export default function OfferDetailsClient({
         {offer.banner && (
           <div className="mb-6">
             <Image
-              src={urlFor(offer.banner).width(1600).height(800).url()}
+              src={urlFor(offer.banner).width(8000).height(4000).url()}
               alt={offer.bannerAlt || offer.title}
               width={800}
               height={400}
+              quality={100}
+              priority
               className="w-full h-auto rounded-lg"
             />
           </div>
@@ -447,9 +454,15 @@ export default function OfferDetailsClient({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       {moreOffer.bookmaker?.logo ? (
-                      <Image
-                          src={urlFor(moreOffer.bookmaker.logo).width(25).height(25).url()}
-                        alt={moreOffer.bookmaker.logoAlt || moreOffer.bookmaker.name}
+                        <Image
+                          src={urlFor(moreOffer.bookmaker.logo)
+                            .width(25)
+                            .height(25)
+                            .url()}
+                          alt={
+                            moreOffer.bookmaker.logoAlt ||
+                            moreOffer.bookmaker.name
+                          }
                           width={25}
                           height={25}
                           className="w-[25px] h-[25px] rounded-[6px] object-contain flex-shrink-0"
