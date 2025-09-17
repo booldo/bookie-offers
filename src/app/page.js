@@ -65,7 +65,6 @@ async function CountryCards() {
                 width={32}
                 height={32}
                 alt={`${country.country} flag`}
-
                 className="w-8 h-8 sm:w-9 sm:h-9 object-cover rounded"
               />
             ) : (
@@ -83,7 +82,7 @@ async function CountryCards() {
           </div>
 
           {/* Description and View Offers Button Row */}
-          <div className="flex items-center justify-between">
+          <div className=" font-['General_Sans'] flex items-center justify-between">
             <div className="text-sm text-gray-500  ml-11 sm:ml-12">
               {country.description || "Discover local offers"}
             </div>
@@ -133,13 +132,13 @@ async function LandingPageHeader() {
 
   return (
     <>
-      <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-center text-gray-900 mb-3 sm:mb-4  leading-tight">
+      <h1 className="font-['General_Sans'] text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-center text-gray-900 mb-3 sm:mb-4  leading-tight">
         {heading1}
       </h1>
-      <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-center text-gray-900 mb-4 sm:mb-6 md:mb-8  leading-tight">
+      <h1 className="font-['General_Sans'] text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-center text-gray-900 mb-4 sm:mb-6 md:mb-8  leading-tight">
         {heading2}
       </h1>
-      <div className="text-center text-gray-600 mb-4 sm:mb-6 md:mb-8  text-sm sm:text-base lg:text-lg max-w-4xl leading-relaxed px-2 sm:px-0">
+      <div className=" font-['General_Sans'] text-center text-gray-600 mb-4 sm:mb-6 md:mb-8  text-sm sm:text-base lg:text-lg max-w-4xl leading-relaxed px-2 sm:px-0">
         <PortableText value={description} />
       </div>
     </>
