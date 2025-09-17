@@ -271,7 +271,7 @@ export default function Footer() {
 
         {/* Resources */}
         {footerData?.gamblingResources && (
-          <div className="md:text-center">
+          <div className="md:text-center font-['General_Sans']">
             <div className="mb-1 font-['General_Sans']">
               {footerData.gamblingResources.title ||
                 "Need help? Visit these responsible gambling resources"}
@@ -304,7 +304,7 @@ export default function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  Gamblers Anonymous
+                  <span> Gamblers Anonymous</span>
                 </a>
                 <br />
                 <a
@@ -330,7 +330,7 @@ export default function Footer() {
         )}
 
         {/* Bottom row */}
-        <div className="flex flex-wrap justify-center items-center text-xs text-gray-400 mt-4 gap-4">
+        <div className="flex flex-wrap justify-center font-['General_Sans'] items-center text-xs text-gray-400 mt-4 gap-4">
           {footerData?.bottomRowLinks?.links?.map((link, index) => {
             if (
               !link.isActive ||
@@ -355,7 +355,7 @@ export default function Footer() {
               <a
                 key={index}
                 href={link.url || "#"}
-                className="hover:underline  font-medium text-[12px] leading-[100%] tracking-[1%] text-[#272932]"
+                className="hover:underline font-['General_Sans'] font-medium text-[12px] leading-[100%] tracking-[1%] text-[#272932]"
               >
                 {link.label}
               </a>
