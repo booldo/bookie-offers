@@ -549,10 +549,12 @@ function OfferDetailsInner({ slug }) {
                       <div className="flex items-center gap-3 min-w-0 flex-1">
                         {moreOffer.bookmaker?.logo ? (
                             <Image
-                              src={urlFor(moreOffer.bookmaker.logo).width(25).height(25).url()}
+                              src={urlFor(moreOffer.bookmaker.logo).width(75).height(75).url()}
                               alt={moreOffer.bookmaker.name}
                               width={25}
                               height={25}
+                              quality={100}
+                              priority
                               className="w-[25px] h-[25px] rounded-[6px] flex-shrink-0"
                             />
                           ) : (
