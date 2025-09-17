@@ -510,7 +510,7 @@ function OfferDetailsInner({ slug }) {
             {/* FAQ Section */}
             {offer && offer.faq && offer.faq.length > 0 && (
               <div>
-                <div className="font-semibold text-gray-900 mb-4">Frequently Asked Questions</div>
+                <div className="font-semibold text-gray-900 mb-4">FAQ</div>
                 <div className="space-y-3">
                     {offer.faq.map((faqItem, index) => (
                     <FAQItem 

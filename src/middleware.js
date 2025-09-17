@@ -7,7 +7,7 @@ export async function middleware(request) {
   const { pathname } = request.nextUrl;
   
   // Generic global 410 Gone logic for all dynamic content types
-  const excludedRoutes = ['/briefly', '/faq', '/footer', '/analytics', '/robots.txt', '/sitemap.xml', '/sitemap-index.xml'];
+  const excludedRoutes = ['/briefly', '/briefly/calculators', '/faq', '/footer', '/analytics', '/robots.txt', '/sitemap.xml', '/sitemap-index.xml'];
   if (excludedRoutes.includes(pathname)) {
     return NextResponse.next();
   }

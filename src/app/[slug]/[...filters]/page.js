@@ -424,7 +424,7 @@ export default async function CountryFiltersPage({ params }) {
         bonusType->{ name }
       }
     `);
-    console.log('🔍 DEBUG - All active affiliate links in Sanity:', allAffiliateLinks);
+    console.log('DEBUG - All active affiliate links in Sanity:', allAffiliateLinks);
   } catch (error) {
     console.error('Error fetching all affiliate links:', error);
   }
@@ -436,7 +436,7 @@ export default async function CountryFiltersPage({ params }) {
   if (segments.length > 0) {
     // Try the full joined path first (e.g., "betika/welcome-bonus-2")
     const fullPath = segments.join('/');
-    console.log('🔍 DEBUG - Checking full path:', fullPath);
+    console.log('DEBUG - Checking full path:', fullPath);
     
     // Query for active affiliate links with this pretty link
     const affiliateLink = await client.fetch(`
@@ -447,10 +447,10 @@ export default async function CountryFiltersPage({ params }) {
       }
     `, { prettyLink: fullPath });
     
-    console.log('🔍 DEBUG - Affiliate link found for full path:', affiliateLink);
+    console.log('DEBUG - Affiliate link found for full path:', affiliateLink);
     
     if (affiliateLink?.affiliateUrl) {
-      console.log('🔍 DEBUG - Redirecting to affiliate URL:', affiliateLink.affiliateUrl);
+      console.log('DEBUG - Redirecting to affiliate URL:', affiliateLink.affiliateUrl);
       // Redirect to the affiliate URL - this will throw NEXT_REDIRECT and exit the function
       redirect(affiliateLink.affiliateUrl);
     }
@@ -458,7 +458,7 @@ export default async function CountryFiltersPage({ params }) {
     // If no match found, try single segment (for single-segment pretty links)
     if (segments.length === 1) {
       const singleSegment = segments[0];
-      console.log('🔍 DEBUG - Checking single segment:', singleSegment);
+      console.log('DEBUG - Checking single segment:', singleSegment);
       
       const singleAffiliateLink = await client.fetch(`
         *[_type == "affiliate" && isActive == true && prettyLink.current == $prettyLink][0]{
@@ -468,10 +468,10 @@ export default async function CountryFiltersPage({ params }) {
         }
       `, { prettyLink: singleSegment });
       
-      console.log('🔍 DEBUG - Single segment affiliate link:', singleAffiliateLink);
+      console.log('DEBUG - Single segment affiliate link:', singleAffiliateLink);
       
       if (singleAffiliateLink?.affiliateUrl) {
-        console.log('🔍 DEBUG - Redirecting single segment to affiliate URL:', singleAffiliateLink.affiliateUrl);
+        console.log('DEBUG - Redirecting single segment to affiliate URL:', singleAffiliateLink.affiliateUrl);
         // Redirect to the affiliate URL - this will throw NEXT_REDIRECT and exit the function
         redirect(singleAffiliateLink.affiliateUrl);
       }
@@ -481,7 +481,7 @@ export default async function CountryFiltersPage({ params }) {
     // Pretty links are stored as "bookmaker/bonus-type" in Sanity
     if (segments.length === 2) {
       const bookmakerBonusType = segments.join('/');
-      console.log('🔍 DEBUG - Checking bookmaker/bonus-type format:', bookmakerBonusType);
+      console.log('DEBUG - Checking bookmaker/bonus-type format:', bookmakerBonusType);
       
       const bookmakerBonusTypeLink = await client.fetch(`
         *[_type == "affiliate" && isActive == true && prettyLink.current == $prettyLink][0]{
@@ -491,17 +491,17 @@ export default async function CountryFiltersPage({ params }) {
         }
       `, { prettyLink: bookmakerBonusType });
       
-      console.log('🔍 DEBUG - Bookmaker/bonus-type affiliate link:', bookmakerBonusTypeLink);
+      console.log('DEBUG - Bookmaker/bonus-type affiliate link:', bookmakerBonusTypeLink);
       
       if (bookmakerBonusTypeLink?.affiliateUrl) {
-        console.log('🔍 DEBUG - Redirecting bookmaker/bonus-type to affiliate URL:', bookmakerBonusTypeLink.affiliateUrl);
+        console.log('DEBUG - Redirecting bookmaker/bonus-type to affiliate URL:', bookmakerBonusTypeLink.affiliateUrl);
         // Redirect to the affiliate URL - this will throw NEXT_REDIRECT and exit the function
         redirect(bookmakerBonusTypeLink.affiliateUrl);
       }
     }
   }
   
-  console.log('🔍 DEBUG - No affiliate redirect found, continuing with normal processing');
+  console.log('DEBUG - No affiliate redirect found, continuing with normal processing');
   
   // Check if this is an offer details page (has 3 segments: country/bonus-type/offer-slug)
   const isOfferDetailsPage = awaitedParams.filters && awaitedParams.filters.length >= 2;
@@ -584,7 +584,7 @@ export default async function CountryFiltersPage({ params }) {
       );
     }
 
-    console.log('🔍 DEBUG - Checking single filter for pretty link:', singleFilter);
+    console.log('DEBUG - Checking single filter for pretty link:', singleFilter);
     
       // Check if this is a pretty link for an affiliate
       const affiliateLink = await client.fetch(`
@@ -609,10 +609,10 @@ export default async function CountryFiltersPage({ params }) {
         }
       `, { prettyLink: singleFilter });
 
-    console.log('🔍 DEBUG - Single filter affiliate link found:', affiliateLink);
+    console.log('DEBUG - Single filter affiliate link found:', affiliateLink);
 
       if (affiliateLink && affiliateLink.affiliateUrl) {
-      console.log('🔍 DEBUG - Redirecting single filter to affiliate URL:', affiliateLink.affiliateUrl);
+      console.log('DEBUG - Redirecting single filter to affiliate URL:', affiliateLink.affiliateUrl);
       // Redirect to the affiliate URL - this will throw NEXT_REDIRECT and exit the function
         redirect(affiliateLink.affiliateUrl);
     }
