@@ -263,7 +263,7 @@ function ArticleInner({ slug }) {
           >
             <Image src="/assets/back-arrow.png" alt="Back" width={28} height={28} />
           </button>
-          <h1 className="text-3xl font-bold">{article.title}</h1>
+          {/* <h1 className="text-3xl font-bold">{article.title}</h1> */}
         </div>
         <div className="flex flex-col md:flex-row gap-8">
           {/* Main Article Content */}

@@ -422,7 +422,7 @@ function OfferDetailsInner({ slug }) {
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center gap-3">
                 {offer.bookmaker?.logo ? (
-                  <Image src={urlFor(offer.bookmaker.logo).width(40).height(40).url()} alt={offer.bookmaker.logoAlt || offer.bookmaker.name} width={40} height={40} className="rounded-md" />
+                  <Image src={urlFor(offer.bookmaker.logo).width(400).height(400).url()} alt={offer.bookmaker.logoAlt || offer.bookmaker.name} width={40} height={40} className="rounded-md" />
                 ) : (
                   <div className="w-10 h-10 bg-gray-100 rounded-md" />
                 )}
@@ -530,26 +530,26 @@ function OfferDetailsInner({ slug }) {
           {moreOffers.length > 0 && (
             <div className="bg-white p-1 sm:p-6 mb-4">
               <div className="font-semibold text-gray-900 mb-4">More Offers</div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-1 sm:gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                 {moreOffers.map((moreOffer) => (
                   <div
                     key={moreOffer._id}
-                    className="relative border border-gray-200 rounded-lg p-1 sm:p-4 hover:border-gray-300 transition-colors cursor-pointer h-full min-w-0"
+                    className="relative border  border-gray-200 rounded-lg p-1mb-2 sm:p-4 hover:border-gray-300 transition-colors cursor-pointer h-full min-w-0"
                   >
                     {moreOffer.slug?.current && (
                       <Link
                         href={`/${getCountrySlug()}/${moreOffer.bonusType?.name?.toLowerCase().replace(/\s+/g, '-')}/${moreOffer.slug?.current}`}
                         aria-label={moreOffer.title}
-                        className="absolute inset-0 z-10"
+                        className="  absolute inset-0 z-10"
                       />
                     )}
-                    <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-3 p-2 ">
                       {/* Top row: Logo, Bookmaker Name, and Published Date */}
                       <div className="flex items-center justify-between min-w-0">
                       <div className="flex items-center gap-3 min-w-0 flex-1">
                         {moreOffer.bookmaker?.logo ? (
                             <Image
-                              src={urlFor(moreOffer.bookmaker.logo).width(75).height(75).url()}
+                              src={urlFor(moreOffer.bookmaker.logo).width(250).height(250).url()}
                               alt={moreOffer.bookmaker.name}
                               width={25}
                               height={25}
@@ -567,7 +567,7 @@ function OfferDetailsInner({ slug }) {
                         {/* Published Date - positioned on the far right */}
                         {moreOffer.published && (
                           <div className="text-sm text-gray-500 flex-shrink-0">
-                            <span className="font-['General_Sans'] font-medium text-[14px] leading-[100%] tracking-[1%] text-[#696969]">
+                            <span className="font-['General_Sans'] font-medium text-xs leading-[100%] tracking-[1%] text-[#696969]">
                               Published: {formatDate(moreOffer.published)}
                             </span>
                           </div>
@@ -575,19 +575,19 @@ function OfferDetailsInner({ slug }) {
                     </div>
                       
                       {/* Offer Title */}
-                      <div className="font-['General_Sans'] font-medium text-[20px] leading-[100%] tracking-[1%] text-[#272932]">
+                      <div className="font-['General_Sans'] font-medium text-[16px] leading-[100%] tracking-[1%] text-[#272932]">
                         {moreOffer.title}
                       </div>
 
                       {/* Bookmaker and Bonus Type */}
-                      <div className="flex gap-2 mb-3">
+                      <div className="flex gap-2 ">
                         {moreOffer.bookmaker?.name && (
-                          <span className="bg-gray-100 rounded-xl px-3 py-2 text-sm font-medium text-gray-700 inline-block">
+                          <span className="bg-gray-100 rounded-full px-3 py-2 text-sm font-medium text-gray-700 inline-block">
                             {moreOffer.bookmaker.name}
                           </span>
                         )}
                         {moreOffer.bonusType?.name && (
-                          <span className="bg-gray-100 rounded-xl px-3 py-2 text-sm font-medium text-gray-700 inline-block">
+                          <span className="bg-gray-100 rounded-full px-3 py-2 text-sm font-medium text-gray-700 inline-block">
                             {moreOffer.bonusType.name}
                           </span>
                         )}
