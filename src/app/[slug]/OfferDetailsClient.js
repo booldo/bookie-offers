@@ -408,7 +408,7 @@ export default function OfferDetailsClient({
       {offer.faq && offer.faq.length > 0 && (
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-4  tracking-[1%]">
-            Frequently Asked Questions
+            FAQ
           </h2>
           <div className="space-y-3">
             {offer.faq.map((faqItem, index) => (
