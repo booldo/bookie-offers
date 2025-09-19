@@ -631,6 +631,35 @@ export default async function CountryFiltersPage({ params }) {
     }
   }
   
+  // CRITICAL: If we have filters but none of the above checks matched, validate if the filter is legitimate
+  if (isSingleFilterPage && singleFilter) {
+    console.log('🔍 Validating single filter legitimacy:', singleFilter);
+    
+    // Check if the filter matches any valid bookmaker, bonus type, or is a combination filter
+    const country = await client.fetch(`*[_type == "countryPage" && slug.current == $slug][0]{country}`, { slug: awaitedParams.slug });
+    
+    if (country?.country) {
+      // Check if it's a valid bookmaker name
+      const bookmaker = await client.fetch(`*[_type == "bookmaker" && country->country == $country && name match $name][0]{_id}`, 
+        { country: country.country, name: singleFilter.replace(/-/g, ' ') });
+      
+      // Check if it's a valid bonus type name  
+      const bonusType = await client.fetch(`*[_type == "bonusType" && country->country == $country && name match $name][0]{_id}`, 
+        { country: country.country, name: singleFilter.replace(/-/g, ' ') });
+      
+      // Check if it's a combination filter (contains hyphens)
+      const isCombination = singleFilter.includes('-');
+      
+      // If it's not a valid bookmaker, bonus type, or combination filter, return 404
+      if (!bookmaker && !bonusType && !isCombination) {
+        console.log('❌ Invalid filter - not a bookmaker, bonus type, or combination:', singleFilter);
+        return notFound();
+      }
+      
+      console.log('✅ Valid filter found:', { bookmaker: !!bookmaker, bonusType: !!bonusType, isCombination });
+    }
+  }
+  
   // Check if this is a combination filter page (country/filter1-filter2)
   const isCombinationFilterPage = isSingleFilterPage && singleFilter && singleFilter.includes('-');
   let filterInfo = null;
