@@ -403,9 +403,22 @@ export async function generateMetadata({ params }) {
 
 import Gone410Page from '../../410/Gone410Page';
 import { getVisibleDocOrNull } from '../../../sanity/lib/checkGoneStatus';
+import { notFound } from 'next/navigation';
 
 export default async function CountryFiltersPage({ params }) {
   const awaitedParams = await params;
+  
+  // Validate country slug at the top - CRITICAL for 404 handling
+  console.log(' Validating country slug:', awaitedParams.slug);
+  const validCountry = await client.fetch(
+    `*[_type == "countryPage" && slug.current == $slug][0]{_id}`,
+    { slug: awaitedParams.slug }
+  );
+  if (!validCountry) {
+    console.log(' Invalid country slug, returning 404:', awaitedParams.slug);
+    return notFound(); // This will render the Next.js 404 page
+  }
+  console.log(' Valid country found:', awaitedParams.slug);
   
   // Temporary debugging - remove after testing
   console.log(' DEBUG - Full params:', awaitedParams);
