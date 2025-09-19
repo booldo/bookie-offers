@@ -29,7 +29,7 @@ const portableTextComponents = {
     number: ({children}) => <li className="text-gray-700">{children}</li>,
   },
   marks: {
-    strong: ({children}) => <strong className="font-semibold text-gray-900">{children}</strong>,
+    strong: ({children}) => <span className="font-normal text-gray-900">{children}</span>,
     em: ({children}) => <em className="italic text-gray-700">{children}</em>,
     code: ({children}) => <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono">{children}</code>,
   },
