@@ -850,15 +850,6 @@ export default function Navbar() {
                     Type at least 4 characters to search.
                   </div>
                 )}
-              {!searchLoading &&
-                !searchError &&
-                searchResults.length === 0 &&
-                searchValue &&
-                searchValue.trim().length >= 4 && (
-                  <div className="text-center text-gray-400">
-                    No results found.
-                  </div>
-                )}
               {!searchLoading && !searchError && searchResults.length > 0 && (
                 <div className="flex flex-col gap-4 mb-6">
                   {searchResults.map((item) => {

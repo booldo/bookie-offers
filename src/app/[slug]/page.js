@@ -173,13 +173,26 @@ export const revalidate = 0;
 
 export default async function CountryPage({ params }) {
   const awaitedParams = await params;
-
-  // Check if country exists
-  const countryDoc = await client.fetch(`*[_type == "countryPage" && slug.current == $slug && isActive == true][0]{_id}`, { slug: awaitedParams.slug });
-  const isValidCountry = !!countryDoc;
-
-  // Render Menu Page if a matching slug exists
-  const menuDoc = await client.fetch(`*[_type == "hamburgerMenu" && slug.current == $slug][0]{
+  
+  // CRITICAL: Validate that this is either a valid country or hamburger menu page
+  console.log('🔍 [slug]/page.js - Validating slug:', awaitedParams.slug);
+  
+  // Check if it's a hamburger menu page first
+  const menuDoc = await client.fetch(`*[_type == "hamburgerMenu" && slug.current == $slug][0]{_id}`, { slug: awaitedParams.slug });
+  
+  // If not a menu page, check if it's a valid country
+  if (!menuDoc) {
+    const validCountry = await client.fetch(`*[_type == "countryPage" && slug.current == $slug][0]{_id}`, { slug: awaitedParams.slug });
+    if (!validCountry) {
+      console.log('[slug]/page.js - Invalid slug, returning 404:', awaitedParams.slug);
+      return notFound();
+    }
+  }
+  
+  console.log('[slug]/page.js - Valid slug found:', awaitedParams.slug);
+  
+  // Render Menu Page if a matching slug exists (fetch full details)
+  const fullMenuDoc = await client.fetch(`*[_type == "hamburgerMenu" && slug.current == $slug][0]{
     title,
     slug,
     content,
@@ -190,16 +203,9 @@ export default async function CountryPage({ params }) {
     canonicalUrl,
     sitemapInclude
   }`, { slug: awaitedParams.slug });
-  const menuSlug = menuDoc?.slug?.current || null;
-  const isValidMenu = menuDoc && menuSlug;
-
-  // If neither country nor menu exists, return 404
-  if (!isValidCountry && !isValidMenu) {
-    notFound();
-  }
-
-  if (isValidMenu) {
-    if (menuDoc.noindex === true || menuDoc.sitemapInclude === false) {
+  const menuSlug = fullMenuDoc?.slug?.current || null;
+  if (fullMenuDoc && menuSlug) {
+    if (fullMenuDoc.noindex === true || fullMenuDoc.sitemapInclude === false) {
       return (
         <div className="min-h-screen flex flex-col bg-[#fafbfc]">
           <HomeNavbar />
@@ -235,8 +241,8 @@ export default async function CountryPage({ params }) {
           <div className="flex flex-col md:flex-row gap-8">
             <div className="flex-1">
               <div className="bg-white rounded-lg shadow-sm p-6 text-gray-800 leading-relaxed font-['General_Sans']">
-                {menuDoc.content && menuDoc.content.length > 0 ? (
-                  <PortableText value={menuDoc.content} components={portableTextComponents} />
+                {fullMenuDoc.content && fullMenuDoc.content.length > 0 ? (
+                  <PortableText value={fullMenuDoc.content} components={portableTextComponents} />
                 ) : (
                   <div className="text-center text-gray-500 py-12">No content available for this menu item.</div>
                 )}

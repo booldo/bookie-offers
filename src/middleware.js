@@ -23,6 +23,15 @@ export async function middleware(request) {
     if (match) {
       // For offers, slug is in match[2], for others it's match[1]
       const slug = type === 'offers' ? match[2] : match[1];
+      // Only run gone check for countryPage if slug is a valid country
+      if (type === 'countryPage') {
+        // Check if slug is a valid country
+        const isValidCountry = await fetch(`${request.nextUrl.origin}/api/country-exists?slug=${slug}`).then(res => res.ok ? res.json() : { exists: false }).then(res => res.exists);
+        if (!isValidCountry) {
+          // Let the route handler return 404
+          continue;
+        }
+      }
       const { shouldReturn410, doc } = await checkGoneStatus(type, slug);
       if (shouldReturn410) {
         const html = generate410Html({ offer: doc, isExpired: false, isHidden: true });
