@@ -4,7 +4,7 @@ import CountryPageShell, { generateStaticParams } from '../CountryPageShell';
 import DynamicOffers from '../DynamicOffers';
 import OfferDetailsInner from './OfferDetailsInner';
 import { Suspense } from "react";
-import { redirect } from 'next/navigation';
+import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
 import { client } from '../../../sanity/lib/client';
 import { urlFor } from '../../../sanity/lib/image';
@@ -401,7 +401,6 @@ export async function generateMetadata({ params }) {
   };
 }
 
-import Gone410Page from '../../410/Gone410Page';
 import { getVisibleDocOrNull } from '../../../sanity/lib/checkGoneStatus';
 
 export default async function CountryFiltersPage({ params }) {
@@ -510,7 +509,7 @@ export default async function CountryFiltersPage({ params }) {
     // Server-side check for gone offer
     const offer = await getVisibleDocOrNull('offers', offerSlug);
     if (!offer) {
-      return <Gone410Page contentType="offer" />;
+      notFound();
     }
     // Extract the offer slug from the last segment
     return (

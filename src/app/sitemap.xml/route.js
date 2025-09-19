@@ -4,7 +4,7 @@ import { client } from "../../sanity/lib/client";
 
 export async function GET() {
   try {
-    const baseUrl = "https://bookie-offers.vercel.app";
+    const baseUrl = "https://booldo.com";
     const entries = await getAllSitemapEntries();
     const landingPage = await getLandingPageSettings();
     const extraUrls = landingPage?.sitemapExtraUrls || [];
@@ -293,7 +293,7 @@ ${uniqueUrls
     // Return a basic sitemap with just the homepage if there's an error
     const fallbackXml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-<url><loc>https://bookie-offers.vercel.app</loc><priority>1.0</priority></url>
+<url><loc>https://booldo.com</loc><priority>1.0</priority></url>
 </urlset>`;
     
     return new NextResponse(fallbackXml, {

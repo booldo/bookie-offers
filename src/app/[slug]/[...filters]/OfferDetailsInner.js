@@ -91,7 +91,7 @@ function OfferDetailsInner({ slug }) {
   const [moreOffers, setMoreOffers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [loadMoreCount, setLoadMoreCount] = useState(4);
+  const [loadMoreCount, setLoadMoreCount] = useState(10);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasClickedLoadMore, setHasClickedLoadMore] = useState(false);
   const [shouldRestoreScroll, setShouldRestoreScroll] = useState(false);
@@ -244,9 +244,9 @@ function OfferDetailsInner({ slug }) {
         expires,
         published
       }`;
-      const moreOffersData = await client.fetch(moreOffersQuery, { slug, count: loadMoreCount + 4, countryName });
+      const moreOffersData = await client.fetch(moreOffersQuery, { slug, count: loadMoreCount + 10, countryName });
       setMoreOffers(moreOffersData);
-      setLoadMoreCount(prev => prev + 4);
+      setLoadMoreCount(prev => prev + 10);
     } catch (err) {
       console.error('Error loading more offers:', err);
     } finally {

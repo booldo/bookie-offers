@@ -212,12 +212,33 @@ export default {
   ],
   preview: {
     select: {
-      title: 'title'
+      title: 'title',
+      selectedPage: 'selectedPage',
+      slug: 'slug'
     },
     prepare(selection) {
-      const {title} = selection;
+      const {title, selectedPage, slug} = selection;
+
+      // Generate subtitle based on selected page
+      let subtitle = '';
+      if (selectedPage) {
+        if (selectedPage._type === 'countryPage') {
+          subtitle = `Country Page: ${selectedPage.country || selectedPage.title || 'Unknown'}`;
+        } else if (selectedPage._type === 'landingPage') {
+          subtitle = `Landing Page: ${selectedPage.defaultMetaTitle || selectedPage.title || 'Global'}`;
+        }
+      } else {
+        subtitle = 'No page selected';
+      }
+
+      // Add slug info if available
+      if (slug?.current) {
+        subtitle += ` | /${slug.current}`;
+      }
+
       return {
-        title: title || 'Hamburger Menu'
+        title: title || 'Hamburger Menu',
+        subtitle: subtitle
       };
     }
   }

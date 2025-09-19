@@ -2,6 +2,7 @@ import CountryPageShell, { generateStaticParams } from './CountryPageShell';
 import OffersServer from './OffersServer';
 import { Suspense } from "react";
 import { client } from "../../sanity/lib/client";
+import { notFound } from 'next/navigation';
 import HomeNavbar from "../../components/HomeNavbar";
 import Footer from "../../components/Footer";
 import { PortableText } from '@portabletext/react';
@@ -172,6 +173,11 @@ export const revalidate = 0;
 
 export default async function CountryPage({ params }) {
   const awaitedParams = await params;
+
+  // Check if country exists
+  const countryDoc = await client.fetch(`*[_type == "countryPage" && slug.current == $slug && isActive == true][0]{_id}`, { slug: awaitedParams.slug });
+  const isValidCountry = !!countryDoc;
+
   // Render Menu Page if a matching slug exists
   const menuDoc = await client.fetch(`*[_type == "hamburgerMenu" && slug.current == $slug][0]{
     title,
@@ -185,7 +191,14 @@ export default async function CountryPage({ params }) {
     sitemapInclude
   }`, { slug: awaitedParams.slug });
   const menuSlug = menuDoc?.slug?.current || null;
-  if (menuDoc && menuSlug) {
+  const isValidMenu = menuDoc && menuSlug;
+
+  // If neither country nor menu exists, return 404
+  if (!isValidCountry && !isValidMenu) {
+    notFound();
+  }
+
+  if (isValidMenu) {
     if (menuDoc.noindex === true || menuDoc.sitemapInclude === false) {
       return (
         <div className="min-h-screen flex flex-col bg-[#fafbfc]">

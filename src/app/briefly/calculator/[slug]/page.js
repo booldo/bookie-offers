@@ -1,5 +1,7 @@
 import { getPageSeo } from "../../../../sanity/lib/seo";
 import CalculatorInner from "./CalculatorInner";
+import { getVisibleDocOrNull } from "../../../../sanity/lib/checkGoneStatus";
+import { notFound } from 'next/navigation';
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
@@ -19,6 +21,11 @@ export async function generateMetadata({ params }) {
 
 export const revalidate = 60;
 
-export default function CalculatorPage({ params }) {
-  return <CalculatorInner slug={params.slug} />;
+export default async function CalculatorPage({ params }) {
+  const awaitedParams = await params;
+  const calculator = await getVisibleDocOrNull('calculator', awaitedParams.slug);
+  if (!calculator) {
+    notFound();
+  }
+  return <CalculatorInner slug={awaitedParams.slug} />;
 }

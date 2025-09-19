@@ -1,5 +1,6 @@
 import { getPageSeo } from "../../../sanity/lib/seo";
 import ArticleInner from "./ArticleInner";
+import { notFound } from 'next/navigation';
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
@@ -19,7 +20,6 @@ export async function generateMetadata({ params }) {
 
 export const revalidate = 60;
 
-import Gone410Page from '../../410/Gone410Page';
 import { getVisibleDocOrNull } from '../../../sanity/lib/checkGoneStatus';
 
 export default async function ArticlePage({ params }) {
@@ -27,7 +27,7 @@ export default async function ArticlePage({ params }) {
   const { slug } = awaitedParams;
   const article = await getVisibleDocOrNull('article', slug);
   if (!article) {
-    return <Gone410Page contentType="article" />;
+    notFound();
   }
   return <ArticleInner slug={slug} />;
 }

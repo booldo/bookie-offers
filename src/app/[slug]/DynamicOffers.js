@@ -20,7 +20,7 @@ const sortOptions = ["Latest", "A-Z"];
 // Fetch offers from Sanity
 const fetchOffers = async (countryData) => {
   if (!countryData) {
-    console.log("❌ fetchOffers: No country data provided");
+    console.log("fetchOffers: No country data provided");
     return [];
   }
 
@@ -39,7 +39,7 @@ const fetchOffers = async (countryData) => {
 
   if (!countryName) {
     console.log(
-      "❌ fetchOffers: Could not extract country name from data:",
+      "fetchOffers: Could not extract country name from data:",
       countryData
     );
     return [];
@@ -976,6 +976,23 @@ export default function DynamicOffers({
     return { totalPages, currentOffers };
   }, [sortedOffers, currentPage, offersPerPage]);
 
+  // Generate dynamic header text based on selected filters
+  const getDynamicHeaderText = useMemo(() => {
+    const allSelectedFilters = [
+      ...selectedBonusTypes,
+      ...selectedBookmakers,
+      ...selectedAdvanced
+    ];
+
+    if (allSelectedFilters.length === 0) {
+      // No filters selected, use default from Sanity
+      return countryData?.pageTitle || "Best Offers";
+    }
+
+    // Return comma-separated filter names
+    return allSelectedFilters.join(", ");
+  }, [selectedBonusTypes, selectedBookmakers, selectedAdvanced, countryData]);
+
   // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
@@ -1036,7 +1053,7 @@ export default function DynamicOffers({
       <div className="sticky top-16 z-40 bg-white sm:static sm:bg-transparent">
         <div className="flex items-center justify-between my-4">
           <h1 className=" font-semibold text-[24px] leading-[100%] text-[#272932] whitespace-nowrap">
-            {countryData?.pageTitle || "Best Offers"}{" "}
+            {getDynamicHeaderText}{" "}
             <span className=" font-medium text-[16px] leading-[100%] tracking-[1%] align-middle text-[#696969]">
               {filteredOffers.length}
             </span>
