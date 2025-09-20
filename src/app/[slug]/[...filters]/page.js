@@ -645,19 +645,36 @@ export default async function CountryFiltersPage({ params }) {
       const bonusType = await client.fetch(`*[_type == "bonusType" && country->country == $country && name match $name][0]{_id}`, 
         { country: country.country, name: singleFilter.replace(/-/g, ' ') });
       
-      // Check if it's a combination filter (contains hyphens)
-      const isCombination = singleFilter.includes('-');
+      // Check if it's a valid combination filter (contains hyphens AND the parts are valid)
+      let isValidCombination = false;
+      if (singleFilter.includes('-')) {
+        const filterParts = singleFilter.split('-');
+        
+        // For a combination to be valid, at least one part should be a valid bookmaker or bonus type
+        let hasValidPart = false;
+        for (const part of filterParts) {
+          const partBookmaker = await client.fetch(`*[_type == "bookmaker" && country->country == $country && name match $name][0]{_id}`, 
+            { country: country.country, name: part.replace(/-/g, ' ') });
+          const partBonusType = await client.fetch(`*[_type == "bonusType" && country->country == $country && name match $name][0]{_id}`, 
+            { country: country.country, name: part.replace(/-/g, ' ') });
+          
+          if (partBookmaker || partBonusType) {
+            hasValidPart = true;
+            break;
+          }
+        }
+        isValidCombination = hasValidPart;
+      }
       
-      // If it's not a valid bookmaker, bonus type, or combination filter, return 404
-      if (!bookmaker && !bonusType && !isCombination) {
-        console.log('❌ Invalid filter - not a bookmaker, bonus type, or combination:', singleFilter);
+      // If it's not a valid bookmaker, bonus type, or valid combination filter, return 404
+      if (!bookmaker && !bonusType && !isValidCombination) {
+        console.log('❌ Invalid filter - not a bookmaker, bonus type, or valid combination:', singleFilter);
         return notFound();
       }
       
-      console.log('✅ Valid filter found:', { bookmaker: !!bookmaker, bonusType: !!bonusType, isCombination });
+      console.log('✅ Valid filter found:', { bookmaker: !!bookmaker, bonusType: !!bonusType, isValidCombination });
     }
   }
-  
   // Check if this is a combination filter page (country/filter1-filter2)
   const isCombinationFilterPage = isSingleFilterPage && singleFilter && singleFilter.includes('-');
   let filterInfo = null;
