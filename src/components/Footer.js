@@ -12,9 +12,9 @@ function FooterSkeleton() {
     <footer className="bg-[#f6f7f9] w-full px-4 pt-8 pb-4 text-gray-700 text-sm mt-8">
       <div className="w-full flex flex-col gap-4">
         {/* Social Media Skeleton */}
-        <div className="md:text-center">
-          <div className="h-4 bg-gray-200 rounded w-24 mx-auto mb-2 animate-pulse"></div>
-          <div className="flex gap-4 mb-3 md:justify-center">
+        <div>
+          <div className="h-4 bg-gray-200 rounded w-24 mb-2 animate-pulse"></div>
+          <div className="flex gap-4 mb-3">
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
@@ -22,11 +22,11 @@ function FooterSkeleton() {
               ></div>
             ))}
           </div>
-          {/* <hr className="my-2 border-gray-200" /> */}
+          <hr className="border-gray-300 my-2" />
         </div>
 
         {/* Navigation Links Skeleton */}
-        <div className="flex flex-col gap-1 md:items-center">
+        <div className="flex flex-col gap-1">
           {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
@@ -34,23 +34,23 @@ function FooterSkeleton() {
             ></div>
           ))}
         </div>
-        {/* <hr className="my-2 border-gray-200" /> */}
+        <hr className="border-gray-300 my-2" />
 
         {/* Content Sections Skeleton */}
         {[1, 2, 3].map((section) => (
-          <div key={section} className="md:text-center">
-            <div className="h-4 bg-gray-200 rounded w-32 mx-auto mb-2 animate-pulse"></div>
+          <div key={section}>
+            <div className="h-4 bg-gray-200 rounded w-32 mb-2 animate-pulse"></div>
             <div className="space-y-1">
               <div className="h-3 bg-gray-200 rounded w-full animate-pulse"></div>
-              <div className="h-3 bg-gray-200 rounded w-3/4 mx-auto animate-pulse"></div>
-              <div className="h-3 bg-gray-200 rounded w-1/2 mx-auto animate-pulse"></div>
+              <div className="h-3 bg-gray-200 rounded w-3/4 animate-pulse"></div>
+              <div className="h-3 bg-gray-200 rounded w-1/2 animate-pulse"></div>
             </div>
-            {/* <hr className="my-2 border-gray-200" /> */}
+            <hr className="border-gray-300 my-2" />
           </div>
         ))}
 
         {/* Bottom Row Skeleton */}
-        <div className="flex flex-wrap justify-center items-center text-xs text-gray-400 mt-4 gap-4">
+        <div className="flex flex-wrap items-center text-xs text-gray-400 mt-4 gap-4">
           {[1, 2, 3].map((i) => (
             <div
               key={i}
@@ -160,11 +160,11 @@ export default function Footer() {
       <div className="w-full flex flex-col gap-4">
         {/* Socials */}
         {footerData?.socialMedia?.isActive && (
-          <div className="md:text-center">
+          <div>
             <div className="mb-2  font-medium text-[14px] leading-[100%] tracking-[1%] text-[#272932]">
               {footerData.socialMedia.title || "Follow us on"}
             </div>
-            <div className="flex gap-4 mb-3 md:justify-center">
+            <div className="flex gap-4 mb-3">
               {footerData.socialMedia.platforms?.map(
                 (platform, index) =>
                   platform.isActive && (
@@ -195,142 +195,151 @@ export default function Footer() {
                   )
               )}
             </div>
-            {/* <hr className="my-2 border-gray-200" /> */}
+            <hr className="border-gray-300 my-2" />
           </div>
         )}
 
         {/* Links */}
         {footerData?.navigationLinks?.menuItems && (
-          <div className="flex flex-col gap-1 md:items-center">
-            {footerData.navigationLinks.menuItems.map(
-              (item, index) =>
-                item.isActive &&
-                getMenuItemUrl(item) && (
-                  <div key={index}>
-                    {/* Main menu item */}
-                    <a
-                      href={getMenuItemUrl(item)}
-                      className=" font-medium text-[14px] leading-[100%] tracking-[1%] text-[#272932] underline decoration-solid decoration-0 decoration-auto"
-                    >
-                      {getMenuItemLabel(item)}
-                    </a>
-                  </div>
-                )
-            )}
+          <div>
+            <div className="flex flex-col gap-1">
+              {footerData.navigationLinks.menuItems.map(
+                (item, index) =>
+                  item.isActive &&
+                  getMenuItemUrl(item) && (
+                    <div key={index}>
+                      {/* Main menu item */}
+                      <a
+                        href={getMenuItemUrl(item)}
+                        className=" font-medium text-[14px] leading-[100%] tracking-[1%] text-[#272932]"
+                      >
+                        {getMenuItemLabel(item)}
+                      </a>
+                    </div>
+                  )
+              )}
+            </div>
+            <hr className="border-gray-300 my-2" />
           </div>
         )}
-        {/* <hr className="my-2 border-gray-200" /> */}
 
         {/* Affiliate Disclosure */}
         {footerData?.affiliateDisclosure?.isActive && (
-          <div className="md:text-center">
-            <div className="font-semibold mb-1 font-['General_Sans']">
-              {footerData.affiliateDisclosure.title || "Affiliate Disclosure"}
+          <div>
+            <div>
+              <div className="font-semibold mb-1 font-['General_Sans']">
+                {footerData.affiliateDisclosure.title || "Affiliate Disclosure"}
+              </div>
+              <div className="text-xs text-gray-600 font-['General_Sans']">
+                {footerData.affiliateDisclosure.content ? (
+                  <PortableText value={footerData.affiliateDisclosure.content} />
+                ) : (
+                  <>
+                    Booldo is an independent sports betting affiliate site. We may
+                    earn a commission if you register or place a bet through some
+                    of the links on our site. <br />
+                    This does not influence which bookmakers or offers we feature
+                    – our team includes all available offers based on relevance,
+                    not commercial <br />
+                    agreements. We strive to provide up-to-date licensing
+                    information for each bookie.
+                  </>
+                )}
+              </div>
             </div>
-            <div className="text-xs text-gray-600 font-['General_Sans']">
-              {footerData.affiliateDisclosure.content ? (
-                <PortableText value={footerData.affiliateDisclosure.content} />
-              ) : (
-                <>
-                  Booldo is an independent sports betting affiliate site. We may
-                  earn a commission if you register or place a bet through some
-                  of the links on our site. <br />
-                  This does not influence which bookmakers or offers we feature
-                  – our team includes all available offers based on relevance,
-                  not commercial <br />
-                  agreements. We strive to provide up-to-date licensing
-                  information for each bookie.
-                </>
-              )}
-            </div>
+            <hr className="border-gray-300 my-2" />
           </div>
         )}
-        {/* <hr className="my-2 border-gray-200" /> */}
 
         {/* Responsible Gambling */}
         {footerData?.responsibleGambling?.isActive && (
-          <div className="md:text-center">
-            <div className="font-semibold mb-1 font-['General_Sans']">
-              {footerData.responsibleGambling.title || "Responsible Gambling"}
+          <div>
+            <div>
+              <div className="font-semibold mb-1 font-['General_Sans']">
+                {footerData.responsibleGambling.title || "Responsible Gambling"}
+              </div>
+              <div className="text-xs text-gray-600 font-['General_Sans']">
+                {footerData.responsibleGambling.content ? (
+                  <PortableText value={footerData.responsibleGambling.content} />
+                ) : (
+                  <>
+                    Betting should be an entertainment, not a solution to
+                    financial problems. Always be responsible. If you or someone
+                    you know is struggling with <br />
+                    gambling, please seek help from local support services.
+                  </>
+                )}
+              </div>
             </div>
-            <div className="text-xs text-gray-600 font-['General_Sans']">
-              {footerData.responsibleGambling.content ? (
-                <PortableText value={footerData.responsibleGambling.content} />
-              ) : (
-                <>
-                  Betting should be an entertainment, not a solution to
-                  financial problems. Always be responsible. If you or someone
-                  you know is struggling with <br />
-                  gambling, please seek help from local support services.
-                </>
-              )}
-            </div>
+            <hr className="border-gray-300 my-2" />
           </div>
         )}
-        {/* <hr className="my-2 border-gray-200" /> */}
 
         {/* Resources */}
         {footerData?.gamblingResources && (
-          <div className="md:text-center font-['General_Sans']">
-            <div className="mb-1 font-['General_Sans']">
-              {footerData.gamblingResources.title ||
-                "Need help? Visit these responsible gambling resources"}
-            </div>
-            {footerData.gamblingResources.resources &&
-            footerData.gamblingResources.resources.length > 0 ? (
-              <ul className="flex flex-col gap-1 md:items-center">
-                {footerData.gamblingResources.resources.map(
-                  (resource, index) =>
-                    resource &&
-                    resource.isActive && (
-                      <li key={index}>
-                        <a
-                          href={resource.url}
-                          className=" font-medium text-[14px] leading-[100%] tracking-[1%] text-[#272932] underline decoration-solid decoration-0 decoration-auto"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {resource.name}
-                        </a>
-                      </li>
-                    )
-                )}
-              </ul>
-            ) : (
-              <div className="text-xs text-gray-600 font-['General_Sans']">
-                <a
-                  href="https://www.gamblersanonymous.org"
-                  className=" font-medium text-[14px] leading-[100%] tracking-[1%] text-[#272932] underline decoration-solid decoration-0 decoration-auto"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <span> Gamblers Anonymous</span>
-                </a>
-                <br />
-                <a
-                  href="https://www.ncpgambling.org"
-                  className=" font-medium text-[14px] leading-[100%] tracking-[1%] text-[#272932] underline decoration-solid decoration-0 decoration-auto"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  National Council on Problem Gambling
-                </a>
-                <br />
-                <a
-                  href="https://www.begambleaware.org"
-                  className=" font-medium text-[14px] leading-[100%] tracking-[1%] text-[#272932] underline decoration-solid decoration-0 decoration-auto"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  BeGambleAware
-                </a>
+          <div>
+            <div className="font-['General_Sans']">
+              <div className="mb-1 font-['General_Sans']">
+                {footerData.gamblingResources.title ||
+                  "Need help? Visit these responsible gambling resources"}
               </div>
-            )}
+              {footerData.gamblingResources.resources &&
+              footerData.gamblingResources.resources.length > 0 ? (
+                <ul className="flex flex-col gap-1">
+                  {footerData.gamblingResources.resources.map(
+                    (resource, index) =>
+                      resource &&
+                      resource.isActive && (
+                        <li key={index}>
+                          <a
+                            href={resource.url}
+                            className=" font-medium text-[14px] leading-[100%] tracking-[1%] text-[#272932] underline decoration-solid decoration-0 decoration-auto"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {resource.name}
+                          </a>
+                        </li>
+                      )
+                  )}
+                </ul>
+              ) : (
+                <div className="text-xs text-gray-600 font-['General_Sans']">
+                  <a
+                    href="https://www.gamblersanonymous.org"
+                    className=" font-medium text-[14px] leading-[100%] tracking-[1%] text-[#272932] underline decoration-solid decoration-0 decoration-auto"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <span> Gamblers Anonymous</span>
+                  </a>
+                  <br />
+                  <a
+                    href="https://www.ncpgambling.org"
+                    className=" font-medium text-[14px] leading-[100%] tracking-[1%] text-[#272932] underline decoration-solid decoration-0 decoration-auto"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    National Council on Problem Gambling
+                  </a>
+                  <br />
+                  <a
+                    href="https://www.begambleaware.org"
+                    className=" font-medium text-[14px] leading-[100%] tracking-[1%] text-[#272932] underline decoration-solid decoration-0 decoration-auto"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    BeGambleAware
+                  </a>
+                </div>
+              )}
+            </div>
+            <hr className="border-gray-300 my-2" />
           </div>
         )}
 
         {/* Bottom row */}
-        <div className="flex flex-wrap justify-center font-['General_Sans'] items-center text-xs text-gray-400 mt-4 gap-4">
+        <div className="flex flex-wrap font-['General_Sans'] items-center justify-center text-xs text-gray-400 mt-4 gap-4">
           {footerData?.bottomRowLinks?.links?.map((link, index) => {
             if (
               !link.isActive ||

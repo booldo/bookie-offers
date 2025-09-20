@@ -4,11 +4,12 @@ import { checkRedirect } from './src/lib/redirects';
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
   
-  // Skip middleware for static files and API routes
+  // Skip middleware for static files, API routes, and Studio
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api') ||
     pathname.startsWith('/static') ||
+    pathname.startsWith('/studio') ||
     pathname === '/410' ||
     pathname.includes('.')
   ) {

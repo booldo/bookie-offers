@@ -290,7 +290,6 @@ export default function DynamicOffers({
     }
 
     // Multiple filters or mixed filters - use query parameters
-    let url = `/${countrySlug}/offers/?`;
     const params = [];
     if (bonusTypes.length > 0)
       params.push(`bonustypes=${bonusTypes.map(slugify).join(",")}`);
@@ -298,8 +297,12 @@ export default function DynamicOffers({
       params.push(`bookmakers=${bookmakers.map(slugify).join(",")}`);
     if (advanced.length > 0)
       params.push(`advanced=${advanced.map(slugify).join(",")}`);
-    url += params.join("&");
-    return url;
+
+    if (params.length > 0) {
+      return `/${countrySlug}/offers?${params.join("&")}`;
+    } else {
+      return `/${countrySlug}`;
+    }
   };
 
   // Apply initial filter when options are loaded

@@ -132,7 +132,7 @@ export async function generateMetadata({ params }) {
     console.error('Error generating metadata for affiliate pretty link:', error);
   }
   
-  // Check if this is an offer details page (has 3 segments: country/bonus-type/offer-slug)
+  // Check if this is an offer details page (has 2+ segments: country/bonus-type/offer-slug)
   const isOfferDetailsPage = awaitedParams.filters && awaitedParams.filters.length >= 2;
   
   if (isOfferDetailsPage) {
@@ -514,7 +514,7 @@ export default async function CountryFiltersPage({ params }) {
   
   console.log('DEBUG - No affiliate redirect found, continuing with normal processing');
   
-  // Check if this is an offer details page (has 3 segments: country/bonus-type/offer-slug)
+  // Check if this is an offer details page (has 2+ segments: country/bonus-type/offer-slug)
   const isOfferDetailsPage = awaitedParams.filters && awaitedParams.filters.length >= 2;
   if (isOfferDetailsPage) {
     const offerSlug = awaitedParams.filters[awaitedParams.filters.length - 1];
@@ -540,9 +540,32 @@ export default async function CountryFiltersPage({ params }) {
       </CountryPageShell>
     );
   }
+
+  // Check if this is a multiple filters page (/offers/)
+  const isMultipleFiltersPage = awaitedParams.filters && awaitedParams.filters.length === 1 && awaitedParams.filters[0] === 'offers';
+  if (isMultipleFiltersPage) {
+    console.log('DEBUG - Handling multiple filters page');
+    return (
+      <CountryPageShell params={awaitedParams} hasMultipleFilters={true}>
+        <Suspense fallback={
+          <div className="flex justify-center items-center py-20">
+            <div className="w-3 h-3 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+            <div className="w-3 h-3 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+            <div className="w-3 h-3 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+          </div>
+        }>
+          <DynamicOffers
+            countrySlug={awaitedParams.slug}
+            initialFilter={null}
+            filterInfo={null}
+          />
+        </Suspense>
+      </CountryPageShell>
+    );
+  }
   
-  // Check if this is a single filter page (country/filter)
-  const isSingleFilterPage = awaitedParams.filters && awaitedParams.filters.length === 1;
+  // Check if this is a single filter page (country/filter) - excluding 'offers' which is handled separately
+  const isSingleFilterPage = awaitedParams.filters && awaitedParams.filters.length === 1 && awaitedParams.filters[0] !== 'offers';
   const singleFilter = isSingleFilterPage ? awaitedParams.filters[0] : null;
   
   // Check if this might be a pretty link (single segment that could be an affiliate link)
@@ -629,51 +652,10 @@ export default async function CountryFiltersPage({ params }) {
     }
   }
   
-  // CRITICAL: If we have filters but none of the above checks matched, validate if the filter is legitimate
+  // For single filters that don't match special cases, allow them to be processed as regular filters
+  // The DynamicOffers component will handle filtering and show appropriate results
   if (isSingleFilterPage && singleFilter) {
-    console.log('🔍 Validating single filter legitimacy:', singleFilter);
-    
-    // Check if the filter matches any valid bookmaker, bonus type, or is a combination filter
-    const country = await client.fetch(`*[_type == "countryPage" && slug.current == $slug][0]{country}`, { slug: awaitedParams.slug });
-    
-    if (country?.country) {
-      // Check if it's a valid bookmaker name
-      const bookmaker = await client.fetch(`*[_type == "bookmaker" && country->country == $country && name match $name][0]{_id}`, 
-        { country: country.country, name: singleFilter.replace(/-/g, ' ') });
-      
-      // Check if it's a valid bonus type name  
-      const bonusType = await client.fetch(`*[_type == "bonusType" && country->country == $country && name match $name][0]{_id}`, 
-        { country: country.country, name: singleFilter.replace(/-/g, ' ') });
-      
-      // Check if it's a valid combination filter (contains hyphens AND the parts are valid)
-      let isValidCombination = false;
-      if (singleFilter.includes('-')) {
-        const filterParts = singleFilter.split('-');
-        
-        // For a combination to be valid, at least one part should be a valid bookmaker or bonus type
-        let hasValidPart = false;
-        for (const part of filterParts) {
-          const partBookmaker = await client.fetch(`*[_type == "bookmaker" && country->country == $country && name match $name][0]{_id}`, 
-            { country: country.country, name: part.replace(/-/g, ' ') });
-          const partBonusType = await client.fetch(`*[_type == "bonusType" && country->country == $country && name match $name][0]{_id}`, 
-            { country: country.country, name: part.replace(/-/g, ' ') });
-          
-          if (partBookmaker || partBonusType) {
-            hasValidPart = true;
-            break;
-          }
-        }
-        isValidCombination = hasValidPart;
-      }
-      
-      // If it's not a valid bookmaker, bonus type, or valid combination filter, return 404
-      if (!bookmaker && !bonusType && !isValidCombination) {
-        console.log('❌ Invalid filter - not a bookmaker, bonus type, or valid combination:', singleFilter);
-        return notFound();
-      }
-      
-      console.log('✅ Valid filter found:', { bookmaker: !!bookmaker, bonusType: !!bonusType, isValidCombination });
-    }
+    console.log('🔍 Processing single filter:', singleFilter);
   }
   // Check if this is a combination filter page (country/filter1-filter2)
   const isCombinationFilterPage = isSingleFilterPage && singleFilter && singleFilter.includes('-');

@@ -134,7 +134,6 @@ export default function OffersClient({
     ) {
       return `/${countrySlug}/${slugify(advanced[0])}`;
     }
-    let url = `/${countrySlug}/offers/?`;
     const params = [];
     if (bonusTypes.length)
       params.push(`bonustypes=${bonusTypes.map(slugify).join(",")}`);
@@ -142,8 +141,12 @@ export default function OffersClient({
       params.push(`bookmakers=${bookmakers.map(slugify).join(",")}`);
     if (advanced.length)
       params.push(`advanced=${advanced.map(slugify).join(",")}`);
-    url += params.join("&");
-    return url;
+
+    if (params.length > 0) {
+      return `/${countrySlug}/offers?${params.join("&")}`;
+    } else {
+      return `/${countrySlug}`;
+    }
   };
 
   // URL/Filter sync effect
@@ -289,7 +292,7 @@ export default function OffersClient({
           <h1 className=" font-semibold text-[24px] leading-[100%] text-[#272932] whitespace-nowrap">
             {pageTitle || "Best Offers"}{" "}
             <span className=" font-medium text-[16px] leading-[100%] tracking-[1%] align-middle text-[#696969]">
-              {filteredOffers.length}
+              ({filteredOffers.length})
             </span>
           </h1>
           <div className="flex items-center gap-1">
