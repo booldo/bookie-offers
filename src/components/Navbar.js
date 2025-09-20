@@ -233,13 +233,13 @@ export default function Navbar() {
 
       // Search offers (filtered by current country only)
       if (currentCountrySlug) {
-        const offersQuery = `*[_type == "offers" && country->slug.current == $countrySlug && (
+        const offersQuery = `*[_type == "offers" && country->slug.current == $countrySlug && expires > now() && (
           title match $term ||
           bonusType->name match $term ||
           bookmaker->name match $term ||
           pt::text(description) match $term ||
           title match $term
-      )] | order(_createdAt desc) {
+        )] | order(_createdAt desc) {
         _id,
         slug,
         title,

@@ -176,8 +176,8 @@ export default function HomeNavbar() {
     try {
       let results = [];
       
-      // Search offers (worldwide - both countries)
-      const offersQuery = `*[_type == "offers" && (
+      // Search offers (worldwide - both countries, excluding expired offers)
+      const offersQuery = `*[_type == "offers" && expires > now() && (
         title match $term ||
         bonusType->name match $term ||
         bookmaker->name match $term ||

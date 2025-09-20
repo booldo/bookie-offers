@@ -6,7 +6,7 @@ import OfferDetailsClient from "./OfferDetailsClient";
 async function getOfferDetailsData(slug, countryName) {
   try {
     // Fetch the main offer
-    const mainOfferQuery = `*[_type == "offers" && country->country == $countryName && slug.current == $slug][0]{
+    const mainOfferQuery = `*[_type == "offers" && country->country == $countryName && slug.current == $slug && expires > now()][0]{
       _id,
       slug,
       country->{
@@ -69,8 +69,8 @@ async function getOfferDetailsData(slug, countryName) {
       return null;
     }
     
-    // Fetch more offers from the same bookmaker (excluding current offer)
-    const moreOffersQuery = `*[_type == "offers" && country->country == $countryName && bookmaker._ref == $bookmakerId && slug.current != $currentSlug] | order(_createdAt desc)[0...4] {
+    // Fetch more offers from the same bookmaker (excluding current offer and expired offers)
+    const moreOffersQuery = `*[_type == "offers" && country->country == $countryName && bookmaker._ref == $bookmakerId && slug.current != $currentSlug && expires > now()] | order(_createdAt desc)[0...4] {
       _id,
       slug,
       country->{
@@ -101,8 +101,8 @@ async function getOfferDetailsData(slug, countryName) {
       currentSlug: slug 
     });
     
-    // Get total count of offers from this bookmaker
-    const totalOffersQuery = `count(*[_type == "offers" && country->country == $countryName && bookmaker._ref == $bookmakerId])`;
+    // Get total count of offers from this bookmaker (excluding expired offers)
+    const totalOffersQuery = `count(*[_type == "offers" && country->country == $countryName && bookmaker._ref == $bookmakerId && expires > now()])`;
     const totalOffers = await client.fetch(totalOffersQuery, { 
       countryName, 
       bookmakerId: mainOffer.bookmaker._id 

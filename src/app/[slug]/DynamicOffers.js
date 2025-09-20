@@ -45,8 +45,8 @@ const fetchOffers = async (countryData) => {
     return [];
   }
 
-  // Query offers by country reference name, excluding hidden offers
-  const query = `*[_type == "offers" && country->country == $countryName && (noindex != true) && (sitemapInclude != false)] | order(_createdAt desc) {
+  // Query offers by country reference name, excluding hidden offers and expired offers
+  const query = `*[_type == "offers" && country->country == $countryName && (noindex != true) && (sitemapInclude != false) && expires > now()] | order(_createdAt desc) {
     _id,
     slug,
     country->{
@@ -1055,7 +1055,7 @@ export default function DynamicOffers({
           <h1 className=" font-semibold text-[24px] leading-[100%] text-[#272932] whitespace-nowrap">
             {getDynamicHeaderText}{" "}
             <span className=" font-medium text-[16px] leading-[100%] tracking-[1%] align-middle text-[#696969]">
-              {filteredOffers.length}
+              ({filteredOffers.length})
             </span>
             {totalPages > 1 && (
               <span className=" font-medium text-[16px] leading-[100%] tracking-[1%] align-middle text-[#696969] ml-2">
