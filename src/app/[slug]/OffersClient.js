@@ -571,10 +571,7 @@ export default function OffersClient({
                   <div className="flex items-center gap-2">
                     {offer.bookmaker?.logo ? (
                       <img
-                        src={urlFor(offer.bookmaker.logo)
-                          .width(44)
-                          .height(44)
-                          .url()}
+                        src={offer.bookmaker.logo}
                         alt={offer.bookmaker.name}
                         width="44"
                         height="44"
