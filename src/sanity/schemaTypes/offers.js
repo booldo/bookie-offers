@@ -172,8 +172,8 @@ export default {
       }
     },
     {
-      name: "Pretty Link",
-      title: "Affiliate Link",
+      name: "prettyLink",
+      title: "Pretty Link",
       type: "reference",
       to: [{ type: "affiliate" }],
       description: "Select a Pretty link for this offer",
