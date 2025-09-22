@@ -63,7 +63,6 @@ const fetchOffers = async (countryData) => {
       name,
       logo,
       logoAlt,
-      logoUrl,
       paymentMethods[]->{
         _id,
         name
@@ -1347,7 +1346,10 @@ export default function DynamicOffers({
                   <div className="flex items-center gap-2">
                     {offer.bookmaker?.logo ? (
                       <Image
-                        src={offer.bookmaker.logo}
+                        src={urlFor(offer.bookmaker.logo)
+                          .width(440)
+                          .height(440)
+                          .url()}
                         alt={offer.bookmaker.name}
                         width="44"
                         height="44"

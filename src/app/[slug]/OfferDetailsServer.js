@@ -23,7 +23,6 @@ async function getOfferDetailsData(slug, countryName) {
         name,
         logo,
         logoAlt,
-        logoUrl,
         paymentMethods[]->{
           _id,
           name
@@ -86,8 +85,7 @@ async function getOfferDetailsData(slug, countryName) {
         _id,
         name,
         logo,
-        logoAlt,
-        logoUrl
+        logoAlt
       },
       maxBonus,
       minDeposit,

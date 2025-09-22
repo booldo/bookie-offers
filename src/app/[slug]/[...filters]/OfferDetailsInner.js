@@ -125,7 +125,6 @@ function OfferDetailsInner({ slug }) {
             name,
             logo,
             logoAlt,
-            logoUrl,
             paymentMethods[]->{
               _id,
               name
@@ -178,8 +177,7 @@ function OfferDetailsInner({ slug }) {
             _id,
             name,
             logo,
-            logoAlt,
-            logoUrl
+            logoAlt
           },
           title,
           offerSummary,
@@ -239,8 +237,7 @@ function OfferDetailsInner({ slug }) {
           _id,
           name,
           logo,
-          logoAlt,
-          logoUrl
+          logoAlt
         },
         title,
         offerSummary,
@@ -425,7 +422,7 @@ function OfferDetailsInner({ slug }) {
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center gap-3">
                 {offer.bookmaker?.logo ? (
-                  <Image src={offer.bookmaker.logo} alt={offer.bookmaker.logoAlt || offer.bookmaker.name} width={40} height={40} className="rounded-md" />
+                  <Image src={urlFor(offer.bookmaker.logo).width(400).height(400).url()} alt={offer.bookmaker.logoAlt || offer.bookmaker.name} width={40} height={40} className="rounded-md" />
                 ) : (
                   <div className="w-10 h-10 bg-gray-100 rounded-md" />
                 )}
@@ -552,7 +549,7 @@ function OfferDetailsInner({ slug }) {
                       <div className="flex items-center gap-3 min-w-0 flex-1">
                         {moreOffer.bookmaker?.logo ? (
                             <Image
-                              src={moreOffer.bookmaker.logo}
+                              src={urlFor(moreOffer.bookmaker.logo).width(250).height(250).url()}
                               alt={moreOffer.bookmaker.name}
                               width={25}
                               height={25}

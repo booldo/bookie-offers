@@ -63,13 +63,15 @@ export default {
   preview: {
     select: {
       title: 'name',
-      country: 'country.country'
+      country: 'country.country',
+      logo: 'logo'
     },
     prepare(selection) {
-      const { title, country } = selection;
+      const { title, country, logo } = selection;
       return {
         title: title,
-        subtitle: country || 'Unknown Country'
+        subtitle: country || 'Unknown Country',
+        media: logo
       };
     }
   },
@@ -122,7 +124,7 @@ export default {
       },
       validation: Rule => Rule.required(),
     },
-    { name: "logo", title: "Logo URL", type: "url", description: "Direct URL to the bookmaker logo image" },
+    { name: "logo", title: "Logo", type: "image" },
     { name: "logoAlt", title: "Logo Alt Text", type: "string", description: "Alternative text for accessibility and SEO" },
     {
       name: "license",
