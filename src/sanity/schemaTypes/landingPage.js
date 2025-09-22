@@ -1,6 +1,6 @@
 export default {
   name: "landingPage",
-  title: "World Wide Page",
+  title: " Worldwide HP + SEO",
   type: "document",
   preview: {
     select: {
