@@ -186,9 +186,9 @@ export default {
     },
     {
       name: "slug",
-      title: "Generate Page URL Link",
+      title: "Generate Slug",
       type: "slug",
-      description: "This will appear as pretty link",
+      description: "This will appear as URL link",
       options: {
         source: async (doc, context) => {
           const { getClient } = context;
