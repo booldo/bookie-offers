@@ -19,7 +19,14 @@ export async function middleware(request) {
   try {
     console.log('🔍 Middleware checking path:', pathname);
     
-    // Check if this path should redirect
+    // For article paths (/briefly/*), completely skip redirect handling
+    // Let Next.js handle routing naturally (including 404s)
+    if (pathname.startsWith('/briefly/') && pathname !== '/briefly') {
+      console.log('📝 Article path detected, skipping redirects and letting Next.js handle:', pathname);
+      return NextResponse.next();
+    }
+    
+    // For non-article paths, check redirects normally
     const redirect = await checkRedirect(pathname);
     
     if (redirect) {

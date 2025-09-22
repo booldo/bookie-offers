@@ -12,7 +12,8 @@ export async function middleware(request) {
     return NextResponse.next();
   }
   const dynamicPatterns = [
-    { regex: /^\/briefly\/([^\/]+)$/, type: 'article' },
+    // Removed article pattern to let Next.js handle 404s naturally
+    // { regex: /^\/briefly\/([^\/]+)$/, type: 'article' },
     { regex: /^\/footer\/([^\/]+)$/, type: 'footer' },
     { regex: /^\/([^\/]+)\/[^\/]+\/([^\/]+)$/, type: 'offers' }, // offer details
     { regex: /^\/([^\/]+)$/, type: 'countryPage' }, // country slugs like /ng
