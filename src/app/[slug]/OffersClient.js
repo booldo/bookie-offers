@@ -10,6 +10,27 @@ import { PortableText } from "@portabletext/react";
 
 const sortOptions = ["Latest", "A-Z"];
 
+// Helper function to validate Sanity asset references
+const isValidAssetRef = (asset) => {
+  if (!asset) return false;
+  
+  // Check if it's a direct asset object with _ref
+  if (asset._ref) {
+    // Sanity asset IDs should match the pattern: image-{hash}-{width}x{height}-{format}
+    // or at minimum: image-{hash} with proper length
+    const ref = asset._ref;
+    return ref.startsWith('image-') && ref.length > 10 && !ref.includes('undefined');
+  }
+  
+  // Check if it's a direct asset object with asset property
+  if (asset.asset && asset.asset._ref) {
+    const ref = asset.asset._ref;
+    return ref.startsWith('image-') && ref.length > 10 && !ref.includes('undefined');
+  }
+  
+  return false;
+};
+
 export default function OffersClient({
   countrySlug,
   initialOffers,
@@ -289,16 +310,16 @@ export default function OffersClient({
       {/* Page Title Header */}
       <div className="sticky top-16 z-40 bg-white sm:static sm:bg-transparent">
         <div className="flex items-center justify-between my-4">
-          <h1 className=" font-semibold text-[24px] leading-[100%] text-[#272932] whitespace-nowrap">
+          {/* <h1 className=" font-semibold text-[24px] leading-[100%] text-[#272932] whitespace-nowrap">
             {pageTitle || "Best Offers"}{" "}
             <span className=" font-medium text-[16px] leading-[100%] tracking-[1%] align-middle text-[#696969]">
               ({filteredOffers.length})
             </span>
-          </h1>
+          </h1> */}
           <div className="flex items-center gap-1">
-            <label className="text-sm text-gray-500 mr-0">Sort By:</label>
+            {/* <label className="text-sm text-gray-500 mr-0">Sort By:</label> */}
             <div className="relative" ref={sortByRef}>
-              <button
+              {/* <button
                 className="flex items-center gap-1 text-[#272932] text-[14px] leading-[24px] font-medium  hover:text-gray-600 focus:outline-none"
                 onClick={() => setSortByOpen((p) => !p)}
               >
@@ -312,10 +333,10 @@ export default function OffersClient({
                 >
                   <path d="M19 9l-7 7-7-7" />
                 </svg>
-              </button>
+              </button> */}
 
               {/* Mobile slide-up panel */}
-              <div
+              {/* <div
                 className={`sm:hidden fixed bottom-0 left-0 right-0 rounded-t-2xl p-4 bg-white shadow-2xl border-t border-gray-200 z-[60] transform transition-transform duration-300 ${sortByOpen ? "translate-y-0" : "translate-y-full"}`}
               >
                 <div className="flex justify-between items-center pb-2 mb-3">
@@ -363,10 +384,10 @@ export default function OffersClient({
                     </button>
                   ))}
                 </div>
-              </div>
+              </div> */}
 
               {/* Desktop dropdown */}
-              {sortByOpen && (
+              {/* {sortByOpen && (
                 <div className="hidden sm:block absolute right-0 mt-2 w-48 bg-[#FFFFFF] rounded-xl shadow-xl border border-gray-100 py-2 z-[60]">
                   {sortOptions.map((option) => (
                     <button
@@ -399,7 +420,7 @@ export default function OffersClient({
                     </button>
                   ))}
                 </div>
-              )}
+              )} */}
             </div>
           </div>
         </div>
@@ -569,7 +590,7 @@ export default function OffersClient({
                 {/* Top row */}
                 <div className="flex justify-between items-center mb-1">
                   <div className="flex items-center gap-2">
-                    {offer.bookmaker?.logo ? (
+                    {offer.bookmaker?.logo && isValidAssetRef(offer.bookmaker.logo) ? (
                       <img
                         src={urlFor(offer.bookmaker.logo)
                           .width(44)

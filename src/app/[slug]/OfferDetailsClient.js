@@ -8,6 +8,27 @@ import { PortableText } from "@portabletext/react";
 import { formatDate } from "../../utils/dateFormatter";
 import TrackedLink from "../../components/TrackedLink";
 
+// Helper function to validate Sanity asset references
+const isValidAssetRef = (asset) => {
+  if (!asset) return false;
+  
+  // Check if it's a direct asset object with _ref
+  if (asset._ref) {
+    // Sanity asset IDs should match the pattern: image-{hash}-{width}x{height}-{format}
+    // or at minimum: image-{hash} with proper length
+    const ref = asset._ref;
+    return ref.startsWith('image-') && ref.length > 10 && !ref.includes('undefined');
+  }
+  
+  // Check if it's a direct asset object with asset property
+  if (asset.asset && asset.asset._ref) {
+    const ref = asset.asset._ref;
+    return ref.startsWith('image-') && ref.length > 10 && !ref.includes('undefined');
+  }
+  
+  return false;
+};
+
 // FAQ Item Component
 const FAQItem = ({ question, answer, isOpen, onToggle }) => {
   return (
@@ -349,7 +370,7 @@ export default function OfferDetailsClient({
         {/* Header */}
         <div className="flex items-start justify-between mb-6">
           <div className="flex items-center gap-4">
-            {offer.bookmaker?.logo && (
+            {offer.bookmaker?.logo && isValidAssetRef(offer.bookmaker.logo) && (
               <Image
                 src={urlFor(offer.bookmaker.logo).width(640).height(640).url()}
                 alt={offer.bookmaker.logoAlt || offer.bookmaker.name}
@@ -453,7 +474,7 @@ export default function OfferDetailsClient({
                   {/* Top row: Logo, Bookmaker Name, and Published Date */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      {moreOffer.bookmaker?.logo ? (
+                      {moreOffer.bookmaker?.logo && isValidAssetRef(moreOffer.bookmaker.logo) ? (
                         <Image
                           src={urlFor(moreOffer.bookmaker.logo)
                             .width(25)
