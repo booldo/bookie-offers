@@ -172,18 +172,18 @@ export default {
       }
     },
     {
-      name: "affiliateLink",
+      name: "Pretty Link",
       title: "Affiliate Link",
       type: "reference",
       to: [{ type: "affiliate" }],
-      description: "Select an affiliate link for this offer",
+      description: "Select a Pretty link for this offer",
       inputComponent: AffiliateLinkInput
     },
     {
       name: "slug",
       title: "Generate Page URL Link",
       type: "slug",
-      description: "This will appear as www.booldo.com/pretty link",
+      description: "This will appear as pretty link",
       options: {
         source: async (doc, context) => {
           const { getClient } = context;
