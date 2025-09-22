@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import { urlFor } from "../../sanity/lib/image";
@@ -195,34 +195,52 @@ export default function OffersClient({
     return () => document.removeEventListener("mousedown", handleClick);
   }, [sortByOpen]);
 
-  const handleFilterChange = ({ bonusTypes, bookmakers, advanced }) => {
+  const handleFilterChange = useCallback(({ bonusTypes, bookmakers, advanced }) => {
     const url = buildUrl({ bonusTypes, bookmakers, advanced });
     router.push(url);
-  };
+  }, [router, buildUrl]);
 
-  const setSelectedBonusTypesWrapped = (arr) => {
-    handleFilterChange({
-      bonusTypes: arr,
-      bookmakers: selectedBookmakers,
-      advanced: selectedAdvanced,
+  const setSelectedBonusTypesWrapped = useCallback((arr) => {
+    // Update state immediately for instant UI response
+    setSelectedBonusTypes(arr);
+    
+    // Use requestAnimationFrame for smoother URL updates
+    requestAnimationFrame(() => {
+      handleFilterChange({
+        bonusTypes: arr,
+        bookmakers: selectedBookmakers,
+        advanced: selectedAdvanced,
+      });
     });
-  };
+  }, [selectedBookmakers, selectedAdvanced, handleFilterChange]);
 
-  const setSelectedBookmakersWrapped = (arr) => {
-    handleFilterChange({
-      bonusTypes: selectedBonusTypes,
-      bookmakers: arr,
-      advanced: selectedAdvanced,
+  const setSelectedBookmakersWrapped = useCallback((arr) => {
+    // Update state immediately for instant UI response
+    setSelectedBookmakers(arr);
+    
+    // Use requestAnimationFrame for smoother URL updates
+    requestAnimationFrame(() => {
+      handleFilterChange({
+        bonusTypes: selectedBonusTypes,
+        bookmakers: arr,
+        advanced: selectedAdvanced,
+      });
     });
-  };
+  }, [selectedBonusTypes, selectedAdvanced, handleFilterChange]);
 
-  const setSelectedAdvancedWrapped = (arr) => {
-    handleFilterChange({
-      bonusTypes: selectedBonusTypes,
-      bookmakers: selectedBookmakers,
-      advanced: arr,
+  const setSelectedAdvancedWrapped = useCallback((arr) => {
+    // Update state immediately for instant UI response
+    setSelectedAdvanced(arr);
+    
+    // Use requestAnimationFrame for smoother URL updates
+    requestAnimationFrame(() => {
+      handleFilterChange({
+        bonusTypes: selectedBonusTypes,
+        bookmakers: selectedBookmakers,
+        advanced: arr,
+      });
     });
-  };
+  }, [selectedBonusTypes, selectedBookmakers, handleFilterChange]);
 
   const clearAllFilters = () => {
     setSelectedBonusTypes([]);
@@ -233,77 +251,108 @@ export default function OffersClient({
     }
   };
 
-  // Filter logic (case-insensitive)
-  const filteredOffers = offers.filter((offer) => {
-    const offerBookmaker = offer.bookmaker?.name
-      ? offer.bookmaker.name.toLowerCase()
-      : "";
-    const offerBonusType = offer.bonusType?.name
-      ? offer.bonusType.name.toLowerCase()
-      : "";
+  // Pre-compute lowercase versions of selected filters for better performance
+  const selectedBookmakersLower = useMemo(() => 
+    selectedBookmakers.map(bm => bm.toLowerCase()), 
+    [selectedBookmakers]
+  );
+  
+  const selectedBonusTypesLower = useMemo(() => 
+    selectedBonusTypes.map(bt => bt.toLowerCase()), 
+    [selectedBonusTypes]
+  );
+  
+  const selectedAdvancedLower = useMemo(() => 
+    selectedAdvanced.map(a => a.toLowerCase()), 
+    [selectedAdvanced]
+  );
 
-    // Safely handle payment methods with null/undefined checks
-    const offerPaymentMethods = Array.isArray(offer.bookmaker?.paymentMethods)
-      ? offer.bookmaker.paymentMethods
-          .filter((pm) => pm != null) // Filter out null/undefined values
-          .map((pm) => {
-            if (typeof pm === "string") return pm.toLowerCase();
-            if (pm && typeof pm === "object" && pm.name)
-              return pm.name.toLowerCase();
-            return ""; // Return empty string for invalid items
-          })
-          .filter((pm) => pm !== "") // Filter out empty strings
-      : [];
-
-    // Safely handle licenses with null/undefined checks
-    const offerLicenses = Array.isArray(offer.bookmaker?.license)
-      ? offer.bookmaker.license
-          .filter((lc) => lc != null) // Filter out null/undefined values
-          .map((lc) => {
-            if (typeof lc === "string") return lc.toLowerCase();
-            if (lc && typeof lc === "object" && lc.name)
-              return lc.name.toLowerCase();
-            return ""; // Return empty string for invalid items
-          })
-          .filter((lc) => lc !== "") // Filter out empty strings
-      : [];
-
+  // Memoized filter logic for better performance
+  const filteredOffers = useMemo(() => {
+    // Early return if no filters selected
     if (
-      selectedBookmakers.length > 0 &&
-      !selectedBookmakers.some((bm) => bm.toLowerCase() === offerBookmaker)
-    )
-      return false;
-    if (
-      selectedBonusTypes.length > 0 &&
-      !selectedBonusTypes.some((bt) => bt.toLowerCase() === offerBonusType)
-    )
-      return false;
-    if (selectedAdvanced.length > 0) {
-      const selectedAdvancedLower = selectedAdvanced.map((a) =>
-        a.toLowerCase()
-      );
-      const paymentMatch = offerPaymentMethods.some((pm) =>
-        selectedAdvancedLower.includes(pm)
-      );
-      const licenseMatch = offerLicenses.some((lc) =>
-        selectedAdvancedLower.includes(lc)
-      );
-      if (!paymentMatch && !licenseMatch) return false;
+      selectedBookmakers.length === 0 &&
+      selectedBonusTypes.length === 0 &&
+      selectedAdvanced.length === 0
+    ) {
+      return offers;
     }
-    return true;
-  });
 
-  // Sorting logic
-  let sortedOffers = [...filteredOffers];
-  if (sortBy === "Latest") {
-    sortedOffers.sort((a, b) => new Date(a.published) - new Date(b.published));
-  } else if (sortBy === "A-Z") {
-    sortedOffers.sort((a, b) => {
-      const aName = a.bookmaker?.name || "";
-      const bName = b.bookmaker?.name || "";
-      return aName.localeCompare(bName);
+    return offers.filter((offer) => {
+      // Early bookmaker check (most common filter)
+      if (selectedBookmakersLower.length > 0) {
+        const offerBookmaker = offer.bookmaker?.name?.toLowerCase() || "";
+        if (!selectedBookmakersLower.includes(offerBookmaker)) {
+          return false;
+        }
+      }
+
+      // Early bonus type check
+      if (selectedBonusTypesLower.length > 0) {
+        const offerBonusType = offer.bonusType?.name?.toLowerCase() || "";
+        if (!selectedBonusTypesLower.includes(offerBonusType)) {
+          return false;
+        }
+      }
+
+      // Advanced filters check (only if needed)
+      if (selectedAdvancedLower.length > 0) {
+        let hasAdvancedMatch = false;
+
+        // Check payment methods
+        const paymentMethods = offer.bookmaker?.paymentMethods;
+        if (Array.isArray(paymentMethods)) {
+          for (const pm of paymentMethods) {
+            if (pm?.name) {
+              const pmName = pm.name.toLowerCase();
+              if (selectedAdvancedLower.includes(pmName)) {
+                hasAdvancedMatch = true;
+                break;
+              }
+            }
+          }
+        }
+
+        // Check licenses if no payment method match
+        if (!hasAdvancedMatch) {
+          const licenses = offer.bookmaker?.license;
+          if (Array.isArray(licenses)) {
+            for (const lc of licenses) {
+              if (lc?.name) {
+                const lcName = lc.name.toLowerCase();
+                if (selectedAdvancedLower.includes(lcName)) {
+                  hasAdvancedMatch = true;
+                  break;
+                }
+              }
+            }
+          }
+        }
+
+        if (!hasAdvancedMatch) {
+          return false;
+        }
+      }
+
+      return true;
     });
-  }
+  }, [offers, selectedBookmakersLower, selectedBonusTypesLower, selectedAdvancedLower]);
+
+  // Memoized sorting logic for better performance
+  const sortedOffers = useMemo(() => {
+    if (sortBy === "Latest") {
+      return [...filteredOffers].sort(
+        (a, b) => new Date(a.published) - new Date(b.published)
+      );
+    } else if (sortBy === "A-Z") {
+      return [...filteredOffers].sort((a, b) => {
+        const aName = a.bookmaker?.name || "";
+        const bName = b.bookmaker?.name || "";
+        return aName.localeCompare(bName);
+      });
+    }
+    return filteredOffers;
+  }, [filteredOffers, sortBy]);
 
   return (
     <>
