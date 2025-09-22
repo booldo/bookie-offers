@@ -7,6 +7,7 @@ import BannerCarousel from "../../components/BannerCarousel";
 import { PortableText } from '@portabletext/react';
 import { Suspense } from "react";
 import ExpiredOfferPage from "./[...filters]/ExpiredOfferPage";
+import FAQSection from "../../components/FAQSection";
 
 // Custom components for PortableText rendering
 const portableTextComponents = {
@@ -468,17 +469,7 @@ export default async function CountryPageShell({ params, children, isOfferDetail
               </div>
             )}
             {((filterFaqs && filterFaqs.length > 0) || (!filterFaqs && countryData.faqs && countryData.faqs.length > 0)) && (
-              <div>
-                <h2 className="text-lg sm:text-xl md:text-2xl font-semibold mb-3 font-['General_Sans']">FAQs</h2>
-                <div className="space-y-3">
-                  {(filterFaqs || countryData.faqs || []).map((faq, idx) => (
-                    <div key={idx} className="border border-gray-200 rounded-lg p-3 sm:p-4">
-                      <div className="font-medium text-gray-900 mb-1 font-['General_Sans']">{faq.question}</div>
-                      <div className="text-gray-700 text-sm sm:text-base whitespace-pre-line font-['General_Sans']">{faq.answer}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <FAQSection faqs={filterFaqs || countryData.faqs || []} />
             )}
           </section>
         )}
