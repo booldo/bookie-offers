@@ -64,9 +64,9 @@ export default function NotFoundPage() {
             </div>
 
             {/* Additional Info */}
-            <div className="mt-8 text-sm text-gray-500">
+            {/* <div className="mt-8 text-sm text-gray-500">
               <p>Looking for similar content? Check out our latest offerings!</p>
-            </div>
+            </div> */}
           </div>
         </div>
       </main>
