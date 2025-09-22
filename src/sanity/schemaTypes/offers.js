@@ -84,100 +84,105 @@ export default {
   name: "offers",
   title: "Offers",
   type: "document",
-  validation: Rule => Rule.custom((doc, context) => {
-    if (!doc?.slug?.current) return true // Skip validation if slug is missing
-    
-    const { getClient } = context
-    const client = getClient({ apiVersion: '2023-05-03' })
+  validation: (Rule) =>
+    Rule.custom((doc, context) => {
+      if (!doc?.slug?.current) return true; // Skip validation if slug is missing
 
-    // Exclude both draft and published versions of the current document
-    const currentId = doc._id || 'draft'
-    const draftId = currentId.startsWith('drafts.') ? currentId : `drafts.${currentId}`
-    const publishedId = currentId.replace(/^drafts\./, '')
-    const query = `count(*[_type == "offers" && slug.current == $slug && !(_id in [$draftId, $publishedId])])`
+      const { getClient } = context;
+      const client = getClient({ apiVersion: "2023-05-03" });
 
-    return client.fetch(query, {
-      slug: doc.slug.current,
-      draftId,
-      publishedId
-    })
-      .then(count => {
-        if (count > 0) {
-          return `An offer with this slug already exists. Please modify the slug to make it unique.`
-        }
-        return true
-      })
-      .catch(() => {
-        // If there's an error, allow the operation
-        return true
-      })
-  }),
+      // Exclude both draft and published versions of the current document
+      const currentId = doc._id || "draft";
+      const draftId = currentId.startsWith("drafts.")
+        ? currentId
+        : `drafts.${currentId}`;
+      const publishedId = currentId.replace(/^drafts\./, "");
+      const query = `count(*[_type == "offers" && slug.current == $slug && !(_id in [$draftId, $publishedId])])`;
 
+      return client
+        .fetch(query, {
+          slug: doc.slug.current,
+          draftId,
+          publishedId,
+        })
+        .then((count) => {
+          if (count > 0) {
+            return `An offer with this slug already exists. Please modify the slug to make it unique.`;
+          }
+          return true;
+        })
+        .catch(() => {
+          // If there's an error, allow the operation
+          return true;
+        });
+    }),
 
   fields: [
     {
       name: "title",
       title: "Offer Title",
       type: "string",
-      validation: Rule => Rule.required(),
-      description: "The name of this offer (e.g., 'Get a €5 Free Bet Every Weekend with 1BET!')"
+      validation: (Rule) => Rule.required(),
+      description:
+        "The name of this offer (e.g., 'Get a €5 Free Bet Every Weekend with 1BET!')",
     },
     {
       name: "country",
       title: "Page",
       type: "reference",
       to: [{ type: "countryPage" }],
-      validation: Rule => Rule.required(),
+      validation: (Rule) => Rule.required(),
       options: {
-        filter: 'isActive == true'
-      }
+        filter: "isActive == true",
+      },
     },
     {
       name: "bonusType",
       title: "Bonus Type",
       type: "reference",
-      description: "The type of bonus this offer is (e.g., 'Free Bet', 'Deposit Bonus', 'Risk-Free Bet')",
+      description:
+        "The type of bonus this offer is (e.g., 'Free Bet', 'Deposit Bonus', 'Risk-Free Bet')",
       to: [{ type: "bonusType" }],
-      validation: Rule => Rule.required(),
+      validation: (Rule) => Rule.required(),
       options: {
-        filter: ({document}) => {
+        filter: ({ document }) => {
           // If no country is selected, show all bonus types
-          if (!document?.country?._ref) return {}
-          
+          if (!document?.country?._ref) return {};
+
           // Filter bonus types by the selected country reference
           return {
-            filter: 'country._ref == $countryId',
-            params: { countryId: document.country._ref }
-          }
-        }
-      }
+            filter: "country._ref == $countryId",
+            params: { countryId: document.country._ref },
+          };
+        },
+      },
     },
     {
       name: "bookmaker",
       title: "Bookmaker",
       type: "reference",
       to: [{ type: "bookmaker" }],
-      validation: Rule => Rule.required(),
+      validation: (Rule) => Rule.required(),
       options: {
-        filter: ({document}) => {
+        filter: ({ document }) => {
           // If no country is selected, show all bookmakers
-          if (!document?.country?._ref) return {}
-          
+          if (!document?.country?._ref) return {};
+
           // Filter bookmakers by the selected country reference
           return {
-            filter: 'country._ref == $countryId',
-            params: { countryId: document.country._ref }
-          }
-        }
-      }
+            filter: "country._ref == $countryId",
+            params: { countryId: document.country._ref },
+          };
+        },
+      },
     },
     {
-      name: "prettyLink",
+      name: "affiliateLink",
       title: "Pretty Link",
       type: "reference",
       to: [{ type: "affiliate" }],
       description: "Select a Pretty link for this offer",
-      inputComponent: AffiliateLinkInput
+      inputComponent: AffiliateLinkInput,
     },
     {
       name: "slug",
@@ -187,42 +192,45 @@ export default {
       options: {
         source: async (doc, context) => {
           const { getClient } = context;
-          const client = getClient({ apiVersion: '2023-05-03' });
-          
+          const client = getClient({ apiVersion: "2023-05-03" });
+
           // Get the offer title
           const offerTitle = doc.title || "unknown";
-          
+
           // Get the bookmaker name
           let bookmakerName = "unknown";
           if (doc.bookmaker?._ref) {
             try {
-              const bookmaker = await client.fetch(`*[_type == "bookmaker" && _id == $id][0]{
+              const bookmaker = await client.fetch(
+                `*[_type == "bookmaker" && _id == $id][0]{
                 name
-              }`, { id: doc.bookmaker._ref });
+              }`,
+                { id: doc.bookmaker._ref }
+              );
               bookmakerName = bookmaker?.name || "unknown";
             } catch (error) {
               console.error("Error fetching bookmaker:", error);
             }
           }
-          
+
           // Get current date
           const today = new Date();
-          const dateString = today.toISOString().split('T')[0]; // YYYY-MM-DD format
-          
+          const dateString = today.toISOString().split("T")[0]; // YYYY-MM-DD format
+
           // Create slug: title-bookmaker-date
-          const slug = `${offerTitle.toLowerCase().replace(/\s+/g, '-')}-${bookmakerName.toLowerCase().replace(/\s+/g, '-')}-${dateString}`;
-          
+          const slug = `${offerTitle.toLowerCase().replace(/\s+/g, "-")}-${bookmakerName.toLowerCase().replace(/\s+/g, "-")}-${dateString}`;
+
           return slug;
         },
         maxLength: 96,
-        slugify: input =>
+        slugify: (input) =>
           input
             .toLowerCase()
-            .replace(/\s+/g, '-')
-            .replace(/[^ 0-\u007F\w\-]+/g, '')
-            .slice(0, 96)
+            .replace(/\s+/g, "-")
+            .replace(/[^ 0-\u007F\w\-]+/g, "")
+            .slice(0, 96),
       },
-      validation: Rule => Rule.required(),
+      validation: (Rule) => Rule.required(),
     },
     { name: "maxBonus", title: "Max Bonus", type: "number" },
     { name: "minDeposit", title: "Min Deposit", type: "number" },
@@ -231,34 +239,58 @@ export default {
       title: "Text Block 1 (offer summary)",
       type: "array",
       of: [{ type: "block" }],
-      validation: Rule => Rule.required().custom(blocks => {
-        if (!blocks || blocks.length === 0) {
-          return "Summary is required.";
-        }
+      validation: (Rule) =>
+        Rule.required().custom((blocks) => {
+          if (!blocks || blocks.length === 0) {
+            return "Summary is required.";
+          }
 
-        const plainText = blocks
-          .map(block => {
-            if (block._type === 'block' && Array.isArray(block.children)) {
-              return block.children.map(child => child.text).join('');
-            }
-            return '';
-          })
-          .join(' ');
+          const plainText = blocks
+            .map((block) => {
+              if (block._type === "block" && Array.isArray(block.children)) {
+                return block.children.map((child) => child.text).join("");
+              }
+              return "";
+            })
+            .join(" ");
 
-        const wordCount = plainText.trim().split(/\s+/).filter(Boolean).length;
+          const wordCount = plainText
+            .trim()
+            .split(/\s+/)
+            .filter(Boolean).length;
 
-        if (wordCount > 15) {
-          return `Offer summary must not exceed 15 words. Current count: ${wordCount}`;
-        }
+          if (wordCount > 15) {
+            return `Offer summary must not exceed 15 words. Current count: ${wordCount}`;
+          }
 
-        return true;
-      }),
-      description: "A short summary of this offer (max 15 words)"
+          return true;
+        }),
+      description: "A short summary of this offer (max 15 words)",
     },
-    { name: "expires", title: "Expires", type: "date", validation: Rule => Rule.required() },
-    { name: "published", title: "Published", type: "date", validation: Rule => Rule.required() },
-    { name: "banner", title: "Banner", type: "image", description: "Banner image for this specific offer" },
-    { name: "bannerAlt", title: "Banner Alt Text", type: "string", description: "Alternative text for accessibility and SEO" },
+    {
+      name: "expires",
+      title: "Expires",
+      type: "date",
+      validation: (Rule) => Rule.required(),
+    },
+    {
+      name: "published",
+      title: "Published",
+      type: "date",
+      validation: (Rule) => Rule.required(),
+    },
+    {
+      name: "banner",
+      title: "Banner",
+      type: "image",
+      description: "Banner image for this specific offer",
+    },
+    {
+      name: "bannerAlt",
+      title: "Banner Alt Text",
+      type: "string",
+      description: "Alternative text for accessibility and SEO",
+    },
     {
       name: "howItWorks",
       title: "Content",
@@ -267,9 +299,9 @@ export default {
         { type: "block" },
         {
           type: "codeBlock",
-          title: "Code Block"
-        }
-      ]
+          title: "Code Block",
+        },
+      ],
     },
     {
       name: "faq",
@@ -284,19 +316,18 @@ export default {
               title: "Question",
               type: "array",
               of: [{ type: "block" }],
-              validation: Rule => Rule.required()
+              validation: (Rule) => Rule.required(),
             },
             {
               name: "answer",
               title: "Answer",
               type: "array",
               of: [{ type: "block" }],
-              validation: Rule => Rule.required()
-            }
+              validation: (Rule) => Rule.required(),
+            },
           ],
-
-        }
-      ]
+        },
+      ],
     },
 
     // Removed custom publishing workflow fields; publish via Sanity's built-in workflow
@@ -304,42 +335,42 @@ export default {
       name: "metaTitle",
       title: "Meta Title",
       type: "string",
-      validation: Rule => Rule.required(),
-      description: "SEO: Custom meta title for this page"
+      validation: (Rule) => Rule.required(),
+      description: "SEO: Custom meta title for this page",
     },
     {
       name: "metaDescription",
       title: "Meta Description",
       type: "text",
-      validation: Rule => Rule.required(),
-      description: "SEO: Custom meta description for this page"
+      validation: (Rule) => Rule.required(),
+      description: "SEO: Custom meta description for this page",
     },
     {
       name: "noindex",
       title: "Noindex",
       type: "boolean",
-      description: "SEO: Prevent this page from being indexed by search engines"
+      description:
+        "SEO: Prevent this page from being indexed by search engines",
     },
     {
       name: "nofollow",
       title: "Nofollow",
       type: "boolean",
-      description: "SEO: Prevent search engines from following links on this page"
+      description:
+        "SEO: Prevent search engines from following links on this page",
     },
     {
       name: "canonicalUrl",
       title: "Canonical URL",
       type: "url",
-      description: "SEO: Canonical URL for this page (leave blank for default)"
+      description: "SEO: Canonical URL for this page (leave blank for default)",
     },
     {
       name: "sitemapInclude",
       title: "Include in Sitemap",
       type: "boolean",
       description: "SEO: Should this page be included in sitemap.xml?",
-      initialValue: true
+      initialValue: true,
     },
-
-
-  ]
+  ],
 }; 
