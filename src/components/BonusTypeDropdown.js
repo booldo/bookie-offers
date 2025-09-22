@@ -2,22 +2,32 @@
 import { useState, useRef, useEffect, useMemo, useCallback, memo } from "react";
 
 // Memoized checkbox item component to prevent unnecessary re-renders
-const CheckboxItem = memo(({ item, selected, onToggle, showCount }) => (
-  <label className="flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-50 transition">
-    <input
-      type="checkbox"
-      checked={selected.includes(item.name)}
-      onChange={() => onToggle(item.name)}
-      className="accent-[#018651] w-4 h-4 rounded"
-    />
-    <div className="flex items-center gap-2 flex-1">
-      <span className="align-middle text-[#272932] text-[14px] leading-[24px] font-medium font-['General_Sans']">{item.name}</span>
-    {showCount && item.count !== undefined && (
-      <span className="text-gray-400 text-xs font-semibold">{item.count}</span>
-    )}
-    </div>
-  </label>
-));
+const CheckboxItem = memo(({ item, selected, onToggle, showCount }) => {
+  const isSelected = selected.includes(item.name);
+  
+  return (
+    <label className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all duration-150 ${
+      isSelected ? 'bg-green-50 hover:bg-green-100' : 'hover:bg-gray-50'
+    }`}>
+      <input
+        type="checkbox"
+        checked={isSelected}
+        onChange={() => onToggle(item.name)}
+        className="accent-[#018651] w-4 h-4 rounded transition-all duration-150"
+      />
+      <div className="flex items-center gap-2 flex-1">
+        <span className={`align-middle text-[14px] leading-[24px] font-medium font-['General_Sans'] transition-colors duration-150 ${
+          isSelected ? 'text-[#018651]' : 'text-[#272932]'
+        }`}>{item.name}</span>
+        {showCount && item.count !== undefined && (
+          <span className={`text-xs font-semibold transition-colors duration-150 ${
+            isSelected ? 'text-green-600' : 'text-gray-400'
+          }`}>{item.count}</span>
+        )}
+      </div>
+    </label>
+  );
+});
 
 CheckboxItem.displayName = 'CheckboxItem';
 

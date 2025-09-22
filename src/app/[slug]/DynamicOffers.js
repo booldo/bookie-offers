@@ -805,8 +805,8 @@ export default function DynamicOffers({
       // Update state immediately for instant UI response
       setSelectedBonusTypes(arr);
 
-      // Defer URL update
-      setTimeout(() => {
+      // Use requestAnimationFrame for smoother URL updates
+      requestAnimationFrame(() => {
         const url = buildUrl({
           bonusTypes: arr,
           bookmakers: selectedBookmakers,
@@ -819,9 +819,9 @@ export default function DynamicOffers({
         if (url !== currentUrl) {
           router.replace(url, { scroll: false });
         }
-      }, 0);
+      });
     },
-    [selectedBookmakers, selectedAdvanced, pathname, searchParams]
+    [selectedBookmakers, selectedAdvanced, pathname, searchParams, router, buildUrl]
   );
 
   const setSelectedBookmakersWrapped = useCallback(
@@ -829,8 +829,8 @@ export default function DynamicOffers({
       // Update state immediately for instant UI response
       setSelectedBookmakers(arr);
 
-      // Defer URL update
-      setTimeout(() => {
+      // Use requestAnimationFrame for smoother URL updates
+      requestAnimationFrame(() => {
         const url = buildUrl({
           bonusTypes: selectedBonusTypes,
           bookmakers: arr,
@@ -843,9 +843,9 @@ export default function DynamicOffers({
         if (url !== currentUrl) {
           router.replace(url, { scroll: false });
         }
-      }, 0);
+      });
     },
-    [selectedBonusTypes, selectedAdvanced, pathname, searchParams]
+    [selectedBonusTypes, selectedAdvanced, pathname, searchParams, router, buildUrl]
   );
 
   const setSelectedAdvancedWrapped = useCallback(
@@ -853,8 +853,8 @@ export default function DynamicOffers({
       // Update state immediately for instant UI response
       setSelectedAdvanced(arr);
 
-      // Defer URL update
-      setTimeout(() => {
+      // Use requestAnimationFrame for smoother URL updates
+      requestAnimationFrame(() => {
         const url = buildUrl({
           bonusTypes: selectedBonusTypes,
           bookmakers: selectedBookmakers,
@@ -867,9 +867,9 @@ export default function DynamicOffers({
         if (url !== currentUrl) {
           router.replace(url, { scroll: false });
         }
-      }, 0);
+      });
     },
-    [selectedBonusTypes, selectedBookmakers, pathname, searchParams]
+    [selectedBonusTypes, selectedBookmakers, pathname, searchParams, router, buildUrl]
   );
 
   const clearAllFilters = useCallback(() => {
@@ -881,8 +881,25 @@ export default function DynamicOffers({
     }
   }, [countrySlug]);
 
+  // Pre-compute lowercase versions of selected filters for better performance
+  const selectedBookmakersLower = useMemo(() => 
+    selectedBookmakers.map(bm => bm.toLowerCase()), 
+    [selectedBookmakers]
+  );
+  
+  const selectedBonusTypesLower = useMemo(() => 
+    selectedBonusTypes.map(bt => bt.toLowerCase()), 
+    [selectedBonusTypes]
+  );
+  
+  const selectedAdvancedLower = useMemo(() => 
+    selectedAdvanced.map(a => a.toLowerCase()), 
+    [selectedAdvanced]
+  );
+
   // Memoized filter logic for better performance
   const filteredOffers = useMemo(() => {
+    // Early return if no filters selected
     if (
       selectedBookmakers.length === 0 &&
       selectedBonusTypes.length === 0 &&
@@ -892,88 +909,54 @@ export default function DynamicOffers({
     }
 
     return offers.filter((offer) => {
-      const offerBookmaker = offer.bookmaker?.name
-        ? offer.bookmaker.name.toLowerCase()
-        : "";
-      const offerBonusType = offer.bonusType?.name
-        ? offer.bonusType.name.toLowerCase()
-        : "";
-
-      // Safely handle payment methods with null/undefined checks
-      const offerPaymentMethods = Array.isArray(offer.bookmaker?.paymentMethods)
-        ? offer.bookmaker.paymentMethods
-            .filter((pm) => pm != null) // Filter out null/undefined values
-            .map((pm) => {
-              if (typeof pm === "string") return pm.toLowerCase();
-              if (pm && typeof pm === "object" && pm.name)
-                return pm.name.toLowerCase();
-              return ""; // Return empty string for invalid items
-            })
-            .filter((pm) => pm !== "") // Filter out empty strings
-        : [];
-
-      // Safely handle licenses with null/undefined checks
-      const offerLicenses = Array.isArray(offer.bookmaker?.license)
-        ? offer.bookmaker.license
-            .filter((lc) => lc != null) // Filter out null/undefined values
-            .map((lc) => {
-              if (typeof lc === "string") return lc.toLowerCase();
-              if (lc && typeof lc === "object" && lc.name)
-                return lc.name.toLowerCase();
-              return ""; // Return empty string for invalid items
-            })
-            .filter((lc) => lc !== "") // Filter out empty strings
-        : [];
-
-      // If no filters are selected, show all offers
-      if (
-        selectedBookmakers.length === 0 &&
-        selectedBonusTypes.length === 0 &&
-        selectedAdvanced.length === 0
-      ) {
-        return true;
-      }
-
-      // Check if offer matches ANY of the selected filters (OR logic)
-      let matches = false;
-
-      // Check bookmaker filter
-      if (selectedBookmakers.length > 0) {
-        if (
-          selectedBookmakers.some((bm) => bm.toLowerCase() === offerBookmaker)
-        ) {
-          matches = true;
+      // Early bookmaker check (most common filter)
+      if (selectedBookmakersLower.length > 0) {
+        const offerBookmaker = offer.bookmaker?.name?.toLowerCase() || "";
+        if (selectedBookmakersLower.includes(offerBookmaker)) {
+          return true;
         }
       }
 
-      // Check bonus type filter
-      if (selectedBonusTypes.length > 0) {
-        if (
-          selectedBonusTypes.some((bt) => bt.toLowerCase() === offerBonusType)
-        ) {
-          matches = true;
+      // Early bonus type check
+      if (selectedBonusTypesLower.length > 0) {
+        const offerBonusType = offer.bonusType?.name?.toLowerCase() || "";
+        if (selectedBonusTypesLower.includes(offerBonusType)) {
+          return true;
         }
       }
 
-      // Check advanced filters (payment methods and licenses)
-      if (selectedAdvanced.length > 0) {
-        const selectedAdvancedLower = selectedAdvanced.map((a) =>
-          a.toLowerCase()
-        );
-        const paymentMatch = offerPaymentMethods.some((pm) =>
-          selectedAdvancedLower.includes(pm)
-        );
-        const licenseMatch = offerLicenses.some((lc) =>
-          selectedAdvancedLower.includes(lc)
-        );
-        if (paymentMatch || licenseMatch) {
-          matches = true;
+      // Advanced filters check (only if needed)
+      if (selectedAdvancedLower.length > 0) {
+        // Check payment methods
+        const paymentMethods = offer.bookmaker?.paymentMethods;
+        if (Array.isArray(paymentMethods)) {
+          for (const pm of paymentMethods) {
+            if (pm?.name) {
+              const pmName = pm.name.toLowerCase();
+              if (selectedAdvancedLower.includes(pmName)) {
+                return true;
+              }
+            }
+          }
+        }
+
+        // Check licenses
+        const licenses = offer.bookmaker?.license;
+        if (Array.isArray(licenses)) {
+          for (const lc of licenses) {
+            if (lc?.name) {
+              const lcName = lc.name.toLowerCase();
+              if (selectedAdvancedLower.includes(lcName)) {
+                return true;
+              }
+            }
+          }
         }
       }
 
-      return matches;
+      return false;
     });
-  }, [offers, selectedBookmakers, selectedBonusTypes, selectedAdvanced]);
+  }, [offers, selectedBookmakersLower, selectedBonusTypesLower, selectedAdvancedLower]);
 
   // Memoized sorting logic for better performance
   const sortedOffers = useMemo(() => {
@@ -1076,7 +1059,7 @@ export default function DynamicOffers({
       {/* Best Offers Header */}
       <div className="sticky top-16 z-40 bg-white sm:static sm:bg-transparent">
         <div className="flex items-center justify-between my-4">
-          <h1 className=" font-semibold text-[24px] leading-[100%] text-[#272932] whitespace-nowrap">
+          {/* <h1 className=" font-semibold text-[24px] leading-[100%] text-[#272932] whitespace-nowrap">
             {getDynamicHeaderText}{" "}
             <span className=" font-medium text-[16px] leading-[100%] tracking-[1%] align-middle text-[#696969]">
               ({filteredOffers.length})
@@ -1086,11 +1069,11 @@ export default function DynamicOffers({
                 (Page {currentPage} of {totalPages})
               </span>
             )}
-          </h1>
+          </h1> */}
           <div className="flex items-center gap-1">
-            <label className="text-sm text-gray-500 mr-0">Sort By:</label>
+            {/* <label className="text-sm text-gray-500 mr-0">Sort By:</label> */}
             <div className="relative" ref={sortByRef}>
-              <button
+              {/* <button
                 className="flex items-center gap-1 text-[#272932] text-[14px] leading-[24px] font-medium  hover:text-gray-600 focus:outline-none"
                 onClick={() => setSortByOpen((p) => !p)}
               >
@@ -1104,7 +1087,7 @@ export default function DynamicOffers({
                 >
                   <path d="M19 9l-7 7-7-7" />
                 </svg>
-              </button>
+              </button> */}
 
               {/* Mobile slide-up panel */}
               <div
