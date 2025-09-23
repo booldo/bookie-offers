@@ -9,6 +9,23 @@ import Link from "next/link";
 import { formatDate } from "../utils/dateFormatter";
 import { PortableText } from "@portabletext/react";
 
+// Helper function to get image URL from Sanity asset or URL string
+const getImageUrl = (asset) => {
+  if (!asset) return null;
+
+  // If it's a URL string, return it directly
+  if (typeof asset === 'string' && (asset.startsWith('http://') || asset.startsWith('https://'))) {
+    return asset;
+  }
+
+  // If it's a Sanity asset, use urlFor
+  if (asset._ref || (asset.asset && asset.asset._ref)) {
+    return urlFor(asset).width(48).height(48).url();
+  }
+
+  return null;
+};
+
 const WORLD_WIDE_FLAG = { src: "/assets/flags.png", name: "World Wide", path: "/", topIcon: "/assets/dropdown.png" };
 
 export default function HomeNavbar() {
@@ -797,7 +814,13 @@ export default function HomeNavbar() {
                       >
                         <div className="flex items-center gap-2 md:gap-4">
                           {getItemImage() ? (
-                            <Image src={urlFor(getItemImage()).width(48).height(48).url()} alt={getItemTitle()} width={48} height={48} className="rounded-md" />
+                            <img
+                              src={getImageUrl(getItemImage())}
+                              alt={getItemTitle()}
+                              width={48}
+                              height={48}
+                              className="rounded-md"
+                            />
                           ) : (
                             <div className="w-12 h-12 bg-gray-100 rounded-md flex items-center justify-center">
                               {getItemIcon()}

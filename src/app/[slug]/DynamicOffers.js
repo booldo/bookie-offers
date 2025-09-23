@@ -17,10 +17,15 @@ import {
 
 const sortOptions = ["Latest", "A-Z"];
 
-// Helper function to validate Sanity asset references
+// Helper function to validate Sanity asset references or URL strings
 const isValidAssetRef = (asset) => {
   if (!asset) return false;
-  
+
+  // Check if it's a URL string
+  if (typeof asset === 'string' && (asset.startsWith('http://') || asset.startsWith('https://'))) {
+    return true;
+  }
+
   // Check if it's a direct asset object with _ref
   if (asset._ref) {
     // Sanity asset IDs should match the pattern: image-{hash}-{width}x{height}-{format}
@@ -28,13 +33,13 @@ const isValidAssetRef = (asset) => {
     const ref = asset._ref;
     return ref.startsWith('image-') && ref.length > 10 && !ref.includes('undefined');
   }
-  
+
   // Check if it's a direct asset object with asset property
   if (asset.asset && asset.asset._ref) {
     const ref = asset.asset._ref;
     return ref.startsWith('image-') && ref.length > 10 && !ref.includes('undefined');
   }
-  
+
   return false;
 };
 
@@ -1350,13 +1355,11 @@ export default function DynamicOffers({
                 <div className="flex justify-between items-center mb-1">
                   <div className="flex items-center gap-2">
                     {offer.bookmaker?.logo && isValidAssetRef(offer.bookmaker.logo) ? (
-                      <Image
+                      <img
                         src={offer.bookmaker.logo}
                         alt={offer.bookmaker.name}
                         width="44"
                         height="44"
-                        priority
-                        quality={100}
                         className="rounded-md transition-transform duration-200 group-hover:scale-105"
                       />
                     ) : (

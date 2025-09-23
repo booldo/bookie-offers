@@ -11,10 +11,15 @@ import TrackedLink from "../../../components/TrackedLink";
 import { useCountryContext } from '../../../hooks/useCountryContext';
 import ExpiredOfferPage from './ExpiredOfferPage';
 
-// Helper function to validate Sanity asset references
+// Helper function to validate Sanity asset references or URL strings
 const isValidAssetRef = (asset) => {
   if (!asset) return false;
-  
+
+  // Check if it's a URL string
+  if (typeof asset === 'string' && (asset.startsWith('http://') || asset.startsWith('https://'))) {
+    return true;
+  }
+
   // Check if it's a direct asset object with _ref
   if (asset._ref) {
     // Sanity asset IDs should match the pattern: image-{hash}-{width}x{height}-{format}
@@ -22,13 +27,13 @@ const isValidAssetRef = (asset) => {
     const ref = asset._ref;
     return ref.startsWith('image-') && ref.length > 10 && !ref.includes('undefined');
   }
-  
+
   // Check if it's a direct asset object with asset property
   if (asset.asset && asset.asset._ref) {
     const ref = asset.asset._ref;
     return ref.startsWith('image-') && ref.length > 10 && !ref.includes('undefined');
   }
-  
+
   return false;
 };
 
@@ -446,7 +451,7 @@ function OfferDetailsInner({ slug }) {
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center gap-3">
                 {offer.bookmaker?.logo && isValidAssetRef(offer.bookmaker.logo) ? (
-                  <Image src={offer.bookmaker.logo} alt={offer.bookmaker.logoAlt || offer.bookmaker.name} width={40} height={40} className="rounded-md" />
+                  <img src={offer.bookmaker.logo} alt={offer.bookmaker.logoAlt || offer.bookmaker.name} width="40" height="40" className="rounded-md" />
                 ) : (
                   <div className="w-10 h-10 bg-gray-100 rounded-md" />
                 )}
@@ -572,13 +577,11 @@ function OfferDetailsInner({ slug }) {
                       <div className="flex items-center justify-between min-w-0">
                       <div className="flex items-center gap-3 min-w-0 flex-1">
                         {moreOffer.bookmaker?.logo && isValidAssetRef(moreOffer.bookmaker.logo) ? (
-                            <Image
+                            <img
                               src={moreOffer.bookmaker.logo}
                               alt={moreOffer.bookmaker.name}
-                              width={25}
-                              height={25}
-                              quality={100}
-                              priority
+                              width="25"
+                              height="25"
                               className="w-[25px] h-[25px] rounded-[6px] flex-shrink-0"
                             />
                           ) : (

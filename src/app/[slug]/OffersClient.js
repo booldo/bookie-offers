@@ -10,10 +10,15 @@ import { PortableText } from "@portabletext/react";
 
 const sortOptions = ["Latest", "A-Z"];
 
-// Helper function to validate Sanity asset references
+// Helper function to validate Sanity asset references or URL strings
 const isValidAssetRef = (asset) => {
   if (!asset) return false;
-  
+
+  // Check if it's a URL string
+  if (typeof asset === 'string' && (asset.startsWith('http://') || asset.startsWith('https://'))) {
+    return true;
+  }
+
   // Check if it's a direct asset object with _ref
   if (asset._ref) {
     // Sanity asset IDs should match the pattern: image-{hash}-{width}x{height}-{format}
@@ -21,13 +26,13 @@ const isValidAssetRef = (asset) => {
     const ref = asset._ref;
     return ref.startsWith('image-') && ref.length > 10 && !ref.includes('undefined');
   }
-  
+
   // Check if it's a direct asset object with asset property
   if (asset.asset && asset.asset._ref) {
     const ref = asset.asset._ref;
     return ref.startsWith('image-') && ref.length > 10 && !ref.includes('undefined');
   }
-  
+
   return false;
 };
 
