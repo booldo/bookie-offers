@@ -780,13 +780,13 @@ export default function Navbar() {
                 ) : (
                   <Link
                     key={menu._id || menu.title}
-                    href={`/${currentCountrySlug || ""}/${
+                    href={`/${
                       menu?.slug?.current ||
                       (menu.title || "")
                         .toLowerCase()
                         .replace(/\s+/g, "-")
                         .replace(/[^a-z0-9-]/g, "")
-                    }`.replace("//", "/")}
+                    }`}
                     className="hover:underline font-[14px]"
                   >
                     {menu.title}
