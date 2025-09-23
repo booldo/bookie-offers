@@ -134,7 +134,7 @@ export async function generateMetadata({ params }) {
           openGraph: {
             title,
             description,
-            images: bookmaker?.logo ? [urlFor(bookmaker.logo).url()] : [],
+            images: bookmaker?.logo ? [{ url: bookmaker.logo, alt: bookmaker.name }] : [],
           },
         };
       }
@@ -198,7 +198,7 @@ export async function generateMetadata({ params }) {
             title,
             description,
             images: offerData.bookmaker?.logo
-              ? [urlFor(offerData.bookmaker.logo).url()]
+              ? [{ url: offerData.bookmaker.logo, alt: offerData.bookmaker.name }]
               : [],
           },
         };
@@ -329,7 +329,7 @@ export async function generateMetadata({ params }) {
           openGraph: {
             title,
             description,
-            images: bookmaker?.logo ? [urlFor(bookmaker.logo).url()] : [],
+            images: bookmaker?.logo ? [{ url: bookmaker.logo, alt: bookmaker.name }] : [],
           },
         };
       }

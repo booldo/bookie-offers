@@ -372,7 +372,7 @@ export default function OfferDetailsClient({
           <div className="flex items-center gap-4">
             {offer.bookmaker?.logo && isValidAssetRef(offer.bookmaker.logo) && (
               <Image
-                src={urlFor(offer.bookmaker.logo).width(640).height(640).url()}
+                src={offer.bookmaker.logo}
                 alt={offer.bookmaker.logoAlt || offer.bookmaker.name}
                 width={64}
                 height={64}
@@ -476,10 +476,7 @@ export default function OfferDetailsClient({
                     <div className="flex items-center gap-3">
                       {moreOffer.bookmaker?.logo && isValidAssetRef(moreOffer.bookmaker.logo) ? (
                         <Image
-                          src={urlFor(moreOffer.bookmaker.logo)
-                            .width(25)
-                            .height(25)
-                            .url()}
+                          src={moreOffer.bookmaker.logo}
                           alt={
                             moreOffer.bookmaker.logoAlt ||
                             moreOffer.bookmaker.name

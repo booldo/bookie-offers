@@ -36,6 +36,7 @@ async function getOffersData({ countryName, countryId }) {
       name,
       logo,
       logoAlt,
+      logoUrl,
       paymentMethods[]->{
         _id,
         name
