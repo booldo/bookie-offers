@@ -425,7 +425,7 @@ export default function HomeNavbar() {
         </button>
         {/* Logo */}
         <Link href={pathname.startsWith("/ng") ? "/ng" : pathname.startsWith("/gh") ? "/gh" : "/"}>
-            <img src="/assets/logo.png" alt="Booldo Logo" className="cursor-pointer w-[120px] h-[41px]" />
+            <img src="/assets/Booldo.svg" alt="Booldo Logo" className="cursor-pointer w-[120px] h-[41px]" />
         </Link>
       </div>
       {/* Search & Flag */}
@@ -576,7 +576,7 @@ export default function HomeNavbar() {
         >
           <div className="w-full max-w-5xl mx-auto px-4 sm:px-4 pb-8">
             <div className="flex items-center gap-2 md:gap-4 mb-6">
-                              <img src="/assets/logo.png" alt="Booldo Logo" className="hidden md:block w-[120px] h-[41px]" />
+                              <img src="/assets/Booldo.svg" alt="Booldo Logo" className="hidden md:block w-[120px] h-[41px]" />
               <div className="flex-1 flex items-center bg-[#f6f7f9] border border-gray-200 rounded-lg px-3 py-2 min-w-0">
                 <svg className="text-gray-400 mr-2 flex-shrink-0" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <circle cx="11" cy="11" r="8" />

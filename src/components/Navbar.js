@@ -574,7 +574,7 @@ export default function Navbar() {
             className={`${searchOpen ? "hidden sm:block" : ""}`}
           >
             <img
-              src="/assets/logo.png"
+              src="/assets/Booldo.svg"
               alt="Booldo Logo"
               className="cursor-pointer w-[120px] h-[41px]"
             />
@@ -813,7 +813,7 @@ export default function Navbar() {
           <div className="max-w-5xl mx-auto px-4">
             <div className="flex items-center gap-4 mb-6">
               <img
-                src="/assets/logo.png"
+                src="/assets/Booldo.svg"
                 alt="Booldo Logo"
                 className="hidden md:block w-[120px] h-[41px]"
               />
