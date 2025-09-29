@@ -268,12 +268,6 @@ export default {
       description: "A short summary of this offer (max 15 words)",
     },
     {
-      name: "expires",
-      title: "Expires",
-      type: "date",
-      validation: (Rule) => Rule.required(),
-    },
-    {
       name: "published",
       title: "Published",
       type: "date",
