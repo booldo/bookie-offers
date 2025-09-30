@@ -22,10 +22,8 @@ export default {
     {
       name: 'mainImage',
       title: 'Blog Cover Image',
-      type: 'image',
-      options: {
-        hotspot: true,
-      },
+      type: 'url',
+      description: 'Direct URL to the blog cover image (e.g. https://example.com/image.jpg).'
     },
     {
       name: 'mainImageAlt',

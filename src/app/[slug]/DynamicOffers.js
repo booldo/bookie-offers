@@ -15,7 +15,7 @@ import {
   fetchBonusTypesForCountry,
 } from "../../lib/bookmakerFetcher";
 
-const sortOptions = ["Latest", "A-Z"];
+const sortOptions = ["Latest", "Name"];
 
 // Helper function to validate Sanity asset references or URL strings
 const isValidAssetRef = (asset) => {
@@ -28,8 +28,6 @@ const isValidAssetRef = (asset) => {
 
   // Check if it's a direct asset object with _ref
   if (asset._ref) {
-    // Sanity asset IDs should match the pattern: image-{hash}-{width}x{height}-{format}
-    // or at minimum: image-{hash} with proper length
     const ref = asset._ref;
     return ref.startsWith('image-') && ref.length > 10 && !ref.includes('undefined');
   }
@@ -51,7 +49,6 @@ const fetchOffers = async (countryData) => {
   }
 
   // Extract country name from country data
-  // countryData can be either a string (country name) or an object with country property
   let countryName;
   if (typeof countryData === "string") {
     countryName = countryData;
@@ -128,7 +125,6 @@ const fetchOffers = async (countryData) => {
     return result;
   } catch (error) {
     console.error("Error fetching offers:", error);
-    // Be resilient on filter URL updates: return empty array instead of throwing
     return [];
   }
 };
@@ -970,7 +966,7 @@ export default function DynamicOffers({
       return [...filteredOffers].sort(
         (a, b) => new Date(a.published) - new Date(b.published)
       );
-    } else if (sortBy === "A-Z") {
+    } else if (sortBy === "Name") {
       return [...filteredOffers].sort((a, b) => {
         const aName = a.bookmaker?.name || "";
         const bName = b.bookmaker?.name || "";
@@ -1065,7 +1061,7 @@ export default function DynamicOffers({
       {/* Best Offers Header */}
       <div className="sticky top-16 z-40 bg-white sm:static sm:bg-transparent">
         <div className="flex items-center justify-between my-4">
-          {/* <h1 className=" font-semibold text-[24px] leading-[100%] text-[#272932] whitespace-nowrap">
+          <h1 className=" font-semibold text-[24px] leading-[100%] text-[#272932] whitespace-nowrap">
             {getDynamicHeaderText}{" "}
             <span className=" font-medium text-[16px] leading-[100%] tracking-[1%] align-middle text-[#696969]">
               ({filteredOffers.length})
@@ -1075,12 +1071,12 @@ export default function DynamicOffers({
                 (Page {currentPage} of {totalPages})
               </span>
             )}
-          </h1> */}
+          </h1>
           <div className="flex items-center gap-1">
-            {/* <label className="text-sm text-gray-500 mr-0">Sort By:</label> */}
+            <label className="text-sm text-gray-500 mr-0">Sort By:</label>
             <div className="relative" ref={sortByRef}>
-              {/* <button
-                className="flex items-center gap-1 text-[#272932] text-[14px] leading-[24px] font-medium  hover:text-gray-600 focus:outline-none"
+              <button
+                className="flex items-center gap-1 text-[#272932] text-[14px] leading-[24px] font-medium hover:text-gray-600 focus:outline-none bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded"
                 onClick={() => setSortByOpen((p) => !p)}
               >
                 <span className="truncate">{sortBy}</span>
@@ -1093,7 +1089,7 @@ export default function DynamicOffers({
                 >
                   <path d="M19 9l-7 7-7-7" />
                 </svg>
-              </button> */}
+              </button>
 
               {/* Mobile slide-up panel */}
               <div

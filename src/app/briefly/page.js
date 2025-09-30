@@ -88,10 +88,10 @@ export default function BrieflyPage() {
                   >
                 <div className="w-full h-40 md:w-56 md:h-56 rounded overflow-hidden bg-gray-100 mb-3">
                       {article.mainImage ? (
-                    <img 
-                      src={urlFor(article.mainImage)} 
-                      alt={article.title} 
-                          className="object-cover w-full h-full" 
+                    <img
+                      src={article.mainImage}
+                      alt={article.title}
+                          className="object-cover w-full h-full"
                         />
                       ) : (
                         <div className="w-full h-full bg-gray-200 flex items-center justify-center">

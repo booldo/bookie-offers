@@ -298,7 +298,7 @@ function CalculatorInner({ slug }) {
                   >
                     <div className="w-16 h-16 flex-shrink-0 rounded overflow-hidden bg-gray-100">
                       {a.mainImage ? (
-                        <img src={urlFor(a.mainImage).width(64).height(64).url()} alt={a.title} className="object-cover w-full h-full" />
+                        <img src={a.mainImage} alt={a.title} className="object-cover w-full h-full" />
                       ) : (
                         <div className="w-full h-full bg-gray-200" />
                       )}

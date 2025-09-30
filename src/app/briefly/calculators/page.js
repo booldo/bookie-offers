@@ -167,10 +167,10 @@ export default function CalculatorsPage() {
                   >
                     <div className="w-16 h-16 flex-shrink-0 rounded overflow-hidden bg-gray-100">
                       {article.mainImage ? (
-                        <img 
-                          src={urlFor(article.mainImage)} 
-                          alt={article.title} 
-                          className="object-cover w-full h-full" 
+                        <img
+                          src={article.mainImage}
+                          alt={article.title}
+                          className="object-cover w-full h-full"
                         />
                       ) : (
                         <div className="w-full h-full bg-gray-200 flex items-center justify-center">

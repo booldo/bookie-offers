@@ -81,14 +81,10 @@ async function CountryCards() {
             </div>
           </div>
 
-          {/* Description and View Offers Button Row */}
-          <div className=" font-['General_Sans'] flex items-center justify-between">
-            <div className="text-sm text-gray-500  ml-11 sm:ml-12">
-              {country.description || "Discover local offers"}
-            </div>
-
-            {/* View Offers Button - positioned on far right for desktop only */}
-            <div className="inline-flex items-center text-sm font-semibold text-gray-900  ml-0 sm:ml-auto">
+          {/* View Offers Button Row */}
+          <div className=" font-['General_Sans'] flex items-center justify-end">
+            {/* View Offers Button - positioned on far right */}
+            <div className="inline-flex items-center text-sm font-semibold text-gray-900">
               View Offers
               <svg
                 className="ml-2 w-4 h-4"
@@ -160,10 +156,9 @@ function CountryCardsLoading() {
             <div className="h-5 sm:h-6 bg-gray-300 rounded w-24"></div>
           </div>
 
-          {/* Description and View Offers Button Row */}
-          <div className="flex items-center justify-between">
-            <div className="h-4 bg-gray-300 rounded w-32 ml-11 sm:ml-12"></div>
-            <div className="h-4 bg-gray-300 rounded w-20 ml-0 sm:ml-auto"></div>
+          {/* View Offers Button Row */}
+          <div className="flex items-center justify-end">
+            <div className="h-4 bg-gray-300 rounded w-20"></div>
           </div>
         </div>
       ))}
