@@ -268,6 +268,7 @@ export default async function OffersServer({ countrySlug, initialFilter }) {
       advancedOptions={advancedOptions}
       pageTitle={countryData.pageTitle}
       initialFilter={initialFilter}
+      countryData={countryData}
     />
   );
 }
