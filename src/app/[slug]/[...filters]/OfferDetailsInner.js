@@ -22,8 +22,6 @@ const isValidAssetRef = (asset) => {
 
   // Check if it's a direct asset object with _ref
   if (asset._ref) {
-    // Sanity asset IDs should match the pattern: image-{hash}-{width}x{height}-{format}
-    // or at minimum: image-{hash} with proper length
     const ref = asset._ref;
     return ref.startsWith('image-') && ref.length > 10 && !ref.includes('undefined');
   }
@@ -141,7 +139,7 @@ function OfferDetailsInner({ slug }) {
     const fetchData = async () => {
       try {
         
-        const mainOfferQuery = `*[_type == "offers" && country->country == $countryName && slug.current == $slug && expires > now()][0]{
+        const mainOfferQuery = `*[_type == "offers" && country->country == $countryName && slug.current == $slug && (!defined(expires) || expires > now())][0]{
           _id,
           title,
           bonusType->{name},
@@ -196,7 +194,7 @@ function OfferDetailsInner({ slug }) {
         setOffer(mainOffer);
 
         // Fetch more offers (excluding the current one, hidden ones, and expired ones) - now dynamic
-        const moreOffersQuery = `*[_type == "offers" && country->country == $countryName && slug.current != $slug && (noindex != true) && (sitemapInclude != false) && expires > now()] | order(_createdAt desc) [0...$count] {
+        const moreOffersQuery = `*[_type == "offers" && country->country == $countryName && slug.current != $slug && (noindex != true) && (sitemapInclude != false) && (!defined(expires) || expires > now())] | order(_createdAt desc) [0...$count] {
           _id,
           bonusType->{name},
           slug,
@@ -216,7 +214,7 @@ function OfferDetailsInner({ slug }) {
         setMoreOffers(moreOffersData);
 
         // Get total count for pagination - now dynamic (excluding hidden offers and expired offers)
-        const totalQuery = `count(*[_type == "offers" && country->country == $countryName && slug.current != $slug && (noindex != true) && (sitemapInclude != false) && expires > now()])`;
+        const totalQuery = `count(*[_type == "offers" && country->country == $countryName && slug.current != $slug && (noindex != true) && (sitemapInclude != false) && (!defined(expires) || expires > now())])`;
         const total = await client.fetch(totalQuery, { slug, countryName });
         setTotalOffers(total);
 
@@ -257,7 +255,7 @@ function OfferDetailsInner({ slug }) {
     setIsLoadingMore(true);
     setHasClickedLoadMore(true);
     try {
-      const moreOffersQuery = `*[_type == "offers" && country->country == $countryName && slug.current != $slug && (noindex != true) && (sitemapInclude != false) && expires > now()] | order(_createdAt desc) [0...$count] {
+      const moreOffersQuery = `*[_type == "offers" && country->country == $countryName && slug.current != $slug && (noindex != true) && (sitemapInclude != false) && (!defined(expires) || expires > now())] | order(_createdAt desc) [0...$count] {
         _id,
         bonusType->{name},
         slug,

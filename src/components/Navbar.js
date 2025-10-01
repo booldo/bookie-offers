@@ -250,7 +250,7 @@ export default function Navbar() {
 
       // Search offers (filtered by current country only)
       if (currentCountrySlug) {
-        const offersQuery = `*[_type == "offers" && country->slug.current == $countrySlug && expires > now() && (
+        const offersQuery = `*[_type == "offers" && country->slug.current == $countrySlug && (!defined(expires) || expires > now()) && (
           title match $term ||
           bonusType->name match $term ||
           bookmaker->name match $term ||

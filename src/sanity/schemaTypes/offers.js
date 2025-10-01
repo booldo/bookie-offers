@@ -274,6 +274,12 @@ export default {
       validation: (Rule) => Rule.required(),
     },
     {
+      name: "expires",
+      title: "Expires",
+      type: "date",
+      description: "Optional expiry date for this offer"
+    },
+    {
       name: "banner",
       title: "Banner",
       type: "image",

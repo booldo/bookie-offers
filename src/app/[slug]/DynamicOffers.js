@@ -69,7 +69,7 @@ const fetchOffers = async (countryData) => {
   }
 
   // Query offers by country reference name, excluding hidden offers and expired offers
-  const query = `*[_type == "offers" && country->country == $countryName && (noindex != true) && (sitemapInclude != false) && expires > now()] | order(_createdAt desc) {
+  const query = `*[_type == "offers" && country->country == $countryName && (noindex != true) && (sitemapInclude != false) && (!defined(expires) || expires > now())] | order(_createdAt desc) {
     _id,
     slug,
     country->{
@@ -1383,18 +1383,20 @@ export default function DynamicOffers({
                 </div>
 
                 {/* Expires */}
-                <div className="flex items-center gap-1 text-[#272932] mt-auto mb-2">
-                  <img
-                    src="/assets/calendar.png"
-                    alt="Calendar"
-                    width="16"
-                    height="16"
-                    className="flex-shrink-0"
-                  />
-                  <span className=" font-medium text-[14px] leading-[100%] tracking-[0.01em] text-[#272932]">
-                    Expires: {formatDate(offer.expires)}
-                  </span>
-                </div>
+                {offer.expires && (
+                  <div className="flex items-center gap-1 text-[#272932] mt-auto mb-2">
+                    <img
+                      src="/assets/calendar.png"
+                      alt="Calendar"
+                      width="16"
+                      height="16"
+                      className="flex-shrink-0"
+                    />
+                    <span className=" font-medium text-[14px] leading-[100%] tracking-[0.01em] text-[#272932]">
+                      Expires: {formatDate(offer.expires)}
+                    </span>
+                  </div>
+                )}
               </div>
             ))}
           </div>
