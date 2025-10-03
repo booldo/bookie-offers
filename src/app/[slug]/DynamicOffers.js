@@ -807,21 +807,19 @@ export default function DynamicOffers({
       // Update state immediately for instant UI response
       setSelectedBonusTypes(arr);
 
-      // Use requestAnimationFrame for smoother URL updates
-      requestAnimationFrame(() => {
-        const url = buildUrl({
-          bonusTypes: arr,
-          bookmakers: selectedBookmakers,
-          advanced: selectedAdvanced,
-        });
-        const currentUrl =
-          pathname +
-          (searchParams.toString() ? "?" + searchParams.toString() : "");
-
-        if (url !== currentUrl) {
-          router.replace(url, { scroll: false });
-        }
+      // Update URL immediately
+      const url = buildUrl({
+        bonusTypes: arr,
+        bookmakers: selectedBookmakers,
+        advanced: selectedAdvanced,
       });
+      const currentUrl =
+        pathname +
+        (searchParams.toString() ? "?" + searchParams.toString() : "");
+
+      if (url !== currentUrl) {
+        router.replace(url, { scroll: false });
+      }
     },
     [selectedBookmakers, selectedAdvanced, pathname, searchParams, router, buildUrl]
   );
@@ -831,21 +829,19 @@ export default function DynamicOffers({
       // Update state immediately for instant UI response
       setSelectedBookmakers(arr);
 
-      // Use requestAnimationFrame for smoother URL updates
-      requestAnimationFrame(() => {
-        const url = buildUrl({
-          bonusTypes: selectedBonusTypes,
-          bookmakers: arr,
-          advanced: selectedAdvanced,
-        });
-        const currentUrl =
-          pathname +
-          (searchParams.toString() ? "?" + searchParams.toString() : "");
-
-        if (url !== currentUrl) {
-          router.replace(url, { scroll: false });
-        }
+      // Update URL immediately
+      const url = buildUrl({
+        bonusTypes: selectedBonusTypes,
+        bookmakers: arr,
+        advanced: selectedAdvanced,
       });
+      const currentUrl =
+        pathname +
+        (searchParams.toString() ? "?" + searchParams.toString() : "");
+
+      if (url !== currentUrl) {
+        router.replace(url, { scroll: false });
+      }
     },
     [selectedBonusTypes, selectedAdvanced, pathname, searchParams, router, buildUrl]
   );
@@ -855,21 +851,19 @@ export default function DynamicOffers({
       // Update state immediately for instant UI response
       setSelectedAdvanced(arr);
 
-      // Use requestAnimationFrame for smoother URL updates
-      requestAnimationFrame(() => {
-        const url = buildUrl({
-          bonusTypes: selectedBonusTypes,
-          bookmakers: selectedBookmakers,
-          advanced: arr,
-        });
-        const currentUrl =
-          pathname +
-          (searchParams.toString() ? "?" + searchParams.toString() : "");
-
-        if (url !== currentUrl) {
-          router.replace(url, { scroll: false });
-        }
+      // Update URL immediately
+      const url = buildUrl({
+        bonusTypes: selectedBonusTypes,
+        bookmakers: selectedBookmakers,
+        advanced: arr,
       });
+      const currentUrl =
+        pathname +
+        (searchParams.toString() ? "?" + searchParams.toString() : "");
+
+      if (url !== currentUrl) {
+        router.replace(url, { scroll: false });
+      }
     },
     [selectedBonusTypes, selectedBookmakers, pathname, searchParams, router, buildUrl]
   );

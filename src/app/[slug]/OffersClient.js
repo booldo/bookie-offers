@@ -207,42 +207,36 @@ export default function OffersClient({
   const setSelectedBonusTypesWrapped = useCallback((arr) => {
     // Update state immediately for instant UI response
     setSelectedBonusTypes(arr);
-    
-    // Use requestAnimationFrame for smoother URL updates
-    requestAnimationFrame(() => {
-      handleFilterChange({
-        bonusTypes: arr,
-        bookmakers: selectedBookmakers,
-        advanced: selectedAdvanced,
-      });
+
+    // Update URL immediately
+    handleFilterChange({
+      bonusTypes: arr,
+      bookmakers: selectedBookmakers,
+      advanced: selectedAdvanced,
     });
   }, [selectedBookmakers, selectedAdvanced, handleFilterChange]);
 
   const setSelectedBookmakersWrapped = useCallback((arr) => {
     // Update state immediately for instant UI response
     setSelectedBookmakers(arr);
-    
-    // Use requestAnimationFrame for smoother URL updates
-    requestAnimationFrame(() => {
-      handleFilterChange({
-        bonusTypes: selectedBonusTypes,
-        bookmakers: arr,
-        advanced: selectedAdvanced,
-      });
+
+    // Update URL immediately
+    handleFilterChange({
+      bonusTypes: selectedBonusTypes,
+      bookmakers: arr,
+      advanced: selectedAdvanced,
     });
   }, [selectedBonusTypes, selectedAdvanced, handleFilterChange]);
 
   const setSelectedAdvancedWrapped = useCallback((arr) => {
     // Update state immediately for instant UI response
     setSelectedAdvanced(arr);
-    
-    // Use requestAnimationFrame for smoother URL updates
-    requestAnimationFrame(() => {
-      handleFilterChange({
-        bonusTypes: selectedBonusTypes,
-        bookmakers: selectedBookmakers,
-        advanced: arr,
-      });
+
+    // Update URL immediately
+    handleFilterChange({
+      bonusTypes: selectedBonusTypes,
+      bookmakers: selectedBookmakers,
+      advanced: arr,
     });
   }, [selectedBonusTypes, selectedBookmakers, handleFilterChange]);
 
