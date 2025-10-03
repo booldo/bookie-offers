@@ -45,6 +45,33 @@ export default {
       ],
     },
     {
+      name: "faq",
+      title: "FAQ",
+      type: "array",
+      of: [
+        {
+          type: "object",
+          fields: [
+            {
+              name: "question",
+              title: "Question",
+              type: "array",
+              of: [{ type: "block" }],
+              validation: (Rule) => Rule.required(),
+            },
+            {
+              name: "answer",
+              title: "Answer",
+              type: "array",
+              of: [{ type: "block" }],
+              validation: (Rule) => Rule.required(),
+            },
+          ],
+        },
+      ],
+      description: "Frequently asked questions related to this article"
+    },
+    {
       name: "metaTitle",
       title: "Meta Title",
       type: "string",

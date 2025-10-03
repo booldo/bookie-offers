@@ -471,10 +471,13 @@ function OfferDetailsInner({ slug }) {
             
 
               
-            <div className="flex items-center gap-2 mb-6">
-              <img src="/assets/calendar.png" alt="Calendar" width="18" height="18" />
-              <span className="text-black text-sm">Expires: {formatDate(offer.expires)}</span>
-            </div>
+            {/* Expiry Date - only show if offer has expiry */}
+            {offer.expires && (
+              <div className="flex items-center gap-2 mb-6">
+                <img src="/assets/calendar.png" alt="Calendar" width="18" height="18" />
+                <span className="text-black text-sm">Expires: {formatDate(offer.expires)}</span>
+              </div>
+            )}
 
             {/* Desktop Get Bonus Button */}
             {offer.affiliateLink?.affiliateUrl && offer.affiliateLink?.isActive && (

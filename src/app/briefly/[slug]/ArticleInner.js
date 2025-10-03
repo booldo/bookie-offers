@@ -15,6 +15,75 @@ function urlFor(source) {
   return builder.image(source).url();
 }
 
+// FAQ Item Component
+const FAQItem = ({ question, answer, isOpen, onToggle }) => {
+  return (
+    <div className="border border-gray-200 rounded-lg overflow-hidden">
+      <button
+        className="w-full px-4 py-3 text-left flex justify-between items-center hover:bg-gray-50 transition-colors"
+        onClick={onToggle}
+      >
+        <div className="font-medium text-gray-900 flex-1 text-left">
+          <PortableText
+            value={question}
+            components={{
+              block: { normal: ({ children }) => <span>{children}</span> },
+              types: {
+                code: ({ value }) => {
+                  const { language, code } = value;
+                  return (
+                    <div className="my-2">
+                      <pre className="bg-gray-900 text-gray-100 p-2 rounded text-xs overflow-x-auto">
+                        <code className={`language-${language}`}>{code}</code>
+                      </pre>
+                    </div>
+                  );
+                },
+              },
+            }}
+          />
+        </div>
+        <svg
+          className={`w-5 h-5 text-gray-500 transition-transform duration-300 ease-in-out ${isOpen ? "rotate-180" : ""} flex-shrink-0 ml-2`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      <div
+        className={`transition-all duration-300 ease-in-out overflow-hidden ${
+          isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+        }`}
+      >
+        <div className="px-4 pb-3 border-t border-gray-200">
+          <div className="pt-3 text-gray-700 text-sm">
+            <PortableText
+              value={answer}
+              components={{
+                block: { normal: ({ children }) => <p>{children}</p> },
+                types: {
+                  code: ({ value }) => {
+                    const { language, code } = value;
+                    return (
+                      <div className="my-2">
+                        <pre className="bg-gray-900 text-gray-100 p-2 rounded text-xs overflow-x-auto">
+                          <code className={`language-${language}`}>{code}</code>
+                        </pre>
+                      </div>
+                    );
+                  },
+                },
+              }}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Custom components for PortableText rendering
 const portableTextComponents = {
   block: {
@@ -146,6 +215,7 @@ function ArticleInner({ slug }) {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [openFAQIndex, setOpenFAQIndex] = useState(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -158,6 +228,7 @@ function ArticleInner({ slug }) {
             slug,
             mainImage,
             content,
+            faq,
             noindex,
             sitemapInclude
           }`, { slug }),
@@ -187,6 +258,10 @@ function ArticleInner({ slug }) {
     }
     fetchData();
   }, [slug, router]);
+
+  const handleFAQToggle = (index) => {
+    setOpenFAQIndex(openFAQIndex === index ? null : index);
+  };
 
   if (loading) {
     return (
@@ -271,6 +346,24 @@ function ArticleInner({ slug }) {
             <div className="text-gray-800 text-base space-y-6 mb-8">
               <PortableText value={article.content} components={portableTextComponents} />
             </div>
+
+            {/* FAQ Section */}
+            {article.faq && article.faq.length > 0 && (
+              <div className="mb-8">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">FAQ</h2>
+                <div className="space-y-3">
+                  {article.faq.map((faqItem, index) => (
+                    <FAQItem
+                      key={index}
+                      question={faqItem.question}
+                      answer={faqItem.answer}
+                      isOpen={openFAQIndex === index}
+                      onToggle={() => handleFAQToggle(index)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
           {/* Sidebar */}
           <aside className="w-full md:w-80 flex-shrink-0">

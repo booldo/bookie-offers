@@ -8,7 +8,7 @@ import MultiSelectDropdown from "../../components/BonusTypeDropdown";
 import { formatDate } from "../../utils/dateFormatter";
 import { PortableText } from "@portabletext/react";
 
-const sortOptions = ["Latest", "Name"];
+const sortOptions = ["Latest", "Name (A-Z)"];
 
 // Helper function to validate Sanity asset references or URL strings
 const isValidAssetRef = (asset) => {
@@ -365,7 +365,7 @@ export default function OffersClient({
       return [...filteredOffers].sort(
         (a, b) => new Date(a.published) - new Date(b.published)
       );
-    } else if (sortBy === "Name") {
+    } else if (sortBy === "Name (A-Z)") {
       return [...filteredOffers].sort((a, b) => {
         const aName = a.bookmaker?.name || "";
         const bName = b.bookmaker?.name || "";
