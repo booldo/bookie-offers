@@ -301,6 +301,10 @@ export default {
           type: "codeBlock",
           title: "Code Block",
         },
+         {
+          type: 'image',
+          options: { hotspot: true },
+        },
       ],
     },
     {
