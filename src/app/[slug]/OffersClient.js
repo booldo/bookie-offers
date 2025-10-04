@@ -55,6 +55,7 @@ export default function OffersClient({
   const [sortBy, setSortBy] = useState("Latest");
   const [sortByOpen, setSortByOpen] = useState(false);
   const [filterLoading, setFilterLoading] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
   const sortByRef = useRef();
 
   // Helper functions for URL/Filter sync
@@ -188,6 +189,11 @@ export default function OffersClient({
     advancedOptions,
   ]);
 
+  // Reset navigation loading state when route changes
+  useEffect(() => {
+    setIsNavigating(false);
+  }, [pathname, searchParams]);
+
   // sort dropdown
   useEffect(() => {
     function handleClick(e) {
@@ -201,14 +207,21 @@ export default function OffersClient({
 
   const handleFilterChange = useCallback(({ bonusTypes, bookmakers, advanced }) => {
     const url = buildUrl({ bonusTypes, bookmakers, advanced });
-    router.push(url);
+    
+    // Use requestAnimationFrame for smooth navigation
+    requestAnimationFrame(() => {
+      router.push(url);
+    });
   }, [router, buildUrl]);
 
   const setSelectedBonusTypesWrapped = useCallback((arr) => {
-    // Update state immediately for instant UI response
-    setSelectedBonusTypes(arr);
-
-    // Update URL immediately
+    // Set loading state to prevent flash of filtered content
+    setIsNavigating(true);
+    
+    // Don't update state immediately - let the new page handle it
+    // This prevents the double-render effect
+    
+    // Update URL with navigation loading
     handleFilterChange({
       bonusTypes: arr,
       bookmakers: selectedBookmakers,
@@ -217,10 +230,13 @@ export default function OffersClient({
   }, [selectedBookmakers, selectedAdvanced, handleFilterChange]);
 
   const setSelectedBookmakersWrapped = useCallback((arr) => {
-    // Update state immediately for instant UI response
-    setSelectedBookmakers(arr);
-
-    // Update URL immediately
+    // Set loading state to prevent flash of filtered content
+    setIsNavigating(true);
+    
+    // Don't update state immediately - let the new page handle it
+    // This prevents the double-render effect
+    
+    // Update URL with navigation loading
     handleFilterChange({
       bonusTypes: selectedBonusTypes,
       bookmakers: arr,
@@ -229,10 +245,13 @@ export default function OffersClient({
   }, [selectedBonusTypes, selectedAdvanced, handleFilterChange]);
 
   const setSelectedAdvancedWrapped = useCallback((arr) => {
-    // Update state immediately for instant UI response
-    setSelectedAdvanced(arr);
-
-    // Update URL immediately
+    // Set loading state to prevent flash of filtered content
+    setIsNavigating(true);
+    
+    // Don't update state immediately - let the new page handle it
+    // This prevents the double-render effect
+    
+    // Update URL with navigation loading
     handleFilterChange({
       bonusTypes: selectedBonusTypes,
       bookmakers: selectedBookmakers,
@@ -241,11 +260,17 @@ export default function OffersClient({
   }, [selectedBonusTypes, selectedBookmakers, handleFilterChange]);
 
   const clearAllFilters = () => {
+    // Set loading state for navigation
+    setIsNavigating(true);
+    
+    // Clear filters and navigate
     setSelectedBonusTypes([]);
     setSelectedBookmakers([]);
     setSelectedAdvanced([]);
     if (countrySlug) {
-      router.push(`/${countrySlug}`);
+      requestAnimationFrame(() => {
+        router.push(`/${countrySlug}`);
+      });
     }
   };
 
@@ -620,24 +645,31 @@ export default function OffersClient({
 
       {/* Offer Cards */}
       <div className="flex flex-col gap-3 mb-6">
-        {sortedOffers.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-gray-500 mb-4">
-              No offers match your current filters.
-            </p>
-            <button
-              onClick={clearAllFilters}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
-            >
-              Clear All Filters
-            </button>
+        {isNavigating ? (
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+            <span className="ml-2 text-gray-600">Loading filtered results...</span>
           </div>
-        )}
+        ) : (
+          <>
+            {sortedOffers.length === 0 && (
+              <div className="text-center py-12">
+                <p className="text-gray-500 mb-4">
+                  No offers match your current filters.
+                </p>
+                <button
+                  onClick={clearAllFilters}
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+                >
+                  Clear All Filters
+                </button>
+              </div>
+            )}
 
-        {/* Offers list */}
-        {sortedOffers.length > 0 && (
-          <div className="flex flex-col gap-3 mb-6">
-            {sortedOffers.map((offer) => (
+            {/* Offers list */}
+            {sortedOffers.length > 0 && (
+              <div className="flex flex-col gap-3 mb-6">
+                {sortedOffers.map((offer) => (
               <div
                 key={offer._id}
                 className="group relative bg-white rounded-xl border border-gray-100 shadow-sm p-3 flex flex-col transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:border-gray-200 hover:bg-[#F5F5F7] cursor-pointer w-full h-auto min-h-[174px] gap-[12px] opacity-100 border-radius-[12px] border-width-[1px]"
@@ -703,7 +735,9 @@ export default function OffersClient({
                 )}
               </div>
             ))}
-          </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </>
