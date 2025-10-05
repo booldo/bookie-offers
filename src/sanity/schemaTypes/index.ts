@@ -1,7 +1,7 @@
-import { type SchemaTypeDefinition } from 'sanity'
-import bookmaker from './bookmaker'
-import bonusType from './bonusType'
-import offers from './offers'
+import { type SchemaTypeDefinition } from "sanity";
+import bookmaker from "./bookmaker";
+import bonusType from "./bonusType";
+import offers from "./offers";
 import article from "./article";
 import banner from "./banner";
 import faq from "./faq";
@@ -15,6 +15,7 @@ import licenses from "./licenses";
 import paymentOptions from "./paymentOptions";
 import calculator from "./calculator";
 import redirects from "./redirects";
+import linkPreview from "./linkPreview";
 
 export const schemaTypes = [
   bookmaker,
@@ -33,6 +34,7 @@ export const schemaTypes = [
   paymentOptions,
   calculator,
   redirects,
+  linkPreview,
 ];
 
 export const schema: { types: SchemaTypeDefinition[] } = {

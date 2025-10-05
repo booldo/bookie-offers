@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { PortableText } from '@portabletext/react';
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import LinkPreview from "../../../components/LinkPreview";
 
 const builder = imageUrlBuilder(client);
 function urlFor(source) {
@@ -206,6 +207,9 @@ const portableTextComponents = {
         </div>
       );
     },
+    linkPreview: ({ value }) => {
+      return <LinkPreview value={value} />;
+    },
   },
 };
 
@@ -398,4 +402,4 @@ function ArticleInner({ slug }) {
   );
 }
 
-export default ArticleInner; 
+export default ArticleInner;
