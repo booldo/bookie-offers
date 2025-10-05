@@ -192,6 +192,7 @@ export default function OffersClient({
   // Reset navigation loading state when route changes
   useEffect(() => {
     setIsNavigating(false);
+    setFilterLoading(false);
   }, [pathname, searchParams]);
 
   // sort dropdown
@@ -215,11 +216,9 @@ export default function OffersClient({
   }, [router, buildUrl]);
 
   const setSelectedBonusTypesWrapped = useCallback((arr) => {
-    // Set loading state to prevent flash of filtered content
+    // Set loading state immediately for instant feedback
     setIsNavigating(true);
-    
-    // Don't update state immediately - let the new page handle it
-    // This prevents the double-render effect
+    setFilterLoading(true);
     
     // Update URL with navigation loading
     handleFilterChange({
@@ -230,11 +229,9 @@ export default function OffersClient({
   }, [selectedBookmakers, selectedAdvanced, handleFilterChange]);
 
   const setSelectedBookmakersWrapped = useCallback((arr) => {
-    // Set loading state to prevent flash of filtered content
+    // Set loading state immediately for instant feedback
     setIsNavigating(true);
-    
-    // Don't update state immediately - let the new page handle it
-    // This prevents the double-render effect
+    setFilterLoading(true);
     
     // Update URL with navigation loading
     handleFilterChange({
@@ -245,11 +242,9 @@ export default function OffersClient({
   }, [selectedBonusTypes, selectedAdvanced, handleFilterChange]);
 
   const setSelectedAdvancedWrapped = useCallback((arr) => {
-    // Set loading state to prevent flash of filtered content
+    // Set loading state immediately for instant feedback
     setIsNavigating(true);
-    
-    // Don't update state immediately - let the new page handle it
-    // This prevents the double-render effect
+    setFilterLoading(true);
     
     // Update URL with navigation loading
     handleFilterChange({
@@ -262,6 +257,7 @@ export default function OffersClient({
   const clearAllFilters = () => {
     // Set loading state for navigation
     setIsNavigating(true);
+    setFilterLoading(true);
     
     // Clear filters and navigate
     setSelectedBonusTypes([]);
@@ -645,10 +641,43 @@ export default function OffersClient({
 
       {/* Offer Cards */}
       <div className="flex flex-col gap-3 mb-6">
-        {isNavigating ? (
-          <div className="flex justify-center items-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-            <span className="ml-2 text-gray-600">Loading filtered results...</span>
+        {(isNavigating || filterLoading) ? (
+          <div className="flex flex-col gap-3">
+            {/* Loading skeleton cards */}
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 flex flex-col w-full h-auto min-h-[174px] gap-[12px] animate-pulse"
+              >
+                {/* Top row skeleton */}
+                <div className="flex justify-between items-center mb-1">
+                  <div className="flex items-center gap-2">
+                    <div className="w-11 h-11 bg-gray-200 rounded-md"></div>
+                    <div className="h-4 bg-gray-200 rounded w-24"></div>
+                  </div>
+                  <div className="h-3 bg-gray-200 rounded w-20"></div>
+                </div>
+                
+                {/* Title skeleton */}
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-1"></div>
+                
+                {/* Description skeleton */}
+                <div className="space-y-2 mb-1">
+                  <div className="h-3 bg-gray-200 rounded w-full"></div>
+                  <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                </div>
+                
+                {/* Expires skeleton */}
+                <div className="flex items-center gap-1 mt-auto mb-2">
+                  <div className="w-4 h-4 bg-gray-200 rounded"></div>
+                  <div className="h-3 bg-gray-200 rounded w-28"></div>
+                </div>
+              </div>
+            ))}
+            <div className="flex justify-center items-center py-4">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+              <span className="ml-2 text-gray-600 text-sm">Loading filtered results...</span>
+            </div>
           </div>
         ) : (
           <>

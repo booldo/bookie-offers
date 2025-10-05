@@ -2,11 +2,13 @@
 import { useState, useRef, useEffect, useMemo, useCallback, memo } from "react";
 
 // Memoized checkbox item component to prevent unnecessary re-renders
-const CheckboxItem = memo(({ item, selected, onToggle, showCount }) => {
+const CheckboxItem = memo(({ item, selected, onToggle, showCount, isProcessing }) => {
   const isSelected = selected.includes(item.name);
+  const isCurrentlyProcessing = isProcessing === item.name;
   
   return (
     <label className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all duration-150 ${
+      isCurrentlyProcessing ? 'bg-blue-100 border border-blue-200' : 
       isSelected ? 'bg-green-50 hover:bg-green-100' : 'hover:bg-gray-50'
     }`}>
       <input
@@ -14,15 +16,23 @@ const CheckboxItem = memo(({ item, selected, onToggle, showCount }) => {
         checked={isSelected}
         onChange={() => onToggle(item.name)}
         className="accent-[#018651] w-4 h-4 rounded transition-all duration-150"
+        disabled={isCurrentlyProcessing}
       />
       <div className="flex items-center gap-2 flex-1">
         <span className={`align-middle text-[14px] leading-[24px] font-medium font-['General_Sans'] transition-colors duration-150 ${
+          isCurrentlyProcessing ? 'text-blue-600' :
           isSelected ? 'text-[#018651]' : 'text-[#272932]'
         }`}>{item.name}</span>
         {showCount && item.count !== undefined && (
           <span className={`text-xs font-semibold transition-colors duration-150 ${
+            isCurrentlyProcessing ? 'text-blue-500' :
             isSelected ? 'text-green-600' : 'text-gray-400'
           }`}>{item.count}</span>
+        )}
+        {isCurrentlyProcessing && (
+          <div className="ml-auto">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+          </div>
         )}
       </div>
     </label>
@@ -35,6 +45,7 @@ export default function MultiSelectDropdown({ label, options, selected, setSelec
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [expandedCategories, setExpandedCategories] = useState({});
+  const [processingItem, setProcessingItem] = useState(null);
   const ref = useRef();
 
   // Close dropdown on outside click
@@ -55,13 +66,25 @@ export default function MultiSelectDropdown({ label, options, selected, setSelec
       : options;
   }, [options, search]);
 
-  // Toggle selection
+  // Toggle selection with immediate visual feedback
   const toggle = useCallback((name) => {
+    // Set processing state immediately for visual feedback
+    setProcessingItem(name);
+    
+    // Close dropdown immediately for better UX
+    setOpen(false);
+    
+    // Update selection
     if (selected.includes(name)) {
       setSelected(selected.filter((n) => n !== name));
     } else {
       setSelected([...selected, name]);
     }
+    
+    // Clear processing state after a short delay
+    setTimeout(() => {
+      setProcessingItem(null);
+    }, 300);
   }, [selected, setSelected]);
 
   // Toggle category expansion
@@ -126,6 +149,7 @@ export default function MultiSelectDropdown({ label, options, selected, setSelec
                       selected={selected}
                       onToggle={toggle}
                       showCount={showCount}
+                      isProcessing={processingItem}
                     />
                   ))}
                 </div>
@@ -141,12 +165,13 @@ export default function MultiSelectDropdown({ label, options, selected, setSelec
               selected={selected}
               onToggle={toggle}
               showCount={showCount}
+              isProcessing={processingItem}
             />
           ))
         )}
       </div>
     </div>
-  ), [nested, search, filtered, options, expandedCategories, selected, toggle, toggleCategory, showCount]);
+  ), [nested, search, filtered, options, expandedCategories, selected, toggle, toggleCategory, showCount, processingItem]);
 
   return (
     <div className="relative w-full" ref={ref}>
