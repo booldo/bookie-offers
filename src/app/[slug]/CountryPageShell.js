@@ -437,7 +437,7 @@ export default async function CountryPageShell({ params, children, isOfferDetail
               alt={countryData.bannerAlt || countryData.title}
               width={1200}
               height={200}
-              className="w-full h-24 sm:h-32 md:h-48 object-cover rounded-xl"
+              className="w-full h-24 sm:h-32 md:h-48 object-contain bg-gray-50 rounded-xl"
               priority
             />
           </div>

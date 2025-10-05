@@ -36,7 +36,6 @@ export default function BannerCarousel({ banners = [] }) {
           
           // Don't render if no valid image
           if (!imageUrl) return null;
-          
           return (
             <div
               key={banner._id || idx}
@@ -47,14 +46,13 @@ export default function BannerCarousel({ banners = [] }) {
                 alt={banner.imageAlt || banner.title || "Banner"}
                 width={1200}
                 height={200}
-                className="w-full h-24 sm:h-48 object-cover"
+                className="w-full h-24 sm:h-48 object-contain bg-gray-50"
                 priority={idx === current}
               />
             </div>
           );
         })}
       </div>
-      {/* Dots */}
       <div className="flex justify-center mt-2 gap-2">
         {banners.map((_, idx) => (
           <span
