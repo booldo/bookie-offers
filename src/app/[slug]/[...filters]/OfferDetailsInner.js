@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { client } from "../../../sanity/lib/client";
 import { urlFor } from "../../../sanity/lib/image";
+import imageUrlBuilder from '@sanity/image-url';
 import { PortableText } from '@portabletext/react';
 import { formatDate } from '../../../utils/dateFormatter';
 import { useRouter } from "next/navigation";
@@ -58,6 +59,24 @@ const portableTextComponents = {
     code: ({children}) => <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono">{children}</code>,
   },
   types: {
+    image: ({ value }) => {
+      const src = value ? imageUrlBuilder(client).image(value).width(1200).url() : '';
+      const alt = value?.alt || value?.asset?._ref || 'Offer image';
+      if (!src) return null;
+      return (
+        <figure className="my-6">
+          <img
+            src={src}
+            alt={alt}
+            className="w-full h-auto rounded-md"
+            loading="lazy"
+          />
+          {value?.caption && (
+            <figcaption className="text-sm text-gray-500 mt-2">{value.caption}</figcaption>
+          )}
+        </figure>
+      );
+    },
     code: ({value}) => {
       const {language, code} = value;
       return (
