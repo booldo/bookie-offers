@@ -477,3 +477,4 @@ export default async function CountryPageShell({ params, children, isOfferDetail
       <Footer />
     </div>
   );
+}
