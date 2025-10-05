@@ -556,7 +556,8 @@ function OfferDetailsInner({ slug }) {
             )}
           </div>
 
-          {/* More Offers Section */}
+            {/* More Offers Section */}
+            
           {moreOffers.length > 0 && (
             <div className="bg-white p-1 sm:p-6 mb-4">
               <div className="font-semibold text-gray-900 mb-4">More Offers</div>
@@ -581,9 +582,9 @@ function OfferDetailsInner({ slug }) {
                             <img
                               src={moreOffer.bookmaker.logo}
                               alt={moreOffer.bookmaker.name}
-                              width="25"
-                              height="25"
-                              className="w-[25px] h-[25px] rounded-[6px] flex-shrink-0"
+                              width="44"
+                              height="44"
+                              className="w-[44px] h-[44px] rounded-[6px] flex-shrink-0"
                             />
                           ) : (
                             <div className="w-[25px] h-[25px] bg-gray-100 rounded-[6px] flex-shrink-0" />
