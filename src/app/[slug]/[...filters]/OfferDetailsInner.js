@@ -60,11 +60,16 @@ const portableTextComponents = {
   },
   types: {
     image: ({ value }) => {
-      const src = value ? imageUrlBuilder(client).image(value).width(1200).url() : '';
-      const alt = value?.alt || value?.asset?._ref || 'Offer image';
+      console.log('Image handler called with value:', value);
+      // Handle both direct asset references and nested asset objects
+      const imageSource = value?.asset || value;
+      const src = imageSource ? imageUrlBuilder(client).image(imageSource).width(1200).url() : '';
+      const alt = value?.alt || 'Offer image';
+      console.log('Generated image src:', src);
       if (!src) return null;
       return (
         <figure className="my-6">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={src}
             alt={alt}
