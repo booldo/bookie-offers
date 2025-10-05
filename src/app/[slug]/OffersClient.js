@@ -4,6 +4,8 @@ import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import { urlFor } from "../../sanity/lib/image";
+import imageUrlBuilder from '@sanity/image-url';
+import { client } from "../../sanity/lib/client";
 import MultiSelectDropdown from "../../components/BonusTypeDropdown";
 import { formatDate } from "../../utils/dateFormatter";
 import { PortableText } from "@portabletext/react";
@@ -32,6 +34,32 @@ const isValidAssetRef = (asset) => {
   }
 
   return false;
+};
+
+// PortableText components for rendering content with images
+const portableTextComponents = {
+  types: {
+    image: ({ value }) => {
+      const imageSource = value?.asset || value;
+      const src = imageSource ? imageUrlBuilder(client).image(imageSource).width(800).url() : '';
+      const alt = value?.alt || 'Offer image';
+      if (!src) return null;
+      return (
+        <figure className="my-4">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={src}
+            alt={alt}
+            className="w-full h-auto rounded-md"
+            loading="lazy"
+          />
+          {value?.caption && (
+            <figcaption className="text-sm text-gray-500 mt-2">{value.caption}</figcaption>
+          )}
+        </figure>
+      );
+    },
+  },
 };
 
 export default function OffersClient({
@@ -743,7 +771,7 @@ export default function OffersClient({
                 {/* Description */}
                 <div className=" font-normal text-[16px] leading-[20px] tracking-[0.01em] text-[#696969] mb-1">
                   {offer.offerSummary && (
-                    <PortableText value={offer.offerSummary} />
+                    <PortableText value={offer.offerSummary} components={portableTextComponents} />
                   )}
                 </div>
 
