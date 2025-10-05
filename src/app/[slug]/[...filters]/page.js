@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 
-import CountryPageShell, { generateStaticParams } from "../CountryPageShell";
+import CountryPageShell from "../CountryPageShell";
 import DynamicOffers from "../DynamicOffers";
 import OfferDetailsInner from "./OfferDetailsInner";
 import { Suspense } from "react";
@@ -96,8 +96,7 @@ const portableTextComponents = {
   },
 };
 
-// Use the same static generation functions from CountryPageShell
-export { generateStaticParams };
+// Dynamic route - no static generation needed
 
 // Generate metadata for filter pages and pretty links
 export async function generateMetadata({ params }) {
