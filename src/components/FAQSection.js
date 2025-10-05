@@ -47,6 +47,11 @@ const FAQSection = ({ faqs }) => {
     }));
   };
 
+  // Don't render anything if there are no FAQs
+  if (!faqs || faqs.length === 0) {
+    return null;
+  }
+
   return (
     <div>
       <h2 className="text-lg sm:text-xl md:text-2xl font-semibold mb-3 font-['General_Sans']">FAQs</h2>
