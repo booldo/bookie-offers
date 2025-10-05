@@ -400,7 +400,7 @@ export default function OffersClient({
       <div className="sticky top-16 z-40 bg-white sm:static sm:bg-transparent">
         <div className="flex items-center justify-between my-4">
           <h1 className=" font-semibold text-[24px] leading-[100%] text-[#272932] whitespace-nowrap">
-            {getDynamicHeaderText}{" "}
+            {/* {getDynamicHeaderText}{" "} */}
             <span className=" font-medium text-[16px] leading-[100%] tracking-[1%] align-middle text-[#696969]">
               ({filteredOffers.length})
             </span>
