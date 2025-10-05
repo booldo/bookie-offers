@@ -132,10 +132,10 @@ export default {
                 select: {
                   title: 'type',
                   subtitle: 'hamburgerMenuItem.title',
-                  media: 'isActive'
+                  isActive: 'isActive'
                 },
                 prepare(selection) {
-                  const {title, subtitle, media} = selection;
+                  const {title, subtitle, isActive} = selection;
                   const labels = {
                     home: 'Home',
                     blog: 'Blog',
@@ -145,7 +145,7 @@ export default {
                   };
                   return {
                     title: labels[title] || title,
-                    subtitle: media ? 'Active' : 'Inactive'
+                    subtitle: isActive ? 'Active' : 'Inactive'
                   };
                 }
               }

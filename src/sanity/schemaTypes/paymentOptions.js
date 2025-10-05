@@ -11,8 +11,7 @@ export default {
       const { title, isActive } = selection
       return {
         title: title || 'Untitled Payment Option',
-        subtitle: isActive ? 'Active' : 'Inactive',
-        media: isActive ? undefined : undefined
+        subtitle: isActive ? 'Active' : 'Inactive'
       }
     }
   },

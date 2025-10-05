@@ -59,7 +59,7 @@ export default {
       return {
         title: title || url || "Link Preview",
         subtitle: url,
-        media: image ? { url: image } : undefined,
+        media: image || undefined,
       };
     },
   },

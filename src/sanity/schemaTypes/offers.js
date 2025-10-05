@@ -377,4 +377,20 @@ export default {
       initialValue: true,
     },
   ],
+  preview: {
+    select: {
+      title: 'title',
+      country: 'country.country',
+      bookmaker: 'bookmaker.name',
+      banner: 'banner'
+    },
+    prepare(selection) {
+      const { title, country, bookmaker, banner } = selection;
+      return {
+        title: title,
+        subtitle: `${bookmaker || 'Unknown Bookmaker'} - ${country || 'Unknown Country'}`,
+        media: banner
+      };
+    }
+  },
 }; 

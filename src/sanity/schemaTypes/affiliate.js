@@ -107,15 +107,8 @@ export default {
       const {label, bookmakerName, url, prettyLink} = selection
       return {
         title: label || bookmakerName || 'Untitled Pretty Link',
-        subtitle: prettyLink ? `/${prettyLink}` : (url ? `${url.substring(0, 50)}...` : 'No URL'),
-        media: bookmakerName ? undefined : undefined
+        subtitle: prettyLink ? `/${prettyLink}` : (url ? `${url.substring(0, 50)}...` : 'No URL')
       }
-    }
-  },
-  // Add custom actions for generating pretty link
-  document: {
-    newDocumentOptions: (prev, context) => {
-      return prev.filter((option) => option.template !== 'affiliate')
     }
   },
   fields: [
