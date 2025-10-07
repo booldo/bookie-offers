@@ -1216,7 +1216,7 @@ export default function DynamicOffers({
               options={bookmakerOptions}
               selected={selectedBookmakers}
               setSelected={setSelectedBookmakersWrapped}
-              showCount={false}
+              showCount={true}
             />
             <MultiSelectDropdown
               label="Advanced"
