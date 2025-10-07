@@ -83,11 +83,83 @@ const portableTextComponents = {
       );
     },
     code: ({value}) => {
-      const {language, code} = value;
+      const {language, code, type} = value;
+
+      // If type is 'execute' or language is 'html', render as HTML
+      if (type === 'execute' || language === 'html' || (code && code.includes('<') && code.includes('>'))) {
+        return (
+          <div className="my-4">
+            {value.filename && (
+              <div className="bg-blue-50 px-3 py-2 text-sm text-blue-700 font-medium border border-blue-200 rounded-t">
+                <span className="font-semibold">Embedded HTML:</span> {value.filename}
+              </div>
+            )}
+            {value.description && (
+              <div className="bg-gray-50 px-3 py-2 text-sm text-gray-600 border-b border-gray-200">
+                {value.description}
+              </div>
+            )}
+            <div
+              className={`border border-gray-200 rounded-lg overflow-hidden ${value.filename || value.description ? 'rounded-t-none' : ''}`}
+              dangerouslySetInnerHTML={{ __html: code }}
+            />
+          </div>
+        );
+      }
+
+      // Otherwise, show syntax highlighted code
       return (
         <div className="my-4">
-          <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto">
-            <code className={`language-${language}`}>
+          {value.filename && (
+            <div className="bg-gray-100 px-3 py-1 text-sm text-gray-600 font-mono border-b border-gray-200 rounded-t">
+              {value.filename}
+            </div>
+          )}
+          <pre className={`bg-[#0b1020] text-[#e2e8f0] p-4 rounded-lg overflow-x-auto text-sm ${value.filename ? 'rounded-t-none' : ''}`}>
+            <code className={`language-${language || 'javascript'}`}>
+              {code}
+            </code>
+          </pre>
+        </div>
+      );
+    },
+    codeBlock: ({value}) => {
+      const {language, code, type, filename, description} = value;
+
+      // If type is 'execute' or language is 'html', render as HTML
+      const shouldRenderAsHTML = type === 'execute' || language === 'html' || (code && code.includes('<') && code.includes('>'));
+
+      if (shouldRenderAsHTML) {
+        return (
+          <div className="my-4">
+            {filename && (
+              <div className="bg-blue-50 px-3 py-2 text-sm text-blue-700 font-medium border border-blue-200 rounded-t">
+                <span className="font-semibold">Embedded HTML:</span> {filename}
+              </div>
+            )}
+            {description && (
+              <div className="bg-gray-50 px-3 py-2 text-sm text-gray-600 border-b border-gray-200">
+                {description}
+              </div>
+            )}
+            <div
+              className={`border border-gray-200 rounded-lg overflow-hidden ${filename || description ? 'rounded-t-none' : ''}`}
+              dangerouslySetInnerHTML={{ __html: code }}
+            />
+          </div>
+        );
+      }
+
+      // Otherwise, show syntax highlighted code
+      return (
+        <div className="my-4">
+          {filename && (
+            <div className="bg-gray-100 px-3 py-1 text-sm text-gray-600 font-mono border-b border-gray-200 rounded-t">
+              {filename}
+            </div>
+          )}
+          <pre className={`bg-[#0b1020] text-[#e2e8f0] p-4 rounded-lg overflow-x-auto text-sm ${filename ? 'rounded-t-none' : ''}`}>
+            <code className={`language-${language || 'javascript'}`}>
               {code}
             </code>
           </pre>
@@ -106,7 +178,43 @@ const FAQItem = ({ question, answer, isOpen, onToggle }) => {
         onClick={onToggle}
       >
         <div className="font-medium text-gray-900 flex-1 text-left">
-          <PortableText value={question} components={portableTextComponents} />
+          <PortableText
+            value={question}
+            components={{
+              ...portableTextComponents,
+              types: {
+                ...portableTextComponents.types,
+                code: ({value}) => {
+                  const {language, code, type} = value;
+
+                  // If type is 'execute' with HTML content, or language is 'html', or code contains HTML tags, render as HTML
+                  const shouldRenderAsHTML = type === 'execute' || language === 'html' || (code && code.includes('<') && code.includes('>'));
+
+                  if (shouldRenderAsHTML) {
+                    return (
+                      <div className="my-2">
+                        <div
+                          className="border border-gray-200 rounded p-2 bg-white"
+                          dangerouslySetInnerHTML={{ __html: code }}
+                        />
+                      </div>
+                    );
+                  }
+
+                  // Otherwise, show syntax highlighted code
+                  return (
+                    <div className="my-2">
+                      <pre className="bg-gray-900 text-gray-100 p-2 rounded text-xs overflow-x-auto">
+                        <code className={`language-${language || 'javascript'}`}>
+                          {code}
+                        </code>
+                      </pre>
+                    </div>
+                  );
+                },
+              },
+            }}
+          />
         </div>
         <svg
           className={`w-5 h-5 text-gray-500 transition-transform duration-300 ease-in-out ${isOpen ? 'rotate-180' : ''} flex-shrink-0 ml-2`}
@@ -124,7 +232,45 @@ const FAQItem = ({ question, answer, isOpen, onToggle }) => {
       >
         <div className="px-4 pb-3 border-t border-gray-200">
           <div className="pt-3 text-gray-700 text-sm">
-            <PortableText value={answer} components={portableTextComponents} />
+            <PortableText
+              value={answer}
+              components={{
+                ...portableTextComponents,
+                types: {
+                  ...portableTextComponents.types,
+                  code: ({value}) => {
+                    console.log('Code block value:', value); // Debug logging
+                    const {language, code, type} = value;
+              
+                    // If type is 'execute' with HTML content, or language is 'html', or code contains HTML tags, render as HTML
+                    const shouldRenderAsHTML = type === 'execute' || language === 'html' || (code && code.includes('<') && code.includes('>'));
+                    console.log('Should render as HTML:', shouldRenderAsHTML, { type, language, hasHTMLTags: code && code.includes('<') && code.includes('>') });
+              
+                    if (shouldRenderAsHTML) {
+                      return (
+                        <div className="my-2">
+                          <div
+                            className="border border-gray-200 rounded p-2 bg-white"
+                            dangerouslySetInnerHTML={{ __html: code }}
+                          />
+                        </div>
+                      );
+                    }
+
+                    // Otherwise, show syntax highlighted code
+                    return (
+                      <div className="my-2">
+                        <pre className="bg-gray-900 text-gray-100 p-2 rounded text-xs overflow-x-auto">
+                          <code className={`language-${language || 'javascript'}`}>
+                            {code}
+                          </code>
+                        </pre>
+                      </div>
+                    );
+                  },
+                },
+              }}
+            />
           </div>
         </div>
       </div>
@@ -419,18 +565,17 @@ function OfferDetailsInner({ slug }) {
       <main className="max-w-7xl mx-auto w-full px-0 sm:px-4 flex-1 pb-24 sm:pb-0">
         {/* Updated Breadcrumb */}
         <div className="mt-6 mb-4 flex items-center gap-2 text-sm text-gray-500 ml-2 flex-wrap">
-          <button type="button" onClick={() => router.push(`/${getCountrySlug()}`)} className="hover:underline flex items-center gap-1 flex-shrink-0">
+          <Link href={`/${getCountrySlug()}`} className="hover:underline flex items-center gap-1 flex-shrink-0 cursor-pointer text-blue-600">
             <img src="/assets/back-arrow.png" alt="Back" width="16" height="16" />
             Home
-          </button>
+          </Link>
           <span className="mx-1 flex-shrink-0">/</span>
-          <button 
-            type="button" 
-            onClick={() => router.push(`/${getCountrySlug()}/${offer?.bonusType?.name?.toLowerCase().replace(/\s+/g, '-')}`)} 
-            className="hover:underline text-gray-700 font-medium"
+          <Link
+            href={`/${getCountrySlug()}/${offer?.bonusType?.name?.toLowerCase().replace(/\s+/g, '-')}`}
+            className="hover:underline text-blue-600 font-medium cursor-pointer"
           >
             {offer?.bonusType?.name || "Bonus"}
-          </button>
+          </Link>
           <span className="mx-1 flex-shrink-0">/</span>
           <span className="text-gray-900 font-medium">
             {offer?.title || "Offer"}
