@@ -68,18 +68,23 @@ export default function Footer() {
   const [footerData, setFooterData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Helper function to get hamburger menu item URL
-  const getHamburgerItemUrl = (label) => {
-    return `/hamburger-menu/${label
-      .toLowerCase()
-      .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9-]/g, "")}`;
-  };
-
   // Helper function to get menu item URL based on type
   const getMenuItemUrl = (item) => {
     if (item.type === "hamburger" && item.hamburgerMenuItem) {
-      return "/hamburger-menu/main";
+      const hamburgerItem = item.hamburgerMenuItem;
+      
+      // If hamburger menu item has a selectedPage (country), construct URL as /{countrySlug}/{hamburgerSlug}
+      if (hamburgerItem.selectedPage?.slug?.current && hamburgerItem.slug?.current) {
+        return `/${hamburgerItem.selectedPage.slug.current}/${hamburgerItem.slug.current}`;
+      }
+      
+      // Fallback: if no country selected, use just the hamburger menu slug
+      if (hamburgerItem.slug?.current) {
+        return `/${hamburgerItem.slug.current}`;
+      }
+      
+      // Last resort fallback
+      return "#";
     }
 
     const urls = {
@@ -119,7 +124,12 @@ export default function Footer() {
                 type,
                 hamburgerMenuItem->{
                   _id,
-                  title
+                  title,
+                  slug,
+                  selectedPage->{
+                    _type,
+                    slug
+                  }
                 },
                 isActive
               }
