@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import { useClient } from 'sanity'
 
+
+
 // Custom input component for affiliate link selection
 function AffiliateLinkInput(props) {
   const { value, onChange, document } = props
@@ -465,10 +467,17 @@ export default {
     },
     {
       name: "canonicalUrl",
-      title: "Canonical URL",
-      type: "string",
-      description: "SEO: Canonical URL for this page (auto-generated to match actual URL)",
-      inputComponent: CanonicalUrlInput,
+      title: "Generate Canonical URL",
+      type: "slug",
+      description: "SEO: Canonical URL for this page (click Generate to copy from slug field)",
+      options: {
+        source: (doc) => {
+          // Return the slug value when Generate is clicked
+          return doc?.slug?.current || '';
+        },
+        maxLength: 200,
+        slugify: (input) => input, // Don't modify the input, just return as-is
+      },
     },
     {
       name: "sitemapInclude",

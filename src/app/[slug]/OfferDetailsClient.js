@@ -19,8 +19,6 @@ const isValidAssetRef = (asset) => {
 
   // Check if it's a direct asset object with _ref
   if (asset._ref) {
-    // Sanity asset IDs should match the pattern: image-{hash}-{width}x{height}-{format}
-    // or at minimum: image-{hash} with proper length
     const ref = asset._ref;
     return ref.startsWith('image-') && ref.length > 10 && !ref.includes('undefined');
   }
@@ -49,11 +47,27 @@ const FAQItem = ({ question, answer, isOpen, onToggle }) => {
               block: { normal: ({ children }) => <span>{children}</span> },
               types: {
                 code: ({ value }) => {
-                  const { language, code } = value;
+                  const { language, code, type } = value;
+
+                  // If type is 'execute' with HTML content, or language is 'html', or code contains HTML tags, render as HTML
+                  const shouldRenderAsHTML = type === 'execute' || language === 'html' || (code && code.includes('<') && code.includes('>'));
+
+                  if (shouldRenderAsHTML) {
+                    return (
+                      <div className="my-2">
+                        <div
+                          className="border border-gray-200 rounded p-2 bg-white"
+                          dangerouslySetInnerHTML={{ __html: code }}
+                        />
+                      </div>
+                    );
+                  }
+
+                  // Otherwise, show syntax highlighted code
                   return (
                     <div className="my-2">
                       <pre className="bg-gray-900 text-gray-100 p-2 rounded text-xs overflow-x-auto">
-                        <code className={`language-${language}`}>{code}</code>
+                        <code className={`language-${language || 'javascript'}`}>{code}</code>
                       </pre>
                     </div>
                   );
@@ -89,11 +103,27 @@ const FAQItem = ({ question, answer, isOpen, onToggle }) => {
                 block: { normal: ({ children }) => <p>{children}</p> },
                 types: {
                   code: ({ value }) => {
-                    const { language, code } = value;
+                    const { language, code, type } = value;
+  
+                    // If type is 'execute' with HTML content, or language is 'html', or code contains HTML tags, render as HTML
+                    const shouldRenderAsHTML = type === 'execute' || language === 'html' || (code && code.includes('<') && code.includes('>'));
+  
+                    if (shouldRenderAsHTML) {
+                      return (
+                        <div className="my-2">
+                          <div
+                            className="border border-gray-200 rounded p-2 bg-white"
+                            dangerouslySetInnerHTML={{ __html: code }}
+                          />
+                        </div>
+                      );
+                    }
+
+                    // Otherwise, show syntax highlighted code
                     return (
                       <div className="my-2">
                         <pre className="bg-gray-900 text-gray-100 p-2 rounded text-xs overflow-x-auto">
-                          <code className={`language-${language}`}>{code}</code>
+                          <code className={`language-${language || 'javascript'}`}>{code}</code>
                         </pre>
                       </div>
                     );

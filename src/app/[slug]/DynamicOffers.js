@@ -149,6 +149,7 @@ export default function DynamicOffers({
   const [sortByOpen, setSortByOpen] = useState(false);
   const [bonusTypeOptions, setBonusTypeOptions] = useState([]);
   const [bookmakerOptions, setBookmakerOptions] = useState([]);
+  const [originalBookmakerOptions, setOriginalBookmakerOptions] = useState([]);
   const [advancedOptions, setAdvancedOptions] = useState([]);
   const [countryId, setCountryId] = useState(null);
   const [loadingStage, setLoadingStage] = useState("initial");
@@ -457,6 +458,7 @@ export default function DynamicOffers({
         // Process bookmaker options using enhanced utility
         const bmOptions = processBookmakerOptions(offersData, allBookmakers);
         setBookmakerOptions(bmOptions);
+        setOriginalBookmakerOptions(bmOptions);
 
         // Compute payment method counts from actual data
         const paymentMethodCount = {};
@@ -1000,6 +1002,30 @@ export default function DynamicOffers({
   useEffect(() => {
     setCurrentPage(1);
   }, [selectedBonusTypes, selectedBookmakers, selectedAdvanced]);
+
+  // Update bookmaker options based on filtered offers
+  useEffect(() => {
+    if (selectedBookmakers.length > 0) {
+      // When a bookmaker is selected, show all bookmakers
+      setBookmakerOptions(originalBookmakerOptions);
+    } else if (originalBookmakerOptions.length > 0 && filteredOffers.length > 0) {
+      // Get unique bookmakers from filtered offers
+      const filteredBookmakerNames = [...new Set(filteredOffers.map(offer => offer.bookmaker?.name).filter(Boolean))];
+
+      // Filter original bookmaker options to only include those in filtered results
+      const updatedBookmakerOptions = originalBookmakerOptions.filter(option =>
+        filteredBookmakerNames.includes(option.name)
+      );
+
+      // Update bookmaker options if they changed
+      if (JSON.stringify(updatedBookmakerOptions) !== JSON.stringify(bookmakerOptions)) {
+        setBookmakerOptions(updatedBookmakerOptions);
+      }
+    } else if (originalBookmakerOptions.length > 0 && filteredOffers.length === 0) {
+      // If no offers match filters, show no bookmaker options
+      setBookmakerOptions([]);
+    }
+  }, [filteredOffers, originalBookmakerOptions, bookmakerOptions, selectedBookmakers]);
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
