@@ -553,7 +553,7 @@ export default function OffersClient({
               options={bookmakerOptions}
               selected={selectedBookmakers}
               setSelected={setSelectedBookmakersWrapped}
-              showCount={false}
+              showCount={true}
             />
             <MultiSelectDropdown
               label="Advanced"

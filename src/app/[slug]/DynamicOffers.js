@@ -536,9 +536,6 @@ export default function DynamicOffers({
   }, [
     pathname,
     searchParams,
-    bonusTypeOptions,
-    bookmakerOptions,
-    advancedOptions,
   ]);
 
   // Apply initial filter when component loads
@@ -1006,16 +1003,26 @@ export default function DynamicOffers({
   // Update bookmaker options based on filtered offers
   useEffect(() => {
     if (selectedBookmakers.length > 0) {
-      // When a bookmaker is selected, show all bookmakers
+      // When a bookmaker is selected, show all bookmakers with their total counts
       setBookmakerOptions(originalBookmakerOptions);
     } else if (originalBookmakerOptions.length > 0 && filteredOffers.length > 0) {
-      // Get unique bookmakers from filtered offers
+      // Get unique bookmakers from filtered offers and recompute counts
       const filteredBookmakerNames = [...new Set(filteredOffers.map(offer => offer.bookmaker?.name).filter(Boolean))];
 
-      // Filter original bookmaker options to only include those in filtered results
-      const updatedBookmakerOptions = originalBookmakerOptions.filter(option =>
-        filteredBookmakerNames.includes(option.name)
-      );
+      // Recompute counts based on filtered offers
+      const filteredBookmakerCount = {};
+      filteredOffers.forEach((offer) => {
+        const bm = offer.bookmaker?.name || "Other";
+        filteredBookmakerCount[bm] = (filteredBookmakerCount[bm] || 0) + 1;
+      });
+
+      // Create updated options with filtered counts
+      const updatedBookmakerOptions = originalBookmakerOptions
+        .filter(option => filteredBookmakerNames.includes(option.name))
+        .map(option => ({
+          name: option.name,
+          count: filteredBookmakerCount[option.name] || 0
+        }));
 
       // Update bookmaker options if they changed
       if (JSON.stringify(updatedBookmakerOptions) !== JSON.stringify(bookmakerOptions)) {
