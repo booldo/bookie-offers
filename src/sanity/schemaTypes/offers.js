@@ -80,6 +80,106 @@ function AffiliateLinkInput(props) {
   )
 }
 
+// Custom input component for canonical URL auto-generation
+function CanonicalUrlInput(props) {
+  const { value, onChange, document } = props
+  const client = useClient()
+  const [canonicalUrl, setCanonicalUrl] = useState(value || '')
+  const [isGenerating, setIsGenerating] = useState(false)
+
+  // Function to generate canonical URL
+  const generateCanonicalUrl = async () => {
+    if (!document?.country?._ref || !document?.bonusType?._ref || !document?.slug?.current) {
+      return ''
+    }
+
+    setIsGenerating(true)
+    try {
+      // Fetch country and bonus type data
+      const [countryData, bonusTypeData] = await Promise.all([
+        client.fetch(`*[_type == "countryPage" && _id == $id][0]{slug}`, { id: document.country._ref }),
+        client.fetch(`*[_type == "bonusType" && _id == $id][0]{name}`, { id: document.bonusType._ref })
+      ])
+
+      if (countryData?.slug?.current && bonusTypeData?.name) {
+        // Slugify bonus type name to match the actual URL structure
+        const bonusTypeSlug = bonusTypeData.name
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/(^-|-$)+/g, "")
+          .replace(/-+/g, "-")
+
+        // Generate canonical URL matching actual offer URL structure
+        const newCanonicalUrl = `https://booldo.com/${countryData.slug.current}/${bonusTypeSlug}/${document.slug.current}`
+        setCanonicalUrl(newCanonicalUrl)
+        onChange(newCanonicalUrl)
+        return newCanonicalUrl
+      }
+    } catch (error) {
+      console.error('Error generating canonical URL:', error)
+    } finally {
+      setIsGenerating(false)
+    }
+    return ''
+  }
+
+  // Auto-generate when dependencies change
+  useEffect(() => {
+    if (document?.country?._ref && document?.bonusType?._ref && document?.slug?.current) {
+      generateCanonicalUrl()
+    }
+  }, [document?.country?._ref, document?.bonusType?._ref, document?.slug?.current])
+
+  const handleManualChange = (e) => {
+    const newValue = e.target.value
+    setCanonicalUrl(newValue)
+    onChange(newValue)
+  }
+
+  return (
+    <div>
+      <div style={{ marginBottom: '8px' }}>
+        <input
+          type="url"
+          value={canonicalUrl}
+          onChange={handleManualChange}
+          placeholder="Canonical URL (auto-generated)"
+          disabled={isGenerating}
+          style={{
+            width: '100%',
+            padding: '8px',
+            border: '1px solid #ccc',
+            borderRadius: '4px',
+            backgroundColor: isGenerating ? '#f5f5f5' : 'white'
+          }}
+        />
+      </div>
+      <button
+        type="button"
+        onClick={generateCanonicalUrl}
+        disabled={isGenerating || !document?.country?._ref || !document?.bonusType?._ref || !document?.slug?.current}
+        style={{
+          padding: '6px 12px',
+          backgroundColor: '#2276fc',
+          color: 'white',
+          border: 'none',
+          borderRadius: '4px',
+          cursor: 'pointer',
+          fontSize: '12px',
+          opacity: isGenerating ? 0.6 : 1
+        }}
+      >
+        {isGenerating ? 'Generating...' : 'Auto-Generate URL'}
+      </button>
+      {(!document?.country?._ref || !document?.bonusType?._ref || !document?.slug?.current) && (
+        <div style={{ marginTop: '8px', fontSize: '12px', color: '#666' }}>
+          Please select country, bonus type, and generate slug to auto-generate canonical URL.
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default {
   name: "offers",
   title: "Offers",
@@ -366,8 +466,9 @@ export default {
     {
       name: "canonicalUrl",
       title: "Canonical URL",
-      type: "url",
-      description: "SEO: Canonical URL for this page (leave blank for default)",
+      type: "string",
+      description: "SEO: Canonical URL for this page (auto-generated to match actual URL)",
+      inputComponent: CanonicalUrlInput,
     },
     {
       name: "sitemapInclude",
