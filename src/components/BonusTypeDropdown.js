@@ -97,7 +97,7 @@ export default function MultiSelectDropdown({ label, options, selected, setSelec
 
   // Memoized dropdown content
   const dropdownContent = useMemo(() => (
-    <div className="overflow-y-auto max-h-[calc(80vh-6rem)] sm:max-h-full">
+    <div className="overflow-y-auto h-[calc(70vh-8rem)] sm:max-h-full sm:h-auto">
       {!nested && (
         <div className="px-3 pb-2 pt-1 sticky top-0 bg-[#FFFFFF] z-10">
           <div className="relative">
@@ -197,6 +197,7 @@ export default function MultiSelectDropdown({ label, options, selected, setSelec
           sm:hidden fixed bottom-0 left-0 right-0 rounded-t-2xl p-4
           bg-[#FFFFFF] shadow-2xl border-t border-gray-200 z-20
           transform transition-transform duration-300 ease-in-out
+          h-[70vh] max-h-[600px]
           ${open ? 'translate-y-0' : 'translate-y-full'}
         `}
       >
