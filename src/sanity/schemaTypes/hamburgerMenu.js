@@ -143,6 +143,9 @@ export default {
           }
         },
         {
+          type: 'codeBlock'
+        },
+        {
           type: 'image',
           options: { hotspot: true },
           fields: [

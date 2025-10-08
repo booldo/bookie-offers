@@ -93,6 +93,49 @@ const portableTextComponents = {
         </div>
       );
     },
+    codeBlock: ({ value }) => {
+      const { language, code, type, filename, description } = value;
+
+      // If type is 'execute' or language is 'html', render as HTML
+      const shouldRenderAsHTML = type === 'execute' || language === 'html' || (code && code.includes('<') && code.includes('>'));
+
+      if (shouldRenderAsHTML) {
+        return (
+          <div className="my-4">
+            {filename && (
+              <div className="bg-blue-50 px-3 py-2 text-sm text-blue-700 font-medium border border-blue-200 rounded-t">
+                <span className="font-semibold">Embedded HTML:</span> {filename}
+              </div>
+            )}
+            {description && (
+              <div className="bg-gray-50 px-3 py-2 text-sm text-gray-600 border-b border-gray-200">
+                {description}
+              </div>
+            )}
+            <div
+              className={`border border-gray-200 rounded-lg overflow-hidden ${filename || description ? 'rounded-t-none' : ''}`}
+              dangerouslySetInnerHTML={{ __html: code }}
+            />
+          </div>
+        );
+      }
+
+      // Otherwise, show syntax highlighted code
+      return (
+        <div className="my-4">
+          {filename && (
+            <div className="bg-gray-100 px-3 py-1 text-sm text-gray-600 font-mono border-b border-gray-200 rounded-t">
+              {filename}
+            </div>
+          )}
+          <pre className={`bg-[#0b1020] text-[#e2e8f0] p-4 rounded-lg overflow-x-auto text-sm ${filename ? 'rounded-t-none' : ''}`}>
+            <code className={`language-${language || 'javascript'}`}>
+              {code}
+            </code>
+          </pre>
+        </div>
+      );
+    },
   },
 };
 
