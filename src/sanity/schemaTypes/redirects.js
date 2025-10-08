@@ -5,23 +5,25 @@ export default {
   fields: [
     {
       name: 'sourcePath',
-      title: 'Source Path',
+      title: 'Old URL (Source Path)',
       type: 'string',
-      description: 'The original URL path that should redirect (e.g., "/old-page" or "/ng/old-offer")',
-      validation: Rule => Rule.required()
+      description: 'The OLD URL path from previous domain that users are visiting (e.g., "/old-page", "/ng/old-offer"). This is what gets redirected FROM.',
+      validation: Rule => Rule.required(),
+      placeholder: '/old-url-path'
     },
     {
       name: 'targetUrl',
-      title: 'Target URL',
-      type: 'url',
-      description: 'Destination URL. Not required when Redirect Type is 410 (Gone).',
+      title: 'New URL (Target Destination)',
+      type: 'string',
+      description: 'The NEW URL where users should be redirected TO. Use the current page URL you are on. Can be relative path (e.g., "/new-page") or full URL.',
       validation: Rule => Rule.custom((value, context) => {
         const redirectType = context?.parent?.redirectType;
         if (redirectType === '410') {
           return true;
         }
         return value ? true : 'Target URL is required unless Redirect Type is 410';
-      })
+      }),
+      placeholder: '/current-page-url'
     },
     {
       name: 'redirectType',
@@ -69,13 +71,14 @@ export default {
     select: {
       title: 'sourcePath',
       subtitle: 'targetUrl',
-      isActive: 'isActive'
+      isActive: 'isActive',
+      redirectType: 'redirectType'
     },
     prepare(selection) {
-      const {title, subtitle, isActive} = selection;
+      const {title, subtitle, isActive, redirectType} = selection;
       return {
-        title: title || 'Source Path',
-        subtitle: `${subtitle || 'Target URL'} ${isActive ? '(Active)' : '(Inactive)'}`
+        title: `${title || 'Old URL'} → ${subtitle || 'New URL'}`,
+        subtitle: `${redirectType || '301'} redirect ${isActive ? '(Active)' : '(Inactive)'}`
       };
     }
   },

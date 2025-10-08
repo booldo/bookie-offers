@@ -833,7 +833,7 @@ export function ExpiredOffersTool() {
                            <Stack space={2}>
                              <TextInput
                                size={1}
-                               placeholder="Target URL"
+                               placeholder="Old URL to redirect FROM (e.g., /old-domain-path)"
                                value={targetUrls[offer._id] || ''}
                                onChange={(event) => setTargetUrls(prev => ({
                                  ...prev,
@@ -864,12 +864,12 @@ export function ExpiredOffersTool() {
                              />
                              <Button
                                size={1}
-                               text="Redirect to Page"
+                               text="Create Redirect FROM Old URL"
                                tone="positive"
                                onClick={() => createRedirect(
+                                 targetUrls[offer._id], // Old URL (what user enters)
                                  offer.slug?.current && offer.country?.slug?.current && offer.bonusType?.name ? 
-                                   `/${offer.country.slug.current}/${offer.bonusType.name.toLowerCase().replace(/\s+/g, '-')}/${offer.slug.current}` : '', 
-                                 targetUrls[offer._id],
+                                   `/${offer.country.slug.current}/${offer.bonusType.name.toLowerCase().replace(/\s+/g, '-')}/${offer.slug.current}` : '', // Current offer URL (target)
                                  targetUrls[`${offer._id}_desc`] || '',
                                  offer._id
                                )}
@@ -1036,7 +1036,7 @@ export function ExpiredOffersTool() {
                               <Stack space={2}>
                                 <TextInput
                                   size={1}
-                                  placeholder="Target URL"
+                                  placeholder="Old URL to redirect FROM (e.g., /old-domain-path)"
                                   value={targetUrls[page._id] || ''}
                                   onChange={(event) => setTargetUrls(prev => ({
                                     ...prev,
@@ -1067,11 +1067,11 @@ export function ExpiredOffersTool() {
                                 />
                                                                   <Button
                                     size={1}
-                                    text="Redirect to Page"
+                                    text="Create Redirect FROM Old URL"
                                     tone="positive"
                                     onClick={() => createRedirect(
-                                      page.path, 
-                                      targetUrls[page._id],
+                                      targetUrls[page._id], // Old URL (what user enters)
+                                      page.path, // Current page path (target)
                                       targetUrls[`${page._id}_desc`] || '',
                                       page._id
                                     )}
