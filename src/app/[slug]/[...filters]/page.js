@@ -951,7 +951,7 @@ export default async function CountryFiltersPage({ params }) {
       );
       if (bookmaker) {
         filterComparison = bookmaker.comparison || null;
-        filterFaqs = bookmaker.faqs || null;
+        filterFaqs = bookmaker.faqs || [];
       } else {
         // Try bonus type
         const bonusType = await client.fetch(
@@ -965,7 +965,7 @@ export default async function CountryFiltersPage({ params }) {
         );
         if (bonusType) {
           filterComparison = bonusType.comparison || null;
-          filterFaqs = bonusType.faqs || null;
+          filterFaqs = bonusType.faqs || [];
         }
       }
     }
