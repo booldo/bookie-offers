@@ -47,12 +47,43 @@ export async function middleware(request) {
     }
   }
 
+  // Check for redirects BEFORE checking 410 status
+  // This ensures redirects take priority over 410 responses
+  try {
+    console.log('🔍 Checking for redirects before 410 status:', pathname);
+    const redirect = await checkRedirect(pathname);
+    
+    if (redirect && redirect.type !== '410') {
+      console.log('✅ Redirect found, using redirect instead of 410:', redirect);
+      
+      // Construct proper redirect URL
+      let targetUrl = redirect.url;
+      if (targetUrl) {
+        // If target URL is relative, make it absolute
+        if (targetUrl.startsWith('/')) {
+          targetUrl = `${request.nextUrl.origin}${targetUrl}`;
+        } else if (!targetUrl.startsWith('http')) {
+          targetUrl = `${request.nextUrl.origin}/${targetUrl}`;
+        }
+
+        console.log('🎯 Redirecting to:', targetUrl);
+        
+        // Perform redirect with the specified type
+        const statusCode = redirect.type === '302' ? 302 : 301;
+        return NextResponse.redirect(targetUrl, statusCode);
+      }
+    }
+  } catch (error) {
+    console.error('❌ Error checking redirects in src/middleware:', error);
+  }
+
   // Check for offer pages that should return 410 status
+  // Only runs if no redirect was found above
   // Exclude calculator URLs from 410 checks
   const offerPageMatch = pathname.match(/^\/([^\/]+)\/[^\/]+\/([^\/]+)$/);
   if (offerPageMatch && !pathname.includes('/calculator/')) {
     const [, countrySlug, offerSlug] = offerPageMatch;
-    console.log('🔍 Checking offer for 410 status:', { countrySlug, offerSlug });
+    console.log('🔍 Checking offer for 410 status (no redirect found):', { countrySlug, offerSlug });
     
     const offerStatus = await checkOfferStatus(countrySlug, offerSlug);
     if (offerStatus.shouldReturn410) {
