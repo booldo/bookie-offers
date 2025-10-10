@@ -380,6 +380,21 @@ export default function Footer() {
               </a>
             );
           })}
+          
+          {/* Privacy Policy and Cookie Settings Links */}
+          <Link
+            href="/privacy"
+            className="hover:underline font-['General_Sans'] font-medium text-[12px] leading-[100%] tracking-[1%] text-[#272932]"
+          >
+            Privacy Policy
+          </Link>
+          <Link
+            href="/cookie-settings"
+            className="hover:underline font-['General_Sans'] font-medium text-[12px] leading-[100%] tracking-[1%] text-[#272932]"
+          >
+            Cookie Settings
+          </Link>
+          
           <span className="font-['General_Sans']">
             {footerData?.bottomRowLinks?.copyrightText ||
               "© Copyright 2025 BOOLDO"}
