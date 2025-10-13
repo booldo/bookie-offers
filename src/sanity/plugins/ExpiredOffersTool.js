@@ -47,7 +47,7 @@ export function ExpiredOffersTool() {
   const [redirects, setRedirects] = useState([]);
   const [redirectedPages, setRedirectedPages] = useState([]);
   const [redirect301States, setRedirect301States] = useState({});
-  const [targetUrls, setTargetUrls] = useState({});
+  const [sourceUrls, setSourceUrls] = useState({});
   const [showRedirectInput, setShowRedirectInput] = useState({});
   
   const toast = useToast();
@@ -496,6 +496,30 @@ export function ExpiredOffersTool() {
       return;
     }
 
+    // Process and validate source path
+    let processedSourcePath = sourcePath.trim();
+    
+    // If source path is a full URL, extract just the path portion
+    if (processedSourcePath.startsWith('http://') || processedSourcePath.startsWith('https://')) {
+      try {
+        const url = new URL(processedSourcePath);
+        processedSourcePath = url.pathname;
+        console.log('🔧 Extracted path from full URL:', processedSourcePath);
+      } catch (error) {
+        toast.push({
+          status: 'error',
+          title: 'Invalid source URL',
+          description: 'Please enter a valid URL or path.'
+        });
+        return;
+      }
+    }
+    
+    // Ensure source path starts with /
+    if (!processedSourcePath.startsWith('/')) {
+      processedSourcePath = '/' + processedSourcePath;
+    }
+
     // Validate target URL format
     const trimmedTargetUrl = targetUrl.trim();
     
@@ -503,19 +527,24 @@ export function ExpiredOffersTool() {
       toast.push({
         status: 'error',
         title: 'Invalid URL format',
-        description: 'Please enter a valid URL. Examples:\n• https://example.com\n• /about\n• example.com'
+        description: 'Please enter a valid URL. Examples:\n• https://booldo.com\n• /about\n• example.com'
       });
       return;
     }
 
     setProcessing(true);
     try {
-      console.log('🔄 Creating redirect:', { sourcePath, targetUrl: trimmedTargetUrl, description });
+      console.log('🔄 Creating redirect:', { 
+        originalSourcePath: sourcePath, 
+        processedSourcePath: processedSourcePath, 
+        targetUrl: trimmedTargetUrl, 
+        description 
+      });
       
       // Create new redirect document
       await client.create({
         _type: 'redirects',
-        sourcePath: sourcePath,
+        sourcePath: processedSourcePath,
         targetUrl: trimmedTargetUrl,
         redirectType: '301',
         isActive: true,
@@ -527,12 +556,12 @@ export function ExpiredOffersTool() {
       toast.push({
         status: 'success',
         title: 'Redirect created successfully',
-        description: `${sourcePath} will now redirect to ${trimmedTargetUrl}`
+        description: `${processedSourcePath} will now redirect to ${trimmedTargetUrl}`
       });
       
       // Clear input and collapse fields for this specific item
       if (itemId) {
-        setTargetUrls(prev => ({ 
+        setSourceUrls(prev => ({ 
           ...prev, 
           [itemId]: '', 
           [`${itemId}_desc`]: '' 
@@ -833,20 +862,20 @@ export function ExpiredOffersTool() {
                            <Stack space={2}>
                              <TextInput
                                size={1}
-                               placeholder="Old URL to redirect FROM (e.g., /old-domain-path)"
-                               value={targetUrls[offer._id] || ''}
-                               onChange={(event) => setTargetUrls(prev => ({
+                               placeholder="Source URL to redirect FROM (e.g., /source-page-path or http://localhost:3000/source-page-path)"
+                               value={sourceUrls[offer._id] || ''}
+                               onChange={(event) => setSourceUrls(prev => ({
                                  ...prev,
                                  [offer._id]: event.target.value
                                }))}
                                style={{ minWidth: '300px' }}
                              />
-                             {targetUrls[offer._id] && (
+                             {sourceUrls[offer._id] && (
                                <Text size={1} style={{ 
-                                 color: isValidUrlFormat(targetUrls[offer._id]) ? '#059669' : '#DC2626',
+                                 color: isValidUrlFormat(sourceUrls[offer._id]) ? '#059669' : '#DC2626',
                                  fontSize: '12px'
                                }}>
-                                 {isValidUrlFormat(targetUrls[offer._id]) 
+                                 {isValidUrlFormat(sourceUrls[offer._id]) 
                                    ? '✅ Valid URL format' 
                                    : '❌ Invalid URL format'
                                  }
@@ -855,8 +884,8 @@ export function ExpiredOffersTool() {
                              <TextInput
                                size={1}
                                placeholder="Description (optional)"
-                               value={targetUrls[`${offer._id}_desc`] || ''}
-                               onChange={(event) => setTargetUrls(prev => ({
+                               value={sourceUrls[`${offer._id}_desc`] || ''}
+                               onChange={(event) => setSourceUrls(prev => ({
                                  ...prev,
                                  [`${offer._id}_desc`]: event.target.value
                                }))}
@@ -864,16 +893,16 @@ export function ExpiredOffersTool() {
                              />
                              <Button
                                size={1}
-                               text="Create Redirect FROM Old URL"
+                               text="Create Redirect FROM Source URL"
                                tone="positive"
                                onClick={() => createRedirect(
-                                 targetUrls[offer._id], // Old URL (what user enters)
+                                 sourceUrls[offer._id], // Source URL (what user enters)
                                  offer.slug?.current && offer.country?.slug?.current && offer.bonusType?.name ? 
                                    `/${offer.country.slug.current}/${offer.bonusType.name.toLowerCase().replace(/\s+/g, '-')}/${offer.slug.current}` : '', // Current offer URL (target)
-                                 targetUrls[`${offer._id}_desc`] || '',
+                                 sourceUrls[`${offer._id}_desc`] || '',
                                  offer._id
                                )}
-                               disabled={processing || !targetUrls[offer._id]?.trim() || !isValidUrlFormat(targetUrls[offer._id])}
+                               disabled={processing || !sourceUrls[offer._id]?.trim() || !isValidUrlFormat(sourceUrls[offer._id])}
                              />
                            </Stack>
                          )}

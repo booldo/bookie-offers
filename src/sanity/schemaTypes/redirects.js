@@ -5,17 +5,17 @@ export default {
   fields: [
     {
       name: 'sourcePath',
-      title: 'Old URL (Source Path)',
+      title: 'Source URL (Redirect FROM)',
       type: 'string',
-      description: 'The OLD URL path from previous domain that users are visiting (e.g., "/old-page", "/ng/old-offer"). This is what gets redirected FROM.',
+      description: 'The URL path that should redirect to another page (e.g., "/source-page", "/ke/old-offer"). This is what gets redirected FROM.',
       validation: Rule => Rule.required(),
-      placeholder: '/old-url-path'
+      placeholder: '/source-url-path'
     },
     {
       name: 'targetUrl',
-      title: 'New URL (Target Destination)',
+      title: 'Target URL (Redirect TO)',
       type: 'string',
-      description: 'The NEW URL where users should be redirected TO. Use the current page URL you are on. Can be relative path (e.g., "/new-page") or full URL.',
+      description: 'The URL where users should be redirected TO. This is the destination page. Can be relative path (e.g., "/target-page") or full URL.',
       validation: Rule => Rule.custom((value, context) => {
         const redirectType = context?.parent?.redirectType;
         if (redirectType === '410') {
@@ -23,7 +23,7 @@ export default {
         }
         return value ? true : 'Target URL is required unless Redirect Type is 410';
       }),
-      placeholder: '/current-page-url'
+      placeholder: '/target-page-url'
     },
     {
       name: 'redirectType',
