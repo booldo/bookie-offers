@@ -623,6 +623,35 @@ export function ExpiredOffersTool() {
     }
   };
 
+  // Fix redirect type (change 410 to 301)
+  const fixRedirectType = async (redirectId) => {
+    setProcessing(true);
+    try {
+      await client
+        .patch(redirectId)
+        .set({ redirectType: '301' })
+        .commit();
+
+      toast.push({
+        status: 'success',
+        title: 'Redirect type fixed',
+        description: 'Changed from 410 to 301 redirect'
+      });
+      
+      await fetchData();
+      
+    } catch (error) {
+      console.error('Error fixing redirect type:', error);
+      toast.push({
+        status: 'error',
+        title: 'Failed to fix redirect type',
+        description: error.message
+      });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   const getPageVisibilityButtonProps = (page) => {
     if (isPageHidden(page)) {
       return { text: 'Show', tone: 'critical', title: 'Show this page (indexable, in sitemap)' };
@@ -991,21 +1020,38 @@ export function ExpiredOffersTool() {
                       <Flex align="center" gap={3}>
                         <Box flex={1}>
                           <Stack space={1}>
-                            <Text weight="semibold">{redirect.sourcePath}</Text>
+                            <Flex align="center" gap={2}>
+                              <Text weight="semibold">{redirect.sourcePath}</Text>
+                              <Badge tone={redirect.redirectType === '410' ? 'critical' : 'positive'}>
+                                {redirect.redirectType || '301'}
+                              </Badge>
+                            </Flex>
                             <Text size={1} muted>Redirects to: {redirect.targetUrl}</Text>
                             {redirect.description && (
                               <Text size={1} muted>{redirect.description}</Text>
                             )}
                           </Stack>
                         </Box>
-                        <Button
-                          size={1}
-                          text="Remove"
-                          tone="critical"
-                          onClick={() => removeRedirect(redirect._id)}
-                          disabled={processing}
-                          title="Deactivate this redirect"
-                        />
+                        <Flex gap={2}>
+                          {redirect.redirectType === '410' && (
+                            <Button
+                              size={1}
+                              text="Fix to 301"
+                              tone="positive"
+                              onClick={() => fixRedirectType(redirect._id)}
+                              disabled={processing}
+                              title="Change from 410 to 301 redirect"
+                            />
+                          )}
+                          <Button
+                            size={1}
+                            text="Remove"
+                            tone="critical"
+                            onClick={() => removeRedirect(redirect._id)}
+                            disabled={processing}
+                            title="Deactivate this redirect"
+                          />
+                        </Flex>
                       </Flex>
                     </Card>
                   ))
