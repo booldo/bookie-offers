@@ -278,7 +278,7 @@ export default function DynamicOffers({
     return { bonusTypes, bookmakers, advanced };
   };
 
-  const buildUrl = ({ bonusTypes, bookmakers, advanced }) => {
+  const buildUrl = useCallback(({ bonusTypes, bookmakers, advanced }) => {
     if (!countrySlug || !countryData) return "/";
 
     // If no filters are selected, go to base country page
@@ -327,7 +327,7 @@ export default function DynamicOffers({
     } else {
       return `/${countrySlug}`;
     }
-  };
+  }, [countrySlug, countryData]);
 
   // Apply initial filter when options are loaded
   useEffect(() => {
@@ -536,6 +536,11 @@ export default function DynamicOffers({
   }, [
     pathname,
     searchParams,
+    bonusTypeOptions,
+    bookmakerOptions,
+    advancedOptions,
+    countrySlug,
+    countryData,
   ]);
 
   // Apply initial filter when component loads
