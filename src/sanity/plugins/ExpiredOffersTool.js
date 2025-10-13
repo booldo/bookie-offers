@@ -1065,20 +1065,20 @@ export function ExpiredOffersTool() {
                               <Stack space={2}>
                                 <TextInput
                                   size={1}
-                                  placeholder="Old URL to redirect FROM (e.g., /old-domain-path)"
-                                  value={targetUrls[page._id] || ''}
-                                  onChange={(event) => setTargetUrls(prev => ({
+                                  placeholder="Source URL to redirect FROM (e.g., /source-page-path)"
+                                  value={sourceUrls[page._id] || ''}
+                                  onChange={(event) => setSourceUrls(prev => ({
                                     ...prev,
                                     [page._id]: event.target.value
                                   }))}
                                   style={{ minWidth: '300px' }}
                                 />
-                                {targetUrls[page._id] && (
+                                {sourceUrls[page._id] && (
                                   <Text size={1} style={{ 
-                                    color: isValidUrlFormat(targetUrls[page._id]) ? '#059669' : '#DC2626',
+                                    color: isValidUrlFormat(sourceUrls[page._id]) ? '#059669' : '#DC2626',
                                     fontSize: '12px'
                                   }}>
-                                    {isValidUrlFormat(targetUrls[page._id]) 
+                                    {isValidUrlFormat(sourceUrls[page._id]) 
                                       ? '✅ Valid URL format' 
                                       : '❌ Invalid URL format'
                                     }
@@ -1087,8 +1087,8 @@ export function ExpiredOffersTool() {
                                 <TextInput
                                   size={1}
                                   placeholder="Description (optional)"
-                                  value={targetUrls[`${page._id}_desc`] || ''}
-                                  onChange={(event) => setTargetUrls(prev => ({
+                                  value={sourceUrls[`${page._id}_desc`] || ''}
+                                  onChange={(event) => setSourceUrls(prev => ({
                                     ...prev,
                                     [`${page._id}_desc`]: event.target.value
                                   }))}
@@ -1096,15 +1096,15 @@ export function ExpiredOffersTool() {
                                 />
                                                                   <Button
                                     size={1}
-                                    text="Create Redirect FROM Old URL"
+                                    text="Create Redirect FROM Source URL"
                                     tone="positive"
                                     onClick={() => createRedirect(
-                                      targetUrls[page._id], // Old URL (what user enters)
+                                      sourceUrls[page._id], // Source URL (what user enters)
                                       page.path, // Current page path (target)
-                                      targetUrls[`${page._id}_desc`] || '',
+                                      sourceUrls[`${page._id}_desc`] || '',
                                       page._id
                                     )}
-                                    disabled={processing || !targetUrls[page._id]?.trim() || !isValidUrlFormat(targetUrls[page._id])}
+                                    disabled={processing || !sourceUrls[page._id]?.trim() || !isValidUrlFormat(sourceUrls[page._id])}
                                   />
                               </Stack>
                             )}
