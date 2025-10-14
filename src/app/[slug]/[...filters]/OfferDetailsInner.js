@@ -710,13 +710,8 @@ function OfferDetailsInner({ slug }) {
               className="w-full h-24 sm:h-48 object-cover rounded-xl"
             />
           </div>
-<<<<<<< HEAD
         )} */}
         
-=======
-        )}
-
->>>>>>> 90ad6e7d97953a18a7f4593eab8def9b716c7661
         {/* Offer Card */}
         {error && <div className="text-center text-red-500">{error}</div>}
         {!error && offer && (
