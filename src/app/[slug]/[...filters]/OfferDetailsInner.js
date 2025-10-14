@@ -905,12 +905,12 @@ function OfferDetailsInner({ slug }) {
                               <img
                                 src={moreOffer.bookmaker.logo}
                                 alt={moreOffer.bookmaker.name}
-                                width="44"
-                                height="44"
-                                className="w-[44px] h-[44px] rounded-[6px] flex-shrink-0"
+                                width="88"
+                                height="88"
+                                className="w-[40px] h-[40px] sm:w-[60px] sm:h-[60px] rounded-[6px] flex-shrink-0"
                               />
                             ) : (
-                              <div className="w-[25px] h-[25px] bg-gray-100 rounded-[6px] flex-shrink-0" />
+                              <div className="w-[44px] h-[44px] sm:w-[60px] sm:h-[60px] bg-gray-100 rounded-[6px] flex-shrink-0" />
                             )}
                             <div className="font-['General_Sans'] font-semibold text-[16px] leading-[100%] tracking-[1%] text-[#272932] min-w-0">
                               {moreOffer.bookmaker?.name}
