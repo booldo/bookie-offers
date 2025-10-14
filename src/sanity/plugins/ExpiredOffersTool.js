@@ -48,6 +48,7 @@ export function ExpiredOffersTool() {
   const [redirectedPages, setRedirectedPages] = useState([]);
   const [redirect301States, setRedirect301States] = useState({});
   const [targetUrls, setTargetUrls] = useState({});
+  const [sourceUrls, setSourceUrls] = useState({});
   const [showRedirectInput, setShowRedirectInput] = useState({});
   
   const toast = useToast();
@@ -533,6 +534,11 @@ export function ExpiredOffersTool() {
       // Clear input and collapse fields for this specific item
       if (itemId) {
         setTargetUrls(prev => ({ 
+          ...prev, 
+          [itemId]: '', 
+          [`${itemId}_desc`]: '' 
+        }));
+        setSourceUrls(prev => ({ 
           ...prev, 
           [itemId]: '', 
           [`${itemId}_desc`]: '' 
