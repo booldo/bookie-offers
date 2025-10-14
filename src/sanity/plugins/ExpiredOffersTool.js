@@ -47,7 +47,7 @@ export function ExpiredOffersTool() {
   const [redirects, setRedirects] = useState([]);
   const [redirectedPages, setRedirectedPages] = useState([]);
   const [redirect301States, setRedirect301States] = useState({});
-  const [targetUrls, setTargetUrls] = useState({});
+  const [sourceUrls, setSourceUrls] = useState({});
   const [showRedirectInput, setShowRedirectInput] = useState({});
   
   const toast = useToast();
@@ -532,7 +532,7 @@ export function ExpiredOffersTool() {
       
       // Clear input and collapse fields for this specific item
       if (itemId) {
-        setTargetUrls(prev => ({ 
+        setSourceUrls(prev => ({ 
           ...prev, 
           [itemId]: '', 
           [`${itemId}_desc`]: '' 
@@ -833,20 +833,20 @@ export function ExpiredOffersTool() {
                            <Stack space={2}>
                              <TextInput
                                size={1}
-                               placeholder="Old URL to redirect FROM (e.g., /old-domain-path)"
-                               value={targetUrls[offer._id] || ''}
-                               onChange={(event) => setTargetUrls(prev => ({
-                                 ...prev,
-                                 [offer._id]: event.target.value
-                               }))}
+                               placeholder="Source URL to redirect FROM (e.g., /source-page-path)"
+                              value={sourceUrls[offer._id] || ''}
+                              onChange={(event) => setSourceUrls(prev => ({
+                                ...prev,
+                                [offer._id]: event.target.value
+                              }))}
                                style={{ minWidth: '300px' }}
                              />
-                             {targetUrls[offer._id] && (
+                             {sourceUrls[offer._id] && (
                                <Text size={1} style={{ 
-                                 color: isValidUrlFormat(targetUrls[offer._id]) ? '#059669' : '#DC2626',
+                                 color: isValidUrlFormat(sourceUrls[offer._id]) ? '#059669' : '#DC2626',
                                  fontSize: '12px'
                                }}>
-                                 {isValidUrlFormat(targetUrls[offer._id]) 
+                                 {isValidUrlFormat(sourceUrls[offer._id]) 
                                    ? '✅ Valid URL format' 
                                    : '❌ Invalid URL format'
                                  }
@@ -855,8 +855,8 @@ export function ExpiredOffersTool() {
                              <TextInput
                                size={1}
                                placeholder="Description (optional)"
-                               value={targetUrls[`${offer._id}_desc`] || ''}
-                               onChange={(event) => setTargetUrls(prev => ({
+                               value={sourceUrls[`${offer._id}_desc`] || ''}
+                               onChange={(event) => setSourceUrls(prev => ({
                                  ...prev,
                                  [`${offer._id}_desc`]: event.target.value
                                }))}
@@ -864,16 +864,16 @@ export function ExpiredOffersTool() {
                              />
                              <Button
                                size={1}
-                               text="Create Redirect FROM Old URL"
+                               text="Create Redirect FROM Source URL"
                                tone="positive"
                                onClick={() => createRedirect(
-                                 targetUrls[offer._id], // Old URL (what user enters)
+                                 sourceUrls[offer._id], // Source URL (what user enters)
                                  offer.slug?.current && offer.country?.slug?.current && offer.bonusType?.name ? 
                                    `/${offer.country.slug.current}/${offer.bonusType.name.toLowerCase().replace(/\s+/g, '-')}/${offer.slug.current}` : '', // Current offer URL (target)
-                                 targetUrls[`${offer._id}_desc`] || '',
+                                 sourceUrls[`${offer._id}_desc`] || '',
                                  offer._id
                                )}
-                               disabled={processing || !targetUrls[offer._id]?.trim() || !isValidUrlFormat(targetUrls[offer._id])}
+                               disabled={processing || !sourceUrls[offer._id]?.trim() || !isValidUrlFormat(sourceUrls[offer._id])}
                              />
                            </Stack>
                          )}

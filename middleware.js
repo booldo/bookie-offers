@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { checkRedirect } from './src/lib/redirects';
+import { generate410Html, checkOfferStatus } from './src/lib/gone410';
+import { checkGoneStatus } from './src/lib/checkGoneStatus';
 
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
@@ -26,6 +28,44 @@ export async function middleware(request) {
       return NextResponse.next();
     }
     
+    // Generic global 410 Gone logic for all dynamic content types
+    const excludedRoutes = ['/briefly', '/briefly/calculators', '/faq', '/footer', '/analytics', '/robots.txt', '/sitemap.xml', '/sitemap-index.xml'];
+    if (!excludedRoutes.includes(pathname)) {
+      const dynamicPatterns = [
+        { regex: /^\/footer\/([^\/]+)$/, type: 'footer' },
+        { regex: /^\/([^\/]+)\/[^\/]+\/([^\/]+)$/, type: 'offers' }, // offer details
+        { regex: /^\/([^\/]+)$/, type: 'countryPage' }, // country slugs like /ng
+      ];
+      
+      for (const { regex, type } of dynamicPatterns) {
+        const match = pathname.match(regex);
+        if (match) {
+          // For offers, slug is in match[2], for others it's match[1]
+          const slug = type === 'offers' ? match[2] : match[1];
+          // Only run gone check for countryPage if slug is a valid country
+          if (type === 'countryPage') {
+            // Check if slug is a valid country
+            const isValidCountry = await fetch(`${request.nextUrl.origin}/api/country-exists?slug=${slug}`).then(res => res.ok ? res.json() : { exists: false }).then(res => res.exists);
+            if (!isValidCountry) {
+              // Let the route handler return 404
+              continue;
+            }
+          }
+          const { shouldReturn410, doc } = await checkGoneStatus(type, slug);
+          if (shouldReturn410) {
+            const html = generate410Html({ offer: doc, isExpired: false, isHidden: true });
+            return new Response(html, {
+              status: 410,
+              headers: {
+                'content-type': 'text/html; charset=utf-8',
+                'cache-control': 'no-cache, no-store, must-revalidate'
+              }
+            });
+          }
+        }
+      }
+    }
+    
     // For non-article paths, check redirects normally
     const redirect = await checkRedirect(pathname);
     
@@ -34,54 +74,7 @@ export async function middleware(request) {
       
       // If explicitly marked as 410, return a 410 response instead of redirecting
       if (redirect.type === '410') {
-        const html = `<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="robots" content="noindex, nofollow" />
-    <title>410 Gone</title>
-    <style>
-      body { margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji"; background:#fafbfc; color:#111827; }
-      .container { max-width: 72rem; margin: 0 auto; padding: 1.5rem; min-height: 100vh; display:flex; flex-direction:column; }
-      .main { flex:1; display:flex; align-items:center; justify-content:center; }
-      .card { text-align:center; }
-      .iconWrap { width: 6rem; height: 6rem; margin: 0 auto 1rem; background:#fee2e2; border-radius:9999px; display:flex; align-items:center; justify-content:center; }
-      .h1 { font-size: 3rem; font-weight:700; color:#dc2626; margin: 0 0 0.75rem; }
-      .h2 { font-size: 1.5rem; font-weight:600; margin: 0 0 1rem; }
-      .p { color:#4b5563; margin: 0 0 2rem; }
-      .btn { display:inline-flex; align-items:center; gap:.5rem; background:#16a34a; color:white; padding:.75rem 1.25rem; border-radius:.5rem; text-decoration:none; font-weight:600; }
-      .btn:hover { background:#15803d; }
-      .muted { margin-top:2rem; font-size:.875rem; color:#6b7280; }
-      svg { color:#dc2626; }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <main class="main">
-        <div class="card">
-          <div class="iconWrap">
-            <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="15" y1="9" x2="9" y2="15" />
-              <line x1="9" y1="9" x2="15" y2="15" />
-            </svg>
-          </div>
-          <div class="h1">410</div>
-          <div class="h2">Content No Longer Available</div>
-          <p class="p">This resource has been intentionally removed and is no longer accessible.</p>
-          <a class="btn" href="/">
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path d="M15 19l-7-7 7-7" />
-            </svg>
-            Go Home
-          </a>
-          <div class="muted">If you believe this is an error, please contact support.</div>
-        </div>
-      </main>
-    </div>
-  </body>
-</html>`;
+        const html = generate410Html({ isExpired: false, isHidden: true });
         return new Response(html, {
           status: 410,
           headers: { 'content-type': 'text/html; charset=utf-8' }
@@ -94,54 +87,7 @@ export async function middleware(request) {
         // Treat redirects pointing to the 410 page as true 410 responses
         const normalizedTarget = targetUrl.trim().toLowerCase();
         if (normalizedTarget === '/410' || normalizedTarget.endsWith('/410')) {
-          const html = `<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="robots" content="noindex, nofollow" />
-    <title>410 Gone</title>
-    <style>
-      body { margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji"; background:#fafbfc; color:#111827; }
-      .container { max-width: 72rem; margin: 0 auto; padding: 1.5rem; min-height: 100vh; display:flex; flex-direction:column; }
-      .main { flex:1; display:flex; align-items:center; justify-content:center; }
-      .card { text-align:center; }
-      .iconWrap { width: 6rem; height: 6rem; margin: 0 auto 1rem; background:#fee2e2; border-radius:9999px; display:flex; align-items:center; justify-content:center; }
-      .h1 { font-size: 3rem; font-weight:700; color:#dc2626; margin: 0 0 0.75rem; }
-      .h2 { font-size: 1.5rem; font-weight:600; margin: 0 0 1rem; }
-      .p { color:#4b5563; margin: 0 0 2rem; }
-      .btn { display:inline-flex; align-items:center; gap:.5rem; background:#16a34a; color:white; padding:.75rem 1.25rem; border-radius:.5rem; text-decoration:none; font-weight:600; }
-      .btn:hover { background:#15803d; }
-      .muted { margin-top:2rem; font-size:.875rem; color:#6b7280; }
-      svg { color:#dc2626; }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <main class="main">
-        <div class="card">
-          <div class="iconWrap">
-            <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="15" y1="9" x2="9" y2="15" />
-              <line x1="9" y1="9" x2="15" y2="15" />
-            </svg>
-          </div>
-          <div class="h1">410</div>
-          <div class="h2">Content No Longer Available</div>
-          <p class="p">This resource has been intentionally removed and is no longer accessible.</p>
-          <a class="btn" href="/">
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path d="M15 19l-7-7 7-7" />
-            </svg>
-            Go Home
-          </a>
-          <div class="muted">If you believe this is an error, please contact support.</div>
-        </div>
-      </main>
-    </div>
-  </body>
-</html>`;
+          const html = generate410Html({ isExpired: false, isHidden: true });
           return new Response(html, {
             status: 410,
             headers: { 'content-type': 'text/html; charset=utf-8' }
@@ -162,6 +108,28 @@ export async function middleware(request) {
       }
     } else {
       console.log('❌ No redirect found for:', pathname);
+      
+      // Check for offer pages that should return 410 status
+      // Only runs if no redirect was found above
+      // Exclude calculator URLs from 410 checks
+      const offerPageMatch = pathname.match(/^\/([^\/]+)\/[^\/]+\/([^\/]+)$/);
+      if (offerPageMatch && !pathname.includes('/calculator/')) {
+        const [, countrySlug, offerSlug] = offerPageMatch;
+        console.log('🔍 Checking offer for 410 status (no redirect found):', { countrySlug, offerSlug });
+        
+        const offerStatus = await checkOfferStatus(countrySlug, offerSlug);
+        if (offerStatus.shouldReturn410) {
+          console.log('✅ Returning 410 status for offer:', offerSlug);
+          const html = generate410Html(offerStatus);
+          return new Response(html, {
+            status: 410,
+            headers: {
+              'content-type': 'text/html; charset=utf-8',
+              'cache-control': 'no-cache, no-store, must-revalidate'
+            }
+          });
+        }
+      }
     }
   } catch (error) {
     console.error('❌ Middleware redirect error:', error);
