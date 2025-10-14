@@ -166,72 +166,8 @@ export default function Footer() {
   }
 
   return (
-    <footer className="bg-[#f6f7f9] w-full px-4 pt-8 pb-4 text-gray-700 text-sm mt-8  tracking-[1%]">
+    <footer className="bg-[#f6f7f9] w-full px-4 pt-8 pb-4 text-gray-700 text-sm mt-0  tracking-[1%]">
       <div className="w-full flex flex-col gap-4">
-        {/* Socials */}
-        {footerData?.socialMedia?.isActive && (
-          <div>
-            <div className="mb-2  font-medium text-[14px] leading-[100%] tracking-[1%] text-[#272932]">
-              {footerData.socialMedia.title || "Follow us on"}
-            </div>
-            <div className="flex gap-4 mb-3">
-              {footerData.socialMedia.platforms?.map(
-                (platform, index) =>
-                  platform.isActive && (
-                    <a
-                      key={index}
-                      href={platform.url}
-                      aria-label={platform.name}
-                      className="hover:opacity-80"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {platform.icon ? (
-                        <Image
-                          src={urlFor(platform.icon).width(28).height(28).url()}
-                          alt={platform.name}
-                          width={28}
-                          height={28}
-                        />
-                      ) : (
-                        <img
-                          src="/assets/x.png"
-                          alt={platform.name}
-                          width={28}
-                          height={28}
-                        />
-                      )}
-                    </a>
-                  )
-              )}
-            </div>
-            <hr className="border-gray-300 my-2" />
-          </div>
-        )}
-
-        {/* Links */}
-        {footerData?.navigationLinks?.menuItems && (
-          <div>
-            <div className="flex flex-col gap-1">
-              {footerData.navigationLinks.menuItems.map(
-                (item, index) =>
-                  item.isActive &&
-                  getMenuItemUrl(item) && (
-                    <div key={index}>
-                      {/* Main menu item */}
-                      <a
-                        href={getMenuItemUrl(item)}
-                        className=" font-medium text-[14px] leading-[100%] tracking-[1%] text-[#272932]"
-                      >
-                        {getMenuItemLabel(item)}
-                      </a>
-                    </div>
-                  )
-              )}
-            </div>
-            <hr className="border-gray-300 my-2" />
-          </div>
-        )}
 
         {/* Affiliate Disclosure */}
         {footerData?.affiliateDisclosure?.isActive && (
@@ -348,8 +284,57 @@ export default function Footer() {
           </div>
         )}
 
+        {/* Social Media Icons and Navigation Links - Above Copyright */}
+        <div className="flex flex-wrap items-center justify-center gap-6 mt-4 mb-4">
+          {/* Social Media Icons */}
+          {footerData?.socialMedia?.isActive && footerData.socialMedia.platforms?.map(
+            (platform, index) =>
+              platform.isActive && (
+                <a
+                  key={index}
+                  href={platform.url}
+                  aria-label={platform.name}
+                  className="hover:opacity-80"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {platform.icon ? (
+                    <Image
+                      src={urlFor(platform.icon).width(28).height(28).url()}
+                      alt={platform.name}
+                      width={28}
+                      height={28}
+                    />
+                  ) : (
+                    <img
+                      src="/assets/x.png"
+                      alt={platform.name}
+                      width={28}
+                      height={28}
+                    />
+                  )}
+                </a>
+              )
+          )}
+
+          {/* Navigation Links */}
+          {footerData?.navigationLinks?.menuItems?.map(
+            (item, index) =>
+              item.isActive &&
+              getMenuItemUrl(item) && (
+                <a
+                  key={index}
+                  href={getMenuItemUrl(item)}
+                  className="font-medium text-[14px] leading-[100%] tracking-[1%] text-[#272932] hover:underline"
+                >
+                  {getMenuItemLabel(item)}
+                </a>
+              )
+          )}
+        </div>
+
         {/* Bottom row */}
-        <div className="flex flex-wrap font-['General_Sans'] items-center justify-center text-xs text-gray-400 mt-4 gap-4">
+        <div className="flex flex-wrap font-['General_Sans'] items-center justify-center text-xs text-gray-400 gap-4">
           {footerData?.bottomRowLinks?.links?.map((link, index) => {
             if (
               !link.isActive ||

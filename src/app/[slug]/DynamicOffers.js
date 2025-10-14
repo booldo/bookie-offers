@@ -904,7 +904,7 @@ export default function DynamicOffers({
     }
 
     return offers.filter((offer) => {
-      // Early bookmaker check (most common filter)
+      // Check bookmaker filter (if any selected)
       if (selectedBookmakersLower.length > 0) {
         const offerBookmaker = offer.bookmaker?.name?.toLowerCase() || "";
         if (selectedBookmakersLower.includes(offerBookmaker)) {
@@ -912,7 +912,7 @@ export default function DynamicOffers({
         }
       }
 
-      // Early bonus type check
+      // Check bonus type filter (if any selected)
       if (selectedBonusTypesLower.length > 0) {
         const offerBonusType = offer.bonusType?.name?.toLowerCase() || "";
         if (selectedBonusTypesLower.includes(offerBonusType)) {
@@ -920,7 +920,7 @@ export default function DynamicOffers({
         }
       }
 
-      // Advanced filters check (only if needed)
+      // Check advanced filters (if any selected)
       if (selectedAdvancedLower.length > 0) {
         // Check payment methods
         const paymentMethods = offer.bookmaker?.paymentMethods;
@@ -957,7 +957,7 @@ export default function DynamicOffers({
   const sortedOffers = useMemo(() => {
     if (sortBy === "Latest") {
       return [...filteredOffers].sort(
-        (a, b) => new Date(a.published) - new Date(b.published)
+        (a, b) => new Date(b.published) - new Date(a.published)
       );
     } else if (sortBy === "Name (A-Z)") {
       return [...filteredOffers].sort((a, b) => {

@@ -343,26 +343,24 @@ export default function OffersClient({
     }
 
     return offers.filter((offer) => {
-      // Early bookmaker check (most common filter)
+      // Check bookmaker filter (if any selected)
       if (selectedBookmakersLower.length > 0) {
         const offerBookmaker = offer.bookmaker?.name?.toLowerCase() || "";
-        if (!selectedBookmakersLower.includes(offerBookmaker)) {
-          return false;
+        if (selectedBookmakersLower.includes(offerBookmaker)) {
+          return true;
         }
       }
 
-      // Early bonus type check
+      // Check bonus type filter (if any selected)
       if (selectedBonusTypesLower.length > 0) {
         const offerBonusType = offer.bonusType?.name?.toLowerCase() || "";
-        if (!selectedBonusTypesLower.includes(offerBonusType)) {
-          return false;
+        if (selectedBonusTypesLower.includes(offerBonusType)) {
+          return true;
         }
       }
 
-      // Advanced filters check (only if needed)
+      // Check advanced filters (if any selected)
       if (selectedAdvancedLower.length > 0) {
-        let hasAdvancedMatch = false;
-
         // Check payment methods
         const paymentMethods = offer.bookmaker?.paymentMethods;
         if (Array.isArray(paymentMethods)) {
@@ -370,35 +368,27 @@ export default function OffersClient({
             if (pm?.name) {
               const pmName = pm.name.toLowerCase();
               if (selectedAdvancedLower.includes(pmName)) {
-                hasAdvancedMatch = true;
-                break;
+                return true;
               }
             }
           }
         }
 
-        // Check licenses if no payment method match
-        if (!hasAdvancedMatch) {
-          const licenses = offer.bookmaker?.license;
-          if (Array.isArray(licenses)) {
-            for (const lc of licenses) {
-              if (lc?.name) {
-                const lcName = lc.name.toLowerCase();
-                if (selectedAdvancedLower.includes(lcName)) {
-                  hasAdvancedMatch = true;
-                  break;
-                }
+        // Check licenses
+        const licenses = offer.bookmaker?.license;
+        if (Array.isArray(licenses)) {
+          for (const lc of licenses) {
+            if (lc?.name) {
+              const lcName = lc.name.toLowerCase();
+              if (selectedAdvancedLower.includes(lcName)) {
+                return true;
               }
             }
           }
-        }
-
-        if (!hasAdvancedMatch) {
-          return false;
         }
       }
 
-      return true;
+      return false;
     });
   }, [offers, selectedBookmakersLower, selectedBonusTypesLower, selectedAdvancedLower]);
 
@@ -406,7 +396,7 @@ export default function OffersClient({
   const sortedOffers = useMemo(() => {
     if (sortBy === "Latest") {
       return [...filteredOffers].sort(
-        (a, b) => new Date(a.published) - new Date(b.published)
+        (a, b) => new Date(b.published) - new Date(a.published)
       );
     } else if (sortBy === "Name (A-Z)") {
       return [...filteredOffers].sort((a, b) => {

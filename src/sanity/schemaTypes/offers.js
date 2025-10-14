@@ -393,18 +393,18 @@ export default {
       type: "date",
       description: "Optional expiry date for this offer"
     },
-    {
-      name: "banner",
-      title: "Banner",
-      type: "image",
-      description: "Banner image for this specific offer",
-    },
-    {
-      name: "bannerAlt",
-      title: "Banner Alt Text",
-      type: "string",
-      description: "Alternative text for accessibility and SEO",
-    },
+    // {
+    //   name: "banner",
+    //   title: "Banner",
+    //   type: "image",
+    //   description: "Banner image for this specific offer",
+    // },
+    // {
+    //   name: "bannerAlt",
+    //   title: "Banner Alt Text",
+    //   type: "string",
+    //   description: "Alternative text for accessibility and SEO",
+    // },
     {
       name: "howItWorks",
       title: "Content",

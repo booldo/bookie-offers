@@ -596,17 +596,17 @@ function OfferDetailsInner({ slug }) {
         )}
         
         {/* Individual Offer Banner */}
-        {!loading && !error && offer && offer.banner && (
+        {/* {!loading && !error && offer && offer.banner && (
           <div className="mb-6">
-            <Image 
-              src={urlFor(offer.banner).width(1200).height(200).url()} 
+            <Image
+              src={urlFor(offer.banner).width(1200).height(200).url()}
               alt={offer.bannerAlt || offer.title}
               width={1200}
               height={200}
               className="w-full h-24 sm:h-48 object-cover rounded-xl"
             />
           </div>
-        )}
+        )} */}
         
         {/* Offer Card */}
         {error && <div className="text-center text-red-500">{error}</div>}
