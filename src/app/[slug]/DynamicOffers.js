@@ -278,7 +278,7 @@ export default function DynamicOffers({
     return { bonusTypes, bookmakers, advanced };
   };
 
-  const buildUrl = ({ bonusTypes, bookmakers, advanced }) => {
+  const buildUrl = useCallback(({ bonusTypes, bookmakers, advanced }) => {
     if (!countrySlug || !countryData) return "/";
 
     // If no filters are selected, go to base country page
@@ -327,7 +327,7 @@ export default function DynamicOffers({
     } else {
       return `/${countrySlug}`;
     }
-  };
+  }, [countrySlug, countryData]);
 
   // Apply initial filter when options are loaded
   useEffect(() => {
@@ -536,6 +536,11 @@ export default function DynamicOffers({
   }, [
     pathname,
     searchParams,
+    bonusTypeOptions,
+    bookmakerOptions,
+    advancedOptions,
+    countrySlug,
+    countryData,
   ]);
 
   // Apply initial filter when component loads
@@ -904,24 +909,24 @@ export default function DynamicOffers({
     }
 
     return offers.filter((offer) => {
-      // Check bookmaker filter (if any selected)
+      let matchesBookmaker = true;
+      let matchesBonusType = true;
+      let matchesAdvanced = true;
+
+      // Check bookmaker filter (AND logic between categories, OR within category)
       if (selectedBookmakersLower.length > 0) {
         const offerBookmaker = offer.bookmaker?.name?.toLowerCase() || "";
-        if (selectedBookmakersLower.includes(offerBookmaker)) {
-          return true;
-        }
+        matchesBookmaker = selectedBookmakersLower.includes(offerBookmaker);
       }
 
-      // Check bonus type filter (if any selected)
-      if (selectedBonusTypesLower.length > 0) {
-        const offerBonusType = offer.bonusType?.name?.toLowerCase() || "";
-        if (selectedBonusTypesLower.includes(offerBonusType)) {
-          return true;
-        }
-      }
+      // Check bonus type filter (AND logic between categories, OR within category)
+        matchesBonusType = selectedBonusTypesLower.includes(offerBonusType);
 
       // Check advanced filters (if any selected)
+      // Check advanced filters (AND logic between categories, OR within category)
       if (selectedAdvancedLower.length > 0) {
+        matchesAdvanced = false;
+        
         // Check payment methods
         const paymentMethods = offer.bookmaker?.paymentMethods;
         if (Array.isArray(paymentMethods)) {
@@ -929,27 +934,32 @@ export default function DynamicOffers({
             if (pm?.name) {
               const pmName = pm.name.toLowerCase();
               if (selectedAdvancedLower.includes(pmName)) {
-                return true;
+                matchesAdvanced = true;
+                break;
               }
             }
           }
         }
 
-        // Check licenses
-        const licenses = offer.bookmaker?.license;
-        if (Array.isArray(licenses)) {
-          for (const lc of licenses) {
-            if (lc?.name) {
-              const lcName = lc.name.toLowerCase();
-              if (selectedAdvancedLower.includes(lcName)) {
-                return true;
+        // Check licenses if payment methods didn't match
+        if (!matchesAdvanced) {
+          const licenses = offer.bookmaker?.license;
+          if (Array.isArray(licenses)) {
+            for (const lc of licenses) {
+              if (lc?.name) {
+                const lcName = lc.name.toLowerCase();
+                if (selectedAdvancedLower.includes(lcName)) {
+                  matchesAdvanced = true;
+                  break;
+                }
               }
             }
           }
         }
       }
 
-      return false;
+      // Return true only if ALL selected filter categories match
+      return matchesBookmaker && matchesBonusType && matchesAdvanced;
     });
   }, [offers, selectedBookmakersLower, selectedBonusTypesLower, selectedAdvancedLower]);
 

@@ -505,12 +505,12 @@ export default function HomeNavbar() {
         <div ref={menuRef} className="fixed left-0 right-0 top-[64px] w-full bg-white shadow-2xl z-50 rounded-b-xl animate-slide-down">
           <div className="flex flex-col gap-6 px-10 py-4 text-gray-800 text-base font-medium">
             {/* Default Menu Items */}
-            <Link 
+            {/* <Link 
               href={pathname.startsWith('/ng') ? '/ng' : pathname.startsWith('/gh') ? '/gh' : '/'} 
               className="hover:underline"
             >
               Home
-            </Link>
+            </Link> */}
             <div className="relative">
               <button 
                 onClick={() => setBrieflyOpen(!brieflyOpen)}

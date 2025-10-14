@@ -48,6 +48,7 @@ export function ExpiredOffersTool() {
   const [redirectedPages, setRedirectedPages] = useState([]);
   const [redirect301States, setRedirect301States] = useState({});
   const [targetUrls, setTargetUrls] = useState({});
+  const [sourceUrls, setSourceUrls] = useState({});
   const [showRedirectInput, setShowRedirectInput] = useState({});
   
   const toast = useToast();
@@ -537,6 +538,11 @@ export function ExpiredOffersTool() {
           [itemId]: '', 
           [`${itemId}_desc`]: '' 
         }));
+        setSourceUrls(prev => ({ 
+          ...prev, 
+          [itemId]: '', 
+          [`${itemId}_desc`]: '' 
+        }));
         
         // Collapse the input fields for this specific item
         setShowRedirectInput(prev => ({ 
@@ -833,7 +839,7 @@ export function ExpiredOffersTool() {
                            <Stack space={2}>
                              <TextInput
                                size={1}
-                               placeholder="Target URL"
+                               placeholder="Old URL to redirect FROM (e.g., /old-domain-path)"
                                value={targetUrls[offer._id] || ''}
                                onChange={(event) => setTargetUrls(prev => ({
                                  ...prev,
@@ -864,12 +870,12 @@ export function ExpiredOffersTool() {
                              />
                              <Button
                                size={1}
-                               text="Redirect to Page"
+                               text="Create Redirect FROM Old URL"
                                tone="positive"
                                onClick={() => createRedirect(
+                                 targetUrls[offer._id], // Old URL (what user enters)
                                  offer.slug?.current && offer.country?.slug?.current && offer.bonusType?.name ? 
-                                   `/${offer.country.slug.current}/${offer.bonusType.name.toLowerCase().replace(/\s+/g, '-')}/${offer.slug.current}` : '', 
-                                 targetUrls[offer._id],
+                                   `/${offer.country.slug.current}/${offer.bonusType.name.toLowerCase().replace(/\s+/g, '-')}/${offer.slug.current}` : '', // Current offer URL (target)
                                  targetUrls[`${offer._id}_desc`] || '',
                                  offer._id
                                )}
@@ -1036,20 +1042,20 @@ export function ExpiredOffersTool() {
                               <Stack space={2}>
                                 <TextInput
                                   size={1}
-                                  placeholder="Target URL"
-                                  value={targetUrls[page._id] || ''}
-                                  onChange={(event) => setTargetUrls(prev => ({
+                                  placeholder="Source URL to redirect FROM (e.g., /source-page-path)"
+                                  value={sourceUrls[page._id] || ''}
+                                  onChange={(event) => setSourceUrls(prev => ({
                                     ...prev,
                                     [page._id]: event.target.value
                                   }))}
                                   style={{ minWidth: '300px' }}
                                 />
-                                {targetUrls[page._id] && (
+                                {sourceUrls[page._id] && (
                                   <Text size={1} style={{ 
-                                    color: isValidUrlFormat(targetUrls[page._id]) ? '#059669' : '#DC2626',
+                                    color: isValidUrlFormat(sourceUrls[page._id]) ? '#059669' : '#DC2626',
                                     fontSize: '12px'
                                   }}>
-                                    {isValidUrlFormat(targetUrls[page._id]) 
+                                    {isValidUrlFormat(sourceUrls[page._id]) 
                                       ? '✅ Valid URL format' 
                                       : '❌ Invalid URL format'
                                     }
@@ -1058,8 +1064,8 @@ export function ExpiredOffersTool() {
                                 <TextInput
                                   size={1}
                                   placeholder="Description (optional)"
-                                  value={targetUrls[`${page._id}_desc`] || ''}
-                                  onChange={(event) => setTargetUrls(prev => ({
+                                  value={sourceUrls[`${page._id}_desc`] || ''}
+                                  onChange={(event) => setSourceUrls(prev => ({
                                     ...prev,
                                     [`${page._id}_desc`]: event.target.value
                                   }))}
@@ -1067,15 +1073,15 @@ export function ExpiredOffersTool() {
                                 />
                                                                   <Button
                                     size={1}
-                                    text="Redirect to Page"
+                                    text="Create Redirect FROM Source URL"
                                     tone="positive"
                                     onClick={() => createRedirect(
-                                      page.path, 
-                                      targetUrls[page._id],
-                                      targetUrls[`${page._id}_desc`] || '',
+                                      sourceUrls[page._id], // Source URL (what user enters)
+                                      page.path, // Current page path (target)
+                                      sourceUrls[`${page._id}_desc`] || '',
                                       page._id
                                     )}
-                                    disabled={processing || !targetUrls[page._id]?.trim() || !isValidUrlFormat(targetUrls[page._id])}
+                                    disabled={processing || !sourceUrls[page._id]?.trim() || !isValidUrlFormat(sourceUrls[page._id])}
                                   />
                               </Stack>
                             )}

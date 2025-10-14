@@ -19,6 +19,13 @@ export const useClickTracking = () => {
     linkUrl: string,
     linkTitle?: string
   ) => {
+    // Check cookie consent before tracking
+    const { areCookiesAccepted } = await import('../lib/cookieConsent');
+    if (!areCookiesAccepted()) {
+      console.log('Tracking skipped - cookies not accepted');
+      return;
+    }
+
     const trackingData: ClickTrackingData = {
       linkId,
       linkType,
@@ -35,4 +42,4 @@ export const useClickTracking = () => {
   }, [pathname]);
 
   return { trackLinkClick };
-}; 
+};

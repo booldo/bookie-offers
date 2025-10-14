@@ -658,7 +658,24 @@ export default async function CountryFiltersPage({ params }) {
     awaitedParams.filters && awaitedParams.filters.length >= 2;
   if (isOfferDetailsPage) {
     const offerSlug = awaitedParams.filters[awaitedParams.filters.length - 1];
-    // Server-side check for gone offer
+    
+    // IMPORTANT: Check for redirects BEFORE checking if offer exists
+    // This allows redirects to work even for URLs that look like offer paths
+    const currentPath = `/${awaitedParams.slug}/${awaitedParams.filters.join('/')}`;
+    console.log('🔍 Checking for redirects before offer lookup:', currentPath);
+    
+    // Check for redirects - don't wrap in try/catch as NEXT_REDIRECT needs to bubble up
+    const { checkRedirect } = await import('../../../lib/redirects');
+    const redirectResult = await checkRedirect(currentPath);
+    
+    if (redirectResult && redirectResult.url) {
+      console.log('✅ Redirect found in page route, redirecting:', redirectResult);
+      // Use Next.js redirect to handle the redirect - this will throw NEXT_REDIRECT
+      const { redirect: nextRedirect } = await import('next/navigation');
+      nextRedirect(redirectResult.url, redirectResult.type === '302' ? 'replace' : 'push');
+    }
+    
+    // Server-side check for gone offer (only if no redirect found)
     const offer = await getVisibleDocOrNull("offers", offerSlug);
     if (!offer) {
       notFound();
@@ -951,7 +968,7 @@ export default async function CountryFiltersPage({ params }) {
       );
       if (bookmaker) {
         filterComparison = bookmaker.comparison || null;
-        filterFaqs = bookmaker.faqs || null;
+        filterFaqs = bookmaker.faqs || [];
       } else {
         // Try bonus type
         const bonusType = await client.fetch(
@@ -965,7 +982,7 @@ export default async function CountryFiltersPage({ params }) {
         );
         if (bonusType) {
           filterComparison = bonusType.comparison || null;
-          filterFaqs = bonusType.faqs || null;
+          filterFaqs = bonusType.faqs || [];
         }
       }
     }

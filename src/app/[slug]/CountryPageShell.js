@@ -456,7 +456,7 @@ export default async function CountryPageShell({ params, children, isOfferDetail
         </div>
         
         {/* Static home content + FAQ section - prerendered */}
-        {!isOfferDetailsPage && ((filterComparison && filterComparison.length > 0) || (filterFaqs && filterFaqs.length > 0) || (!filterComparison && countryData.comparison && countryData.comparison.length > 0) || (countryData.faqs && countryData.faqs.length > 0)) && (
+        {!isOfferDetailsPage && ((filterComparison && filterComparison.length > 0) || (filterFaqs && filterFaqs.length > 0) || (!filterComparison && countryData.comparison && countryData.comparison.length > 0) || (filterFaqs === null && countryData.faqs && countryData.faqs.length > 0)) && (
           <section className="bg-white rounded-xl p-4 sm:p-6 mb-8 sm:mb-10 shadow-sm border border-gray-100">
             {(filterComparison && filterComparison.length > 0) || (!filterComparison && countryData.comparison && countryData.comparison.length > 0) ? (
               <div className="mb-4 sm:mb-6">
@@ -468,8 +468,8 @@ export default async function CountryPageShell({ params, children, isOfferDetail
                 </div>
               </div>
             ) : null}
-            {((filterFaqs && filterFaqs.length > 0) || (!filterFaqs && countryData.faqs && countryData.faqs.length > 0)) ? (
-              <FAQSection faqs={filterFaqs || countryData.faqs || []} />
+            {(filterFaqs !== null && filterFaqs.length > 0) || (filterFaqs === null && countryData.faqs && countryData.faqs.length > 0) ? (
+              <FAQSection faqs={filterFaqs !== null && filterFaqs.length > 0 ? filterFaqs : countryData.faqs || []} />
             ) : null}
           </section>
         )}

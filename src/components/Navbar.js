@@ -714,7 +714,7 @@ export default function Navbar() {
         >
           <div className="flex flex-col gap-6 px-10 py-4 text-gray-800 text-base font-medium">
             {/* Default Menu Items */}
-            <Link
+            {/* <Link
               href={
                 pathname.startsWith("/ng")
                   ? "/ng"
@@ -725,7 +725,38 @@ export default function Navbar() {
               className="hover:underline"
             >
               Home
-            </Link>
+            </Link> */}
+
+            {hamburgerMenus.map(
+              (menu) =>
+                menu?.title &&
+                !menu.noindex &&
+                menu.sitemapInclude !== false &&
+                (menu.url ? (
+                  <a
+                    key={menu._id || menu.title}
+                    href={menu.url}
+                    className="hover:underline font-[14px]"
+                    target="_self"
+                  >
+                    {menu.title}
+                  </a>
+                ) : (
+                  <Link
+                    key={menu._id || menu.title}
+                    href={`/${
+                      menu?.slug?.current ||
+                      (menu.title || "")
+                        .toLowerCase()
+                        .replace(/\s+/g, "-")
+                        .replace(/[^a-z0-9-]/g, "")
+                    }`}
+                    className="hover:underline font-[14px]"
+                  >
+                    {menu.title}
+                  </Link>
+                ))
+            )}
             <div className="relative">
               <button
                 onClick={() => setBrieflyOpen(!brieflyOpen)}
@@ -763,36 +794,6 @@ export default function Navbar() {
                 </div>
               )}
             </div>
-            {hamburgerMenus.map(
-              (menu) =>
-                menu?.title &&
-                !menu.noindex &&
-                menu.sitemapInclude !== false &&
-                (menu.url ? (
-                  <a
-                    key={menu._id || menu.title}
-                    href={menu.url}
-                    className="hover:underline font-[14px]"
-                    target="_self"
-                  >
-                    {menu.title}
-                  </a>
-                ) : (
-                  <Link
-                    key={menu._id || menu.title}
-                    href={`/${
-                      menu?.slug?.current ||
-                      (menu.title || "")
-                        .toLowerCase()
-                        .replace(/\s+/g, "-")
-                        .replace(/[^a-z0-9-]/g, "")
-                    }`}
-                    className="hover:underline font-[14px]"
-                  >
-                    {menu.title}
-                  </Link>
-                ))
-            )}
           </div>
         </div>
       )}

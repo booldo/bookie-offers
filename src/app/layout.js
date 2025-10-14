@@ -1,5 +1,7 @@
 import "./globals.css";
 import { getLandingPageSettings } from "../sanity/lib/seo";
+import CookieBanner from "../components/CookieBanner";
+import AnalyticsInitializer from "../components/AnalyticsInitializer";
 
 export async function generateMetadata() {
   const landingPage = await getLandingPageSettings();
@@ -21,6 +23,8 @@ export default function RootLayout({ children }) {
       </head>
       <body className={`antialiased`} style={{ fontFamily: "var(--font-sans)" }}>
         {children}
+        <CookieBanner />
+        <AnalyticsInitializer />
       </body>
     </html>
   );
