@@ -920,7 +920,10 @@ export default function DynamicOffers({
       }
 
       // Check bonus type filter (AND logic between categories, OR within category)
+      if (selectedBonusTypesLower.length > 0) {
+        const offerBonusType = offer.bonusType?.name?.toLowerCase() || "";
         matchesBonusType = selectedBonusTypesLower.includes(offerBonusType);
+      }
 
       // Check advanced filters (if any selected)
       // Check advanced filters (AND logic between categories, OR within category)
