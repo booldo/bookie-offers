@@ -88,6 +88,16 @@ const portableTextComponents = {
         {children}
       </code>
     ),
+    link: ({ children, value }) => (
+      <a
+        href={value?.href}
+        target={value?.blank ? "_blank" : "_self"}
+        rel={value?.blank ? "noopener noreferrer" : undefined}
+        className="text-blue-600 hover:text-blue-800 underline"
+      >
+        {children}
+      </a>
+    ),
   },
   types: {
     image: ({ value }) => {
@@ -699,19 +709,6 @@ function OfferDetailsInner({ slug }) {
           </div>
         )}
 
-        {/* Individual Offer Banner */}
-        {/* {!loading && !error && offer && offer.banner && (
-          <div className="mb-6">
-            <Image
-              src={urlFor(offer.banner).width(1200).height(200).url()}
-              alt={offer.bannerAlt || offer.title}
-              width={1200}
-              height={200}
-              className="w-full h-24 sm:h-48 object-cover rounded-xl"
-            />
-          </div>
-        )} */}
-        
         {/* Offer Card */}
         {error && <div className="text-center text-red-500">{error}</div>}
         {!error && offer && (
