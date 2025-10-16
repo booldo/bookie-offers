@@ -670,9 +670,14 @@ export default async function CountryFiltersPage({ params }) {
     
     if (redirectResult && redirectResult.url) {
       console.log('✅ Redirect found in page route, redirecting:', redirectResult);
-      // Use Next.js redirect to handle the redirect - this will throw NEXT_REDIRECT
-      const { redirect: nextRedirect } = await import('next/navigation');
-      nextRedirect(redirectResult.url, redirectResult.type === '302' ? 'replace' : 'push');
+      // Use correct Next.js redirect function based on redirect type
+      if (redirectResult.type === '302') {
+        const { redirect: nextRedirect } = await import('next/navigation');
+        nextRedirect(redirectResult.url); // 307/303 temporary redirect
+      } else {
+        const { permanentRedirect } = await import('next/navigation');
+        permanentRedirect(redirectResult.url); // 308/301 permanent redirect
+      }
     }
     
     // Server-side check for gone offer (only if no redirect found)
