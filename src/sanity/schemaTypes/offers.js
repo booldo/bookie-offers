@@ -491,6 +491,26 @@ export default {
       description: "SEO: Should this page be included in sitemap.xml?",
       initialValue: true,
     },
+    {
+      name: "draftPreview",
+      title: "Draft Preview Settings",
+      type: "object",
+      description: "Configure preview link expiry and notes",
+      fields: [
+        {
+          name: "previewExpiry",
+          title: "Preview Expiry Date",
+          type: "datetime",
+          description: "When should this preview link expire? (Leave empty for no expiry)",
+        },
+        {
+          name: "previewNotes",
+          title: "Preview Notes",
+          type: "text",
+          description: "Internal notes about this preview (not shown to viewers)",
+        },
+      ],
+    },
   ],
   preview: {
     select: {
