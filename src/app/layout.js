@@ -2,6 +2,10 @@ import "./globals.css";
 import { getLandingPageSettings } from "../sanity/lib/seo";
 import CookieBanner from "../components/CookieBanner";
 import AnalyticsInitializer from "../components/AnalyticsInitializer";
+import { VisualEditing } from "next-sanity";
+import { draftMode } from "next/headers";
+import { DisableDraftMode } from "../components/DisableDraftMode";
+
 
 export async function generateMetadata() {
   const landingPage = await getLandingPageSettings();
@@ -14,7 +18,8 @@ export async function generateMetadata() {
   };
 }
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  const { isEnabled } = await draftMode();
   return (
     <html lang="en">
       <head>
@@ -25,6 +30,13 @@ export default function RootLayout({ children }) {
         {children}
         <CookieBanner />
         <AnalyticsInitializer />
+
+        {isEnabled && (
+          <>
+            <VisualEditing  />
+            <DisableDraftMode />
+          </>
+        )}
       </body>
     </html>
   );

@@ -213,7 +213,7 @@ const portableTextComponents = {
   },
 };
 
-function ArticleInner({ slug }) {
+function ArticleInner({ slug, isPreview = false, draftId = null }) {
   const router = useRouter();
   const [article, setArticle] = useState(null);
   const [articles, setArticles] = useState([]);
@@ -225,8 +225,26 @@ function ArticleInner({ slug }) {
     async function fetchData() {
       setLoading(true);
       try {
-        const [articleData, allArticles] = await Promise.all([
-          client.fetch(`*[_type == "article" && slug.current == $slug][0]{
+        // If in preview mode, fetch by draftId instead of slug
+        let articleQuery;
+        let queryParams;
+        
+        if (isPreview && draftId) {
+          console.log('👁️ Fetching draft article by ID:', draftId);
+          articleQuery = `*[_id == $draftId][0]{
+            _id,
+            title,
+            slug,
+            mainImage,
+            content,
+            faq,
+            noindex,
+            sitemapInclude,
+            draftPreview
+          }`;
+          queryParams = { draftId };
+        } else {
+          articleQuery = `*[_type == "article" && slug.current == $slug][0]{
             _id,
             title,
             slug,
@@ -235,7 +253,12 @@ function ArticleInner({ slug }) {
             faq,
             noindex,
             sitemapInclude
-          }`, { slug }),
+          }`;
+          queryParams = { slug };
+        }
+        
+        const [articleData, allArticles] = await Promise.all([
+          client.fetch(articleQuery, queryParams),
           client.fetch(`*[_type == "article" && (noindex != true) && (sitemapInclude != false)]|order(_createdAt desc){
             _id,
             title,
@@ -261,7 +284,7 @@ function ArticleInner({ slug }) {
       }
     }
     fetchData();
-  }, [slug, router]);
+  }, [slug, router, isPreview, draftId]);
 
   const handleFAQToggle = (index) => {
     setOpenFAQIndex(openFAQIndex === index ? null : index);

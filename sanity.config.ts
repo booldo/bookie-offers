@@ -7,6 +7,7 @@
 import {visionTool} from '@sanity/vision'
 import {defineConfig} from 'sanity'
 import {structureTool} from 'sanity/structure'
+import {presentationTool} from 'sanity/presentation'
 
 // Go to https://www.sanity.io/docs/api-versioning to learn how API versioning works
 import {apiVersion, dataset, projectId} from './src/sanity/env'
@@ -26,5 +27,16 @@ export default defineConfig({
     // https://www.sanity.io/docs/the-vision-plugin
     visionTool({defaultApiVersion: apiVersion}),
     expiredOffersManager(),
+    
+    // Presentation Tool for live preview
+    presentationTool({
+      previewUrl: {
+        origin: process.env.NEXT_PUBLIC_SANITY_STUDIO_URL?.replace('/studio', '') || 'http://localhost:3000',
+        preview: '/',
+        previewMode: {
+          enable: '/api/draft/enable',
+        },
+      },
+    }),
   ],
 })

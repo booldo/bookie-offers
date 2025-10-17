@@ -355,7 +355,7 @@ const FAQItem = ({ question, answer, isOpen, onToggle }) => {
   );
 };
 
-function OfferDetailsInner({ slug }) {
+function OfferDetailsInner({ slug, isPreview = false, draftId = null }) {
   const {
     countryData,
     loading: countryLoading,
@@ -390,54 +390,107 @@ function OfferDetailsInner({ slug }) {
     // Fetch the main offer and more offers from Sanity - now dynamic by country
     const fetchData = async () => {
       try {
-        const mainOfferQuery = `*[_type == "offers" && country->country == $countryName && slug.current == $slug && (!defined(expires) || expires > now())][0]{
-          _id,
-          title,
-          bonusType->{name},
-          slug,
-          bookmaker->{
+        // If in preview mode, fetch by draftId instead of slug
+        let mainOfferQuery;
+        let queryParams;
+        
+        if (isPreview && draftId) {
+          console.log('👁️ Fetching draft offer by ID:', draftId);
+          mainOfferQuery = `*[_id == $draftId][0]{
             _id,
-            name,
-            logo,
-            logoAlt,
-            logoUrl,
-            paymentMethods[]->{
+            title,
+            bonusType->{name},
+            slug,
+            bookmaker->{
               _id,
-              name
+              name,
+              logo,
+              logoAlt,
+              logoUrl,
+              paymentMethods[]->{
+                _id,
+                name
+              },
+              license[]->{
+                _id,
+                name
+              },
+              country
             },
-            license[]->{
+            maxBonus,
+            minDeposit,
+            expires,
+            published,
+            affiliateLink->{
               _id,
-              name
+              name,
+              affiliateUrl,
+              isActive,
+              prettyLink
             },
-            country
-          },
-          maxBonus,
-          minDeposit,
-          expires,
-          published,
-          affiliateLink->{
+            banner,
+            bannerAlt,
+            howItWorks,
+            faq,
+            metaTitle,
+            metaDescription,
+            noindex,
+            nofollow,
+            canonicalUrl,
+            sitemapInclude,
+            offerSummary,
+            draftPreview
+          }`;
+          queryParams = { draftId };
+        } else {
+          mainOfferQuery = `*[_type == "offers" && country->country == $countryName && slug.current == $slug && (!defined(expires) || expires > now())][0]{
             _id,
-            name,
-            affiliateUrl,
-            isActive,
-            prettyLink
-          },
-          banner,
-          bannerAlt,
-          howItWorks,
-          faq,
-          metaTitle,
-          metaDescription,
-          noindex,
-          nofollow,
-          canonicalUrl,
-          sitemapInclude,
-          offerSummary
-        }`;
-        const mainOffer = await client.fetch(mainOfferQuery, {
-          slug,
-          countryName,
-        });
+            title,
+            bonusType->{name},
+            slug,
+            bookmaker->{
+              _id,
+              name,
+              logo,
+              logoAlt,
+              logoUrl,
+              paymentMethods[]->{
+                _id,
+                name
+              },
+              license[]->{
+                _id,
+                name
+              },
+              country
+            },
+            maxBonus,
+            minDeposit,
+            expires,
+            published,
+            affiliateLink->{
+              _id,
+              name,
+              affiliateUrl,
+              isActive,
+              prettyLink
+            },
+            banner,
+            bannerAlt,
+            howItWorks,
+            faq,
+            metaTitle,
+            metaDescription,
+            noindex,
+            nofollow,
+            canonicalUrl,
+            sitemapInclude,
+            offerSummary
+          }`;
+          queryParams = { slug, countryName };
+        }
+        
+        const mainOffer = await client.fetch(mainOfferQuery, queryParams);
 
         // Check if offer is hidden and set state
         if (
@@ -487,7 +540,7 @@ function OfferDetailsInner({ slug }) {
     };
 
     fetchData();
-  }, [slug, loadMoreCount, isCountryLoaded, getCountryName]);
+  }, [slug, loadMoreCount, isCountryLoaded, getCountryName, isPreview, draftId]);
 
   // Restore scroll position when component mounts
   useLayoutEffect(() => {

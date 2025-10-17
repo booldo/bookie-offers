@@ -214,8 +214,13 @@ export async function generateMetadata({ params }) {
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export default async function CountryPage({ params }) {
+export default async function CountryPage({ params, searchParams }) {
   const awaitedParams = await params;
+  const awaitedSearchParams = await searchParams;
+  
+  // Check if this is preview mode
+  const isPreview = awaitedSearchParams?.preview === 'true';
+  const draftId = awaitedSearchParams?.draftId;
   
   // CRITICAL: Validate that this is either a valid country or hamburger menu page
   console.log('🔍 [slug]/page.js - Validating slug:', awaitedParams.slug);

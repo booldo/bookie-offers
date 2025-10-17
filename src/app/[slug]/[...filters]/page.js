@@ -507,8 +507,9 @@ export async function generateMetadata({ params }) {
 
 import { getVisibleDocOrNull } from "../../../sanity/lib/checkGoneStatus";
 
-export default async function CountryFiltersPage({ params }) {
+export default async function CountryFiltersPage({ params, searchParams }) {
   const awaitedParams = await params;
+  const awaitedSearchParams = await searchParams;
 
   // Validate country slug at the top - CRITICAL for 404 handling
   console.log(" Validating country slug:", awaitedParams.slug);
@@ -521,6 +522,12 @@ export default async function CountryFiltersPage({ params }) {
     return notFound(); // This will render the Next.js 404 page
   }
   console.log(" Valid country found:", awaitedParams.slug);
+
+  // Check if this is preview mode
+  const isPreview = awaitedSearchParams?.preview === 'true';
+  const draftId = awaitedSearchParams?.draftId;
+  
+  console.log('🔍 Preview mode check:', { isPreview, draftId });
 
   // Temporary debugging - remove after testing
   console.log(" DEBUG - Full params:", awaitedParams);
@@ -658,6 +665,68 @@ export default async function CountryFiltersPage({ params }) {
     awaitedParams.filters && awaitedParams.filters.length >= 2;
   if (isOfferDetailsPage) {
     const offerSlug = awaitedParams.filters[awaitedParams.filters.length - 1];
+    
+    // Handle preview mode for offers
+    if (isPreview && draftId) {
+      console.log('👁️ Preview mode: Fetching draft offer by draftId:', draftId);
+      
+      const draftOffer = await client.fetch(
+        `*[_id == $draftId][0]{
+          _id,
+          _type,
+          slug,
+          draftPreview
+        }`,
+        { draftId }
+      );
+      
+      if (!draftOffer) {
+        console.log('❌ Draft offer not found');
+        notFound();
+      }
+      
+      // Check if preview has expired
+      const isExpired = draftOffer.draftPreview?.previewExpiry && 
+        new Date() > new Date(draftOffer.draftPreview.previewExpiry);
+      
+      if (isExpired) {
+        console.log('⚠️ Preview has expired');
+      }
+      
+      const { PreviewBanner } = await import('../../../components/PreviewBanner');
+      
+      return (
+        <>
+          <PreviewBanner expiryDate={draftOffer.draftPreview?.previewExpiry} />
+          <div style={{ marginTop: '60px' }}>
+            <CountryPageShell params={awaitedParams} isOfferDetailsPage={true}>
+              <Suspense
+                fallback={
+                  <div className="flex justify-center items-center py-20">
+                    <div className="flex space-x-2">
+                      <div
+                        className="w-3 h-3 bg-gray-500 rounded-full animate-bounce"
+                        style={{ animationDelay: "0ms" }}
+                      ></div>
+                      <div
+                        className="w-3 h-3 bg-gray-500 rounded-full animate-bounce"
+                        style={{ animationDelay: "150ms" }}
+                      ></div>
+                      <div
+                        className="w-3 h-3 bg-gray-500 rounded-full animate-bounce"
+                        style={{ animationDelay: "300ms" }}
+                      ></div>
+                    </div>
+                  </div>
+                }
+              >
+                <OfferDetailsInner slug={draftOffer.slug?.current || offerSlug} isPreview={true} draftId={draftId} />
+              </Suspense>
+            </CountryPageShell>
+          </div>
+        </>
+      );
+    }
     
     // IMPORTANT: Check for redirects BEFORE checking if offer exists
     // This allows redirects to work even for URLs that look like offer paths
