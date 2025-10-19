@@ -157,10 +157,14 @@ export async function middleware(request) {
         }
 
         console.log('🎯 Redirecting to:', targetUrl);
+        console.log('🔢 Redirect type from Sanity:', redirect.type);
         
         // Perform redirect with the specified type
+        // Use explicit status codes: 301 for permanent, 302 for temporary
         const statusCode = redirect.type === '302' ? 302 : 301;
-        return NextResponse.redirect(targetUrl, statusCode);
+        console.log('🔢 Using status code:', statusCode);
+        
+        return NextResponse.redirect(targetUrl, { status: statusCode });
       }
     } else {
       console.log('❌ No redirect found for:', pathname);

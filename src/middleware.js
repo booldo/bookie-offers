@@ -6,11 +6,46 @@ import { checkGoneStatus } from './lib/checkGoneStatus';
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
   
-  // Generic global 410 Gone logic for all dynamic content types
+  // Skip middleware for excluded routes
   const excludedRoutes = ['/briefly', '/briefly/calculators', '/faq', '/footer', '/analytics', '/robots.txt', '/sitemap.xml', '/sitemap-index.xml'];
   if (excludedRoutes.includes(pathname)) {
     return NextResponse.next();
   }
+
+  // ✅ STEP 1: Check for redirects FIRST
+  // This ensures redirects take priority over 410 responses
+  try {
+    console.log('🔍 STEP 1: Checking for redirects first:', pathname);
+    const redirect = await checkRedirect(pathname);
+    
+    if (redirect && redirect.type !== '410') {
+      console.log('✅ Redirect found, using redirect instead of 410:', redirect);
+      
+      // Construct proper redirect URL
+      let targetUrl = redirect.url;
+      if (targetUrl) {
+        // If target URL is relative, make it absolute
+        if (targetUrl.startsWith('/')) {
+          targetUrl = `${request.nextUrl.origin}${targetUrl}`;
+        } else if (!targetUrl.startsWith('http')) {
+          targetUrl = `${request.nextUrl.origin}/${targetUrl}`;
+        }
+
+        console.log('🎯 Redirecting to:', targetUrl);
+        
+        // Perform redirect with the specified type
+        const statusCode = redirect.type === '302' ? 302 : 301;
+        return NextResponse.redirect(targetUrl, statusCode);
+      }
+    }
+    
+    console.log('❌ No redirect found, proceeding to 410 check');
+  } catch (error) {
+    console.error('❌ Error checking redirects in src/middleware:', error);
+  }
+
+  // ✅ STEP 2: Check for 410 status ONLY if no redirect was found
+  console.log('🔍 STEP 2: Checking for 410 status:', pathname);
   const dynamicPatterns = [
     // Removed article pattern to let Next.js handle 404s naturally
     // { regex: /^\/briefly\/([^\/]+)$/, type: 'article' },
@@ -35,6 +70,7 @@ export async function middleware(request) {
       }
       const { shouldReturn410, doc } = await checkGoneStatus(type, slug);
       if (shouldReturn410) {
+        console.log('✅ Returning 410 status (no redirect found)');
         const html = generate410Html({ offer: doc, isExpired: false, isHidden: true });
         return new Response(html, {
           status: 410,
@@ -45,36 +81,6 @@ export async function middleware(request) {
         });
       }
     }
-  }
-
-  // Check for redirects BEFORE checking 410 status
-  // This ensures redirects take priority over 410 responses
-  try {
-    console.log('🔍 Checking for redirects before 410 status:', pathname);
-    const redirect = await checkRedirect(pathname);
-    
-    if (redirect && redirect.type !== '410') {
-      console.log('✅ Redirect found, using redirect instead of 410:', redirect);
-      
-      // Construct proper redirect URL
-      let targetUrl = redirect.url;
-      if (targetUrl) {
-        // If target URL is relative, make it absolute
-        if (targetUrl.startsWith('/')) {
-          targetUrl = `${request.nextUrl.origin}${targetUrl}`;
-        } else if (!targetUrl.startsWith('http')) {
-          targetUrl = `${request.nextUrl.origin}/${targetUrl}`;
-        }
-
-        console.log('🎯 Redirecting to:', targetUrl);
-        
-        // Perform redirect with the specified type
-        const statusCode = redirect.type === '302' ? 302 : 301;
-        return NextResponse.redirect(targetUrl, statusCode);
-      }
-    }
-  } catch (error) {
-    console.error('❌ Error checking redirects in src/middleware:', error);
   }
 
   // Check for offer pages that should return 410 status
