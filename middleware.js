@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
-import { checkRedirect } from './src/lib/redirects';
+
+// Edge Runtime configuration for proper middleware execution
+export const runtime = 'edge';
 
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
@@ -26,8 +28,8 @@ export async function middleware(request) {
       return NextResponse.next();
     }
     
-    // For non-article paths, check redirects normally
-    const redirect = await checkRedirect(pathname);
+    // For non-article paths, check redirects using native fetch (Edge Runtime compatible)
+    const redirect = await checkRedirectWithFetch(pathname);
     
     if (redirect) {
       console.log('✅ Redirect found:', redirect);
@@ -168,6 +170,59 @@ export async function middleware(request) {
   }
 
   return NextResponse.next();
+}
+
+// Inline redirect check using native fetch API (100% Edge Runtime compatible)
+// This avoids importing Sanity client which has Node.js dependencies
+async function checkRedirectWithFetch(path) {
+  try {
+    const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID;
+    const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET;
+    const apiVersion = process.env.NEXT_PUBLIC_SANITY_API_VERSION || '2025-07-13';
+    
+    if (!projectId || !dataset) {
+      console.error('❌ Missing Sanity environment variables');
+      return null;
+    }
+
+    // GROQ query to find active redirects for this path
+    const query = `*[_type == "redirects" && sourcePath == $path && isActive == true][0] {
+      targetUrl,
+      redirectType
+    }`;
+    
+    // Use Sanity HTTP API directly with native fetch
+    const url = `https://${projectId}.api.sanity.io/v${apiVersion}/data/query/${dataset}?query=${encodeURIComponent(query)}&$path=${encodeURIComponent(path)}`;
+    
+    const response = await fetch(url, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      console.error('❌ Sanity API error:', response.status);
+      return null;
+    }
+    
+    const data = await response.json();
+    const redirect = data.result;
+    
+    if (redirect?.redirectType === '410') {
+      return { type: '410' };
+    }
+    if (redirect?.targetUrl) {
+      return {
+        url: redirect.targetUrl,
+        type: redirect.redirectType || '301'
+      };
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('❌ Error checking redirects:', error);
+    return null;
+  }
 }
 
 export const config = {

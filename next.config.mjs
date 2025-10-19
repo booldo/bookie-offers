@@ -1,9 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    optimizePackageImports: ['@portabletext/react'],
-    ppr: 'incremental',
-  },
+  // experimental: {
+  //   optimizePackageImports: ['@portabletext/react'],
+  //   ppr: 'incremental',
+  // },
   images: {
     remotePatterns: [
       {

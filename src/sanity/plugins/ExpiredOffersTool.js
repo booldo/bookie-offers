@@ -50,6 +50,7 @@ export function ExpiredOffersTool() {
   const [targetUrls, setTargetUrls] = useState({});
   const [sourceUrls, setSourceUrls] = useState({});
   const [showRedirectInput, setShowRedirectInput] = useState({});
+  const [redirectMode, setRedirectMode] = useState({}); // 'from' or 'to'
   
   const toast = useToast();
 
@@ -837,9 +838,21 @@ export function ExpiredOffersTool() {
                          
                          {showRedirectInput[offer._id] && (
                            <Stack space={2}>
+                             <Select
+                               size={1}
+                               value={redirectMode[offer._id] || 'from'}
+                               onChange={(event) => setRedirectMode(prev => ({
+                                 ...prev,
+                                 [offer._id]: event.target.value
+                               }))}
+                               style={{ minWidth: '300px' }}
+                             >
+                               <option value="from">Redirect FROM current page TO another URL</option>
+                               <option value="to">Redirect FROM old URL TO current page (Migration)</option>
+                             </Select>
                              <TextInput
                                size={1}
-                               placeholder="Old URL to redirect FROM (e.g., /old-domain-path)"
+                               placeholder={redirectMode[offer._id] === 'to' ? 'Old URL to redirect FROM (e.g., /old-site/offer-slug)' : 'Target URL to redirect TO'}
                                value={targetUrls[offer._id] || ''}
                                onChange={(event) => setTargetUrls(prev => ({
                                  ...prev,
@@ -870,15 +883,24 @@ export function ExpiredOffersTool() {
                              />
                              <Button
                                size={1}
-                               text="Create Redirect FROM Old URL"
+                               text={redirectMode[offer._id] === 'to' ? 'Create Redirect FROM Old URL' : 'Redirect FROM Current Page'}
                                tone="positive"
-                               onClick={() => createRedirect(
-                                 targetUrls[offer._id], // Old URL (what user enters)
-                                 offer.slug?.current && offer.country?.slug?.current && offer.bonusType?.name ? 
-                                   `/${offer.country.slug.current}/${offer.bonusType.name.toLowerCase().replace(/\s+/g, '-')}/${offer.slug.current}` : '', // Current offer URL (target)
-                                 targetUrls[`${offer._id}_desc`] || '',
-                                 offer._id
-                               )}
+                               onClick={() => {
+                                 const currentOfferURL = offer.slug?.current && offer.country?.slug?.current && offer.bonusType?.name ? 
+                                   `/${offer.country.slug.current}/${offer.bonusType.name.toLowerCase().replace(/\s+/g, '-')}/${offer.slug.current}` : '';
+                                 
+                                 // Mode 'to': Old URL (user input) redirects TO current page
+                                 // Mode 'from': Current page redirects TO target URL (user input)
+                                 const sourcePath = redirectMode[offer._id] === 'to' ? targetUrls[offer._id] : currentOfferURL;
+                                 const targetUrl = redirectMode[offer._id] === 'to' ? currentOfferURL : targetUrls[offer._id];
+                                 
+                                 createRedirect(
+                                   sourcePath,
+                                   targetUrl,
+                                   targetUrls[`${offer._id}_desc`] || '',
+                                   offer._id
+                                 );
+                               }}
                                disabled={processing || !targetUrls[offer._id]?.trim() || !isValidUrlFormat(targetUrls[offer._id])}
                              />
                            </Stack>
@@ -1040,11 +1062,23 @@ export function ExpiredOffersTool() {
                             
                             {showRedirectInput[page._id] && (
                               <Stack space={2}>
+                                <Select
+                                  size={1}
+                                  value={redirectMode[page._id] || 'from'}
+                                  onChange={(event) => setRedirectMode(prev => ({
+                                    ...prev,
+                                    [page._id]: event.target.value
+                                  }))}
+                                  style={{ minWidth: '300px' }}
+                                >
+                                  <option value="from">Redirect FROM current page TO another URL</option>
+                                  <option value="to">Redirect FROM old URL TO current page (Migration)</option>
+                                </Select>
                                 <TextInput
                                   size={1}
-                                  placeholder="Source URL to redirect FROM (e.g., /source-page-path)"
-                                  value={sourceUrls[page._id] || ''}
-                                  onChange={(event) => setSourceUrls(prev => ({
+                                  placeholder={redirectMode[page._id] === 'to' ? 'Old URL to redirect FROM (e.g., /old-site/page-slug)' : 'Target URL to redirect TO'}
+                                  value={targetUrls[page._id] || ''}
+                                  onChange={(event) => setTargetUrls(prev => ({
                                     ...prev,
                                     [page._id]: event.target.value
                                   }))}
@@ -1071,17 +1105,24 @@ export function ExpiredOffersTool() {
                                   }))}
                                   style={{ minWidth: '300px' }}
                                 />
-                                                                  <Button
+                                <Button
                                     size={1}
-                                    text="Create Redirect FROM Source URL"
+                                    text={redirectMode[page._id] === 'to' ? 'Create Redirect FROM Old URL' : 'Redirect FROM Current Page'}
                                     tone="positive"
-                                    onClick={() => createRedirect(
-                                      sourceUrls[page._id], // Source URL (what user enters)
-                                      page.path, // Current page path (target)
-                                      sourceUrls[`${page._id}_desc`] || '',
-                                      page._id
-                                    )}
-                                    disabled={processing || !sourceUrls[page._id]?.trim() || !isValidUrlFormat(sourceUrls[page._id])}
+                                    onClick={() => {
+                                      // Mode 'to': Old URL (user input) redirects TO current page
+                                      // Mode 'from': Current page redirects TO target URL (user input)
+                                      const sourcePath = redirectMode[page._id] === 'to' ? targetUrls[page._id] : page.path;
+                                      const targetUrl = redirectMode[page._id] === 'to' ? page.path : targetUrls[page._id];
+                                      
+                                      createRedirect(
+                                        sourcePath,
+                                        targetUrl,
+                                        targetUrls[`${page._id}_desc`] || '',
+                                        page._id
+                                      );
+                                    }}
+                                    disabled={processing || !targetUrls[page._id]?.trim() || !isValidUrlFormat(targetUrls[page._id])}
                                   />
                               </Stack>
                             )}
