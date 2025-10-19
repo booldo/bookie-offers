@@ -185,14 +185,26 @@ async function checkRedirectWithFetch(path) {
       return null;
     }
 
+    // Normalize path: remove trailing slash for consistency
+    const normalizedPath = path.endsWith('/') && path !== '/' ? path.slice(0, -1) : path;
+    console.log('🛠️ Original path:', path);
+    console.log('🛠️ Normalized path:', normalizedPath);
+
     // GROQ query to find active redirects for this path
-    const query = `*[_type == "redirects" && sourcePath == $path && isActive == true][0] {
+    // Try both with and without trailing slash
+    const query = `*[_type == "redirects" && (sourcePath == $path || sourcePath == $pathWithSlash) && isActive == true][0] {
       targetUrl,
-      redirectType
+      redirectType,
+      sourcePath
     }`;
     
     // Use Sanity HTTP API directly with native fetch
-    const url = `https://${projectId}.api.sanity.io/v${apiVersion}/data/query/${dataset}?query=${encodeURIComponent(query)}&$path=${encodeURIComponent(path)}`;
+    const pathWithSlash = normalizedPath + '/';
+    const url = `https://${projectId}.api.sanity.io/v${apiVersion}/data/query/${dataset}?query=${encodeURIComponent(query)}&$path=${encodeURIComponent(normalizedPath)}&$pathWithSlash=${encodeURIComponent(pathWithSlash)}`;
+    
+    console.log('🔎 Checking redirect for path:', normalizedPath);
+    console.log('🔎 Also checking with slash:', pathWithSlash);
+    console.log('🌐 Sanity API URL:', url);
     
     const response = await fetch(url, {
       headers: {
@@ -208,16 +220,22 @@ async function checkRedirectWithFetch(path) {
     const data = await response.json();
     const redirect = data.result;
     
+    console.log('📊 Sanity response data:', JSON.stringify(data, null, 2));
+    console.log('🎯 Redirect result:', redirect);
+    
     if (redirect?.redirectType === '410') {
+      console.log('⚠️ Returning 410 type');
       return { type: '410' };
     }
     if (redirect?.targetUrl) {
+      console.log('✅ Returning redirect:', redirect.targetUrl);
       return {
         url: redirect.targetUrl,
         type: redirect.redirectType || '301'
       };
     }
     
+    console.log('❌ No redirect found in Sanity');
     return null;
   } catch (error) {
     console.error('❌ Error checking redirects:', error);
