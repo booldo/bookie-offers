@@ -728,28 +728,11 @@ export default async function CountryFiltersPage({ params, searchParams }) {
       );
     }
     
-    // IMPORTANT: Check for redirects BEFORE checking if offer exists
-    // This allows redirects to work even for URLs that look like offer paths
-    const currentPath = `/${awaitedParams.slug}/${awaitedParams.filters.join('/')}`;
-    console.log('🔍 Checking for redirects before offer lookup:', currentPath);
+    // NOTE: Redirects are handled by middleware.js BEFORE this page component runs
+    // Middleware returns proper 301/302 status codes using NextResponse.redirect()
+    // No need to check redirects here - middleware handles everything
     
-    // Check for redirects - don't wrap in try/catch as NEXT_REDIRECT needs to bubble up
-    const { checkRedirect } = await import('../../../lib/redirects');
-    const redirectResult = await checkRedirect(currentPath);
-    
-    if (redirectResult && redirectResult.url) {
-      console.log('✅ Redirect found in page route, redirecting:', redirectResult);
-      // Use correct Next.js redirect function based on redirect type
-      if (redirectResult.type === '302') {
-        const { redirect: nextRedirect } = await import('next/navigation');
-        nextRedirect(redirectResult.url); // 307/303 temporary redirect
-      } else {
-        const { permanentRedirect } = await import('next/navigation');
-        permanentRedirect(redirectResult.url); // 308/301 permanent redirect
-      }
-    }
-    
-    // Server-side check for gone offer (only if no redirect found)
+    // Server-side check for gone offer
     const offer = await getVisibleDocOrNull("offers", offerSlug);
     if (!offer) {
       notFound();
