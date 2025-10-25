@@ -753,11 +753,11 @@ function OfferDetailsInner({ slug, isPreview = false, draftId = null }) {
           <div className="flex justify-center items-center py-6">
             <div className="w-full max-w-7xl px-2">
               {/* Banner skeleton - match final dimensions */}
-              <div className="w-full h-24 sm:h-48 bg-gray-200 rounded-xl mb-6 animate-pulse"></div>
+              {/* <div className="w-full h-24 sm:h-48 bg-gray-200 rounded-xl mb-6 animate-pulse"></div> */}
               {/* Content skeleton */}
-              <div className="h-6 bg-gray-200 rounded w-1/3 mb-4 animate-pulse"></div>
+              {/* <div className="h-6 bg-gray-200 rounded w-1/3 mb-4 animate-pulse"></div>
               <div className="h-10 bg-gray-200 rounded w-2/3 mb-6 animate-pulse"></div>
-              <div className="h-6 bg-gray-200 rounded w-1/2 animate-pulse"></div>
+              <div className="h-6 bg-gray-200 rounded w-1/2 animate-pulse"></div> */}
             </div>
           </div>
         )}
