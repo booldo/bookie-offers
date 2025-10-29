@@ -704,7 +704,7 @@ export default async function CountryFiltersPage({ params, searchParams }) {
           <PreviewBanner expiryDate={draftOffer.draftPreview?.previewExpiry} />
           <div style={{ marginTop: '60px' }}>
             <CountryPageShell params={awaitedParams} isOfferDetailsPage={true}>
-              {(draftOffer?.title || draftOffer?.offerSummary) && (
+              {/* {(draftOffer?.title || draftOffer?.offerSummary) && (
                 <div className="max-w-7xl mx-auto w-full px-4">
                   {draftOffer?.title && (
                     <h1 className="text-2xl font-bold text-gray-900 mb-2">{draftOffer.title}</h1>
@@ -718,7 +718,7 @@ export default async function CountryFiltersPage({ params, searchParams }) {
                     </div>
                   )}
                 </div>
-              )}
+              )} */}
               <Suspense
                 fallback={
                   <div className="flex justify-center items-center py-20">
@@ -769,7 +769,7 @@ export default async function CountryFiltersPage({ params, searchParams }) {
     // Extract the offer slug from the last segment
     return (
       <CountryPageShell params={awaitedParams} isOfferDetailsPage={true}>
-        {(offerForHeader?.title || offerForHeader?.offerSummary) && (
+        {/* {(offerForHeader?.title || offerForHeader?.offerSummary) && (
           <div className="max-w-7xl mx-auto w-full px-4">
             {offerForHeader?.title && (
               <h1 className="text-2xl font-bold text-gray-900 mb-2">{offerForHeader.title}</h1>
@@ -783,7 +783,7 @@ export default async function CountryFiltersPage({ params, searchParams }) {
               </div>
             )}
           </div>
-        )}
+        )} */}
         <Suspense
           fallback={
             <div className="flex justify-center items-center py-20">
