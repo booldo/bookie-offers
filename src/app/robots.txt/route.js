@@ -21,8 +21,8 @@ Allow: /footer/
 Allow: /faq/
 
 # Sitemaps
-Sitemap: https://bookie-offers-weld.vercel.app/sitemap.xml
-Sitemap: https://bookie-offers-weld.vercel.app/sitemap-index.xml`;
+Sitemap: https://booldo.com/sitemap.xml
+Sitemap: https://booldo.com/sitemap-index.xml`;
 
     // Use custom content from Sanity if available, otherwise use default
     const robotsContent = landingPage?.robotsTxt || defaultRobotsContent;
@@ -53,8 +53,8 @@ Allow: /footer/
 Allow: /faq/
 
 # Sitemaps
-Sitemap: https://bookie-offers-weld.vercel.app/sitemap.xml
-Sitemap: https://bookie-offers-weld.vercel.app/sitemap-index.xml`;
+Sitemap: https://booldo.com/sitemap.xml
+Sitemap: https://booldo.com/sitemap-index.xml`;
 
     return new NextResponse(fallbackContent, {
       status: 200,
