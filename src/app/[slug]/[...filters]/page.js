@@ -677,6 +677,8 @@ export default async function CountryFiltersPage({ params, searchParams }) {
           slug,
           title,
           bookmaker->{ name },
+          offerSummary,
+          published,
           draftPreview
         }`,
         { draftId }
@@ -702,9 +704,19 @@ export default async function CountryFiltersPage({ params, searchParams }) {
           <PreviewBanner expiryDate={draftOffer.draftPreview?.previewExpiry} />
           <div style={{ marginTop: '60px' }}>
             <CountryPageShell params={awaitedParams} isOfferDetailsPage={true}>
-              {draftOffer?.title && (
+              {(draftOffer?.title || draftOffer?.offerSummary) && (
                 <div className="max-w-7xl mx-auto w-full px-4">
-                  <h1 className="text-2xl font-bold text-gray-900 mb-2">{draftOffer.title}</h1>
+                  {draftOffer?.title && (
+                    <h1 className="text-2xl font-bold text-gray-900 mb-2">{draftOffer.title}</h1>
+                  )}
+                  {draftOffer?.published && (
+                    <div className="text-sm text-gray-500 mb-3">Published: {new Date(draftOffer.published).toLocaleDateString()}</div>
+                  )}
+                  {draftOffer?.offerSummary && (
+                    <div className="text-gray-700 mb-4">
+                      <PortableText value={draftOffer.offerSummary} components={portableTextComponents} />
+                    </div>
+                  )}
                 </div>
               )}
               <Suspense
@@ -748,6 +760,8 @@ export default async function CountryFiltersPage({ params, searchParams }) {
     const offerForHeader = await client.fetch(
       `*[_type == "offers" && slug.current == $slug][0]{
         title,
+        published,
+        offerSummary,
         bookmaker->{ name }
       }`,
       { slug: offerSlug }
@@ -755,9 +769,19 @@ export default async function CountryFiltersPage({ params, searchParams }) {
     // Extract the offer slug from the last segment
     return (
       <CountryPageShell params={awaitedParams} isOfferDetailsPage={true}>
-        {offerForHeader?.title && (
+        {(offerForHeader?.title || offerForHeader?.offerSummary) && (
           <div className="max-w-7xl mx-auto w-full px-4">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">{offerForHeader.title}</h1>
+            {offerForHeader?.title && (
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">{offerForHeader.title}</h1>
+            )}
+            {offerForHeader?.published && (
+              <div className="text-sm text-gray-500 mb-3">Published: {new Date(offerForHeader.published).toLocaleDateString()}</div>
+            )}
+            {offerForHeader?.offerSummary && (
+              <div className="text-gray-700 mb-4">
+                <PortableText value={offerForHeader.offerSummary} components={portableTextComponents} />
+              </div>
+            )}
           </div>
         )}
         <Suspense
