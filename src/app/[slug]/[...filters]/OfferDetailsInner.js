@@ -734,7 +734,7 @@ function OfferDetailsInner({ slug, isPreview = false, draftId = null }) {
               width="16"
               height="16"
             />
-            <h1 className="text-gray-900 font-medium cursor-pointer" >Home</h1>
+            <span className="text-gray-900 font-medium cursor-pointer" >Home</span>
           </Link>
           <span className="mx-1 flex-shrink-0">/</span>
           <Link
@@ -792,9 +792,9 @@ function OfferDetailsInner({ slug, isPreview = false, draftId = null }) {
                 </span>
               </div>
 
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
                 {offer.title}
-              </h1>
+              </h2>
 
               {/* Offer Summary */}
               {offer.offerSummary && (
