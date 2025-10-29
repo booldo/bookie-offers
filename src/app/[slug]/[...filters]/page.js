@@ -766,70 +766,10 @@ export default async function CountryFiltersPage({ params, searchParams }) {
       }`,
       { slug: offerSlug }
     );
-
-    // Fetch full offer details for server rendering (so content appears in View Source)
-    const offerFull = await client.fetch(
-      `*[_type == "offers" && slug.current == $slug][0]{
-        _id,
-        title,
-        bonusType->{name},
-        slug,
-        bookmaker->{
-          _id,
-          name,
-          logo,
-          logoAlt,
-          logoUrl,
-          paymentMethods[]->{ _id, name },
-          license[]->{ _id, name },
-          country
-        },
-        maxBonus,
-        minDeposit,
-        expires,
-        published,
-        affiliateLink->{ _id, name, affiliateUrl, isActive, prettyLink },
-        banner,
-        bannerAlt,
-        howItWorks,
-        faq,
-        metaTitle,
-        metaDescription,
-        noindex,
-        nofollow,
-        canonicalUrl,
-        sitemapInclude,
-        offerSummary
-      }`,
-      { slug: offerSlug }
-    );
-
-    // Fetch a server-rendered list of more offers for this country/bookmaker (limited)
-    const moreOffers = offerFull
-      ? await client.fetch(
-          `*[_type == "offers" && bookmaker._ref == $bookmakerId && slug.current != $currentSlug && (noindex != true) && (sitemapInclude != false) && (!defined(expires) || expires > now())] | order(_createdAt desc) [0...10]{
-            _id,
-            bonusType->{name},
-            slug,
-            bookmaker->{ _id, name, logo, logoAlt, logoUrl },
-            title,
-            offerSummary,
-            expires,
-            published
-          }`,
-          { bookmakerId: offerFull?.bookmaker?._id, currentSlug: offerSlug }
-        )
-      : [];
-    const totalMoreOffers = offerFull
-      ? await client.fetch(
-          `count(*[_type == "offers" && bookmaker._ref == $bookmakerId && slug.current != $currentSlug && (noindex != true) && (sitemapInclude != false) && (!defined(expires) || expires > now())])`,
-          { bookmakerId: offerFull?.bookmaker?._id, currentSlug: offerSlug }
-        )
-      : 0;
     // Extract the offer slug from the last segment
     return (
       <CountryPageShell params={awaitedParams} isOfferDetailsPage={true}>
-        {!offerFull && (offerForHeader?.title || offerForHeader?.offerSummary) && (
+        {(offerForHeader?.title || offerForHeader?.offerSummary) && (
           <div className="max-w-7xl mx-auto w-full px-4">
             {offerForHeader?.title && (
               <h1 className="text-2xl font-bold text-gray-900 mb-2">{offerForHeader.title}</h1>
@@ -844,207 +784,28 @@ export default async function CountryFiltersPage({ params, searchParams }) {
             )}
           </div>
         )}
-
-        {/* Breadcrumb (server-rendered) */}
-        {offerFull && (
-          <div className="mt-6 mb-4 flex items-center gap-2 text-sm text-gray-500 ml-2 flex-wrap">
-            <Link
-              href={`/${awaitedParams.slug}`}
-              className="hover:underline flex items-center gap-1 flex-shrink-0 cursor-pointer text-gray-900"
-            >
-              <img src="/assets/back-arrow.png" alt="Back" width="16" height="16" />
-              <span className="text-gray-900 font-medium cursor-pointer">Home</span>
-            </Link>
-            <span className="mx-1 flex-shrink-0">/</span>
-            <Link
-              href={`/${awaitedParams.slug}/${(offerFull?.bonusType?.name || "bonus").toLowerCase().replace(/\s+/g, "-")}`}
-              className="hover:underline text-gray-900 font-medium cursor-pointer"
-            >
-              {offerFull?.bonusType?.name || "Bonus"}
-            </Link>
-            <span className="mx-1 flex-shrink-0">/</span>
-            <span className="text-gray-900 font-medium">{offerFull?.title || "Offer"}</span>
-          </div>
-        )}
-
-        {/* Server-rendered offer body so it appears in View Source */}
-        {offerFull && (
-          <div className="bg-white p-1 sm:p-6 mb-6 flex flex-col">
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex items-center gap-3">
-                {offerFull.bookmaker?.logo ? (
-                  <img
-                    src={offerFull.bookmaker.logo}
-                    alt={offerFull.bookmaker.logoAlt || offerFull.bookmaker.name || ''}
-                    width="40"
-                    height="40"
-                    className="rounded-md"
-                  />
-                ) : (
-                  <div className="w-10 h-10 bg-gray-100 rounded-md" />)
-                }
-                <span className="font-semibold text-gray-900 text-lg">
-                  {offerFull.bookmaker?.name}
-                </span>
+        <Suspense
+          fallback={
+            <div className="flex justify-center items-center py-20">
+              <div className="flex space-x-2">
+                <div
+                  className="w-3 h-3 bg-gray-500 rounded-full animate-bounce"
+                  style={{ animationDelay: "0ms" }}
+                ></div>
+                <div
+                  className="w-3 h-3 bg-gray-500 rounded-full animate-bounce"
+                  style={{ animationDelay: "150ms" }}
+                ></div>
+                <div
+                  className="w-3 h-3 bg-gray-500 rounded-full animate-bounce"
+                  style={{ animationDelay: "300ms" }}
+                ></div>
               </div>
-              {offerFull.published && (
-                <span className="text-gray-500 text-sm">
-                  Published: {new Date(offerFull.published).toLocaleDateString()}
-                </span>
-              )}
             </div>
-
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">{offerFull.title}</h2>
-
-            {offerFull.offerSummary && (
-              <div className="text-gray-700 mb-4">
-                <PortableText value={offerFull.offerSummary} components={portableTextComponents} />
-              </div>
-            )}
-
-            {offerFull.expires && (
-              <div className="flex items-center gap-2 mb-6">
-                <img src="/assets/calendar.png" alt="Calendar" width="18" height="18" />
-                <span className="text-black text-sm">
-                  Expires: {new Date(offerFull.expires).toLocaleDateString()}
-                </span>
-              </div>
-            )}
-
-            {offerFull.affiliateLink?.affiliateUrl && offerFull.affiliateLink?.isActive && (
-              <a
-                href={offerFull.affiliateLink.affiliateUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hidden sm:flex sm:w-fit sm:px-6 bg-[#018651] hover:bg-[#017a4a] text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 items-center justify-center gap-2 mb-6"
-              >
-                Get Bonus
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-              </a>
-            )}
-
-            {offerFull.howItWorks && (
-              <div className="mb-6 text-gray-700 text-sm">
-                <PortableText value={offerFull.howItWorks} components={portableTextComponents} />
-              </div>
-            )}
-
-            {offerFull.bookmaker?.paymentMethods && offerFull.bookmaker.paymentMethods.length > 0 && (
-              <div className="mb-6">
-                <div className="font-semibold text-gray-900 mb-3">Payment Methods</div>
-                <div className="flex flex-wrap gap-2 text-gray-700 text-sm">
-                  {offerFull.bookmaker.paymentMethods.map((pm, i) => (
-                    <span key={i} className="border border-gray-200 rounded px-2 py-1 bg-gray-50">
-                      {typeof pm === 'string' ? pm : pm.name}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {offerFull.bookmaker?.license && offerFull.bookmaker.license.length > 0 && (
-              <div className="mb-6">
-                <div className="font-semibold text-gray-900 mb-3">License</div>
-                <ul className="list-disc list-inside text-gray-700 text-sm space-y-1 pl-4">
-                  {offerFull.bookmaker.license.map((license, i) => (
-                    <li key={i}>{typeof license === 'string' ? license : license.name}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {offerFull.faq && offerFull.faq.length > 0 && (
-              <div>
-                <div className="font-normal text-gray-900 mb-4">FAQ</div>
-                <div className="space-y-3">
-                  {offerFull.faq.map((faqItem, index) => (
-                    <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
-                      <div className="px-4 py-3 text-left">
-                        <div className="font-medium text-gray-900">
-                          <PortableText value={faqItem.question} components={portableTextComponents} />
-                        </div>
-                        <div className="pt-3 text-gray-700 text-sm">
-                          <PortableText value={faqItem.answer} components={portableTextComponents} />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {moreOffers && moreOffers.length > 0 && (
-          <div className="bg-white p-1 sm:p-6 mb-4">
-            <div className="font-semibold text-gray-900 mb-4">More Offers</div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-              {moreOffers.map((moreOffer) => (
-                <div key={moreOffer._id} className="relative border  border-gray-200 rounded-lg p-1mb-2 sm:p-4 hover:border-gray-300 transition-colors cursor-pointer h-full min-w-0">
-                  {moreOffer.slug?.current && (
-                    <Link href={`/${awaitedParams.slug}/${moreOffer.bonusType?.name?.toLowerCase().replace(/\s+/g, "-")}/${moreOffer.slug?.current}`} aria-label={moreOffer.title} className="  absolute inset-0 z-10" />
-                  )}
-                  <div className="flex flex-col gap-3 p-2 ">
-                    <div className="flex items-center justify-between min-w-0">
-                      <div className="flex items-center gap-3 min-w-0 flex-1">
-                        {moreOffer.bookmaker?.logo ? (
-                          <img src={moreOffer.bookmaker.logo} alt={moreOffer.bookmaker.name} width="88" height="88" className="w-[40px] h-[40px] sm:w-[60px] sm:h-[60px] rounded-[6px] flex-shrink-0" />
-                        ) : (
-                          <div className="w-[44px] h-[44px] sm:w-[60px] sm:h-[60px] bg-gray-100 rounded-[6px] flex-shrink-0" />
-                        )}
-                        <div className="font-['General_Sans'] font-semibold text-[16px] leading-[100%] tracking-[1%] text-[#272932] min-w-0">
-                          {moreOffer.bookmaker?.name}
-                        </div>
-                      </div>
-                      {moreOffer.published && (
-                        <div className="text-sm text-gray-500 flex-shrink-0">
-                          <span className="font-['General_Sans'] font-medium text-xs leading-[100%] tracking-[1%] text-[#696969]">
-                            Published: {new Date(moreOffer.published).toLocaleDateString()}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="font-['General_Sans'] font-medium text-[16px] leading-[100%] tracking-[1%] text-[#272932]">
-                      {moreOffer.title}
-                    </div>
-
-                    <div className="flex gap-2 ">
-                      {moreOffer.bookmaker?.name && (
-                        <span className="bg-gray-100 rounded-full px-3 py-2 text-sm font-medium text-gray-700 inline-block">
-                          {moreOffer.bookmaker.name}
-                        </span>
-                      )}
-                      {moreOffer.bonusType?.name && (
-                        <span className="bg-gray-100 rounded-full px-3 py-2 text-sm font-medium text-gray-700 inline-block">
-                          {moreOffer.bonusType.name}
-                        </span>
-                      )}
-                    </div>
-
-                    {moreOffer.offerSummary && (
-                      <div className="font-['General_Sans'] font-normal text-[16px] leading-[20px] tracking-[1%] text-[#696969] line-clamp-2">
-                        <PortableText value={moreOffer.offerSummary} components={portableTextComponents} />
-                      </div>
-                    )}
-
-                    {moreOffer.expires && (
-                      <div className="flex items-center gap-1 text-sm text-black mt-auto">
-                        <img src="/assets/calendar.png" alt="Calendar" width="16" height="16" className="flex-shrink-0" />
-                        <span className="text-xs">Expires: {new Date(moreOffer.expires).toLocaleDateString()}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-            {totalMoreOffers > moreOffers.length && (
-              <div className="mt-4 text-center text-gray-500 text-sm">More results available</div>
-            )}
-          </div>
-        )}
+          }
+        >
+          <OfferDetailsInner slug={offerSlug} />
+        </Suspense>
       </CountryPageShell>
     );
   }
