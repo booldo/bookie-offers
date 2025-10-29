@@ -1,6 +1,7 @@
 import { getPageSeo } from "../../../sanity/lib/seo";
 import ArticleInner from "./ArticleInner";
 import { notFound } from 'next/navigation';
+import { client } from '../../../sanity/lib/client';
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
@@ -31,15 +32,53 @@ export default async function ArticlePage({ params, searchParams }) {
   const isPreview = awaitedSearchParams?.preview === 'true';
   const draftId = awaitedSearchParams?.draftId;
   
-  // If preview mode, skip article existence check and let ArticleInner handle it
+  // Fetch article data server-side
+  let articleQuery;
+  let queryParams;
+  
   if (isPreview && draftId) {
-    return <ArticleInner slug={slug} isPreview={true} draftId={draftId} />;
+    console.log('👁️ Fetching draft article by ID:', draftId);
+    articleQuery = `*[_id == $draftId][0]{
+      _id,
+      title,
+      slug,
+      mainImage,
+      content,
+      faq,
+      noindex,
+      sitemapInclude,
+      draftPreview
+    }`;
+    queryParams = { draftId };
+  } else {
+    articleQuery = `*[_type == "article" && slug.current == $slug][0]{
+      _id,
+      title,
+      slug,
+      mainImage,
+      content,
+      faq,
+      noindex,
+      sitemapInclude
+    }`;
+    queryParams = { slug };
   }
   
-  // Normal mode: check if article exists
-  const article = await getVisibleDocOrNull('article', slug);
-  if (!article) {
+  // Fetch article and sidebar articles in parallel
+  const [article, allArticles] = await Promise.all([
+    client.fetch(articleQuery, queryParams),
+    client.fetch(`*[_type == "article" && (noindex != true) && (sitemapInclude != false)]|order(_createdAt desc){
+      _id,
+      title,
+      slug,
+      mainImage
+    }`)
+  ]);
+  
+  // Check if article exists and is visible
+  if (!article || article.noindex === true || article.sitemapInclude === false) {
     notFound();
   }
-  return <ArticleInner slug={slug} />;
+  
+  return <ArticleInner initialArticle={article} initialArticles={allArticles} />;
 }
