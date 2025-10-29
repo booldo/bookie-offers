@@ -951,14 +951,28 @@ export default async function CountryFiltersPage({ params, searchParams }) {
         `*[_type == "bookmaker" && country->country == $country && name match $name][0]{_id}`,
         { country: country.country, name: singleFilter.replace(/-/g, " ") }
       );
-      if (bookmaker) isValidFilter = true;
+      if (bookmaker) {
+        // CRITICAL: Also check if this bookmaker has any active offers
+        const bookmakerWithOffers = await client.fetch(
+          `*[_type == "offers" && bookmaker._ref == $bmId && country->country == $country && (noindex != true) && (sitemapInclude != false) && (!defined(expires) || expires > now())][0]{_id}`,
+          { bmId: bookmaker._id, country: country.country }
+        );
+        if (bookmakerWithOffers) isValidFilter = true;
+      }
       // Check bonus type
       if (!isValidFilter) {
         const bonusType = await client.fetch(
           `*[_type == "bonusType" && country->country == $country && name match $name][0]{_id}`,
           { country: country.country, name: singleFilter.replace(/-/g, " ") }
         );
-        if (bonusType) isValidFilter = true;
+        if (bonusType) {
+          // CRITICAL: Also check if this bonus type has any active offers
+          const bonusTypeWithOffers = await client.fetch(
+            `*[_type == "offers" && bonusType._ref == $btId && country->country == $country && (noindex != true) && (sitemapInclude != false) && (!defined(expires) || expires > now())][0]{_id}`,
+            { btId: bonusType._id, country: country.country }
+          );
+          if (bonusTypeWithOffers) isValidFilter = true;
+        }
       }
     }
     // If not a valid filter, show 404

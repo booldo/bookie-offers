@@ -179,6 +179,14 @@ export default function OffersClient({
       bonusTypes.length === 0 &&
       advanced.length === 0
     ) {
+      // Check if this bookmaker has 0 offers - if so, use query params to avoid 404
+      const bookmakerOption = bookmakerOptions.find(
+        opt => opt.name === bookmakers[0]
+      );
+      if (bookmakerOption && bookmakerOption.count === 0) {
+        // Use query parameter format for bookmakers with 0 offers
+        return `/${countrySlug}/offers?bookmakers=${slugify(bookmakers[0])}`;
+      }
       return `/${countrySlug}/${slugify(bookmakers[0])}`;
     }
     if (
@@ -414,7 +422,7 @@ export default function OffersClient({
       <div className="sticky top-16 z-40 bg-white sm:static sm:bg-transparent">
         <div className="flex items-center justify-between my-4">
           <h1 className=" font-semibold text-[24px] leading-[100%] text-[#272932] whitespace-nowrap">
-            {/* {getDynamicHeaderText}{" "} */}
+            {getDynamicHeaderText}{" "}
             <span className=" font-medium text-[16px] leading-[100%] tracking-[1%] align-middle text-[#696969]">
               ({filteredOffers.length})
             </span>

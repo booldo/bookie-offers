@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 export async function GET() {
-  const baseUrl = "https://bookie-offers.vercel.app"; // Production domain
+  const baseUrl = "https://booldo.com"; // Production domain
   const currentDate = new Date().toISOString();
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>

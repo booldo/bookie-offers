@@ -303,6 +303,14 @@ export default function DynamicOffers({
       bonusTypes.length === 0 &&
       advanced.length === 0
     ) {
+      // Check if this bookmaker has 0 offers - if so, use query params to avoid 404
+      const bookmakerOption = originalBookmakerOptions.find(
+        opt => opt.name === bookmakers[0]
+      );
+      if (bookmakerOption && bookmakerOption.count === 0) {
+        // Use query parameter format for bookmakers with 0 offers
+        return `/${countrySlug}/offers?bookmakers=${slugify(bookmakers[0])}`;
+      }
       return `/${countrySlug}/${slugify(bookmakers[0])}`;
     }
     if (
@@ -327,7 +335,7 @@ export default function DynamicOffers({
     } else {
       return `/${countrySlug}`;
     }
-  }, [countrySlug, countryData]);
+  }, [countrySlug, countryData, originalBookmakerOptions]);
 
   // Apply initial filter when options are loaded
   useEffect(() => {
@@ -523,9 +531,11 @@ export default function DynamicOffers({
 
   // URL/Filter sync effect
   useEffect(() => {
+    // Only sync from URL when we have the original options loaded
+    // Don't depend on bookmakerOptions to prevent flickering when it updates
     if (
       !bonusTypeOptions.length &&
-      !bookmakerOptions.length &&
+      !originalBookmakerOptions.length &&
       !advancedOptions.length
     )
       return;
@@ -537,7 +547,7 @@ export default function DynamicOffers({
     pathname,
     searchParams,
     bonusTypeOptions,
-    bookmakerOptions,
+    originalBookmakerOptions,
     advancedOptions,
     countrySlug,
     countryData,
@@ -547,7 +557,7 @@ export default function DynamicOffers({
   useEffect(() => {
     if (
       bonusTypeOptions.length > 0 &&
-      bookmakerOptions.length > 0 &&
+      originalBookmakerOptions.length > 0 &&
       advancedOptions.length > 0
     ) {
       if (filterInfo?.type === "combination") {
@@ -565,7 +575,7 @@ export default function DynamicOffers({
             matchFilterPart(
               partLower,
               bonusTypeOptions,
-              bookmakerOptions,
+              originalBookmakerOptions,
               advancedOptions,
               bonusTypes,
               bookmakers,
@@ -593,7 +603,7 @@ export default function DynamicOffers({
             matchFilterPart(
               part2.toLowerCase(),
               [],
-              bookmakerOptions,
+              originalBookmakerOptions,
               [],
               [],
               bookmakers,
@@ -629,7 +639,7 @@ export default function DynamicOffers({
             matchFilterPart(
               part2.toLowerCase(),
               [],
-              bookmakerOptions,
+              originalBookmakerOptions,
               [],
               [],
               bookmakers,
@@ -672,7 +682,7 @@ export default function DynamicOffers({
             matchFilterPart(
               part2.toLowerCase(),
               [],
-              bookmakerOptions,
+              originalBookmakerOptions,
               [],
               [],
               bookmakers,
@@ -736,7 +746,7 @@ export default function DynamicOffers({
         }
 
         // Check bookmakers
-        const matchingBookmaker = bookmakerOptions.find(
+        const matchingBookmaker = originalBookmakerOptions.find(
           (bm) => bm.name.toLowerCase().replace(/\s+/g, "-") === filterLower
         );
         if (matchingBookmaker) {
@@ -761,7 +771,7 @@ export default function DynamicOffers({
     initialFilter,
     filterInfo,
     bonusTypeOptions,
-    bookmakerOptions,
+    originalBookmakerOptions,
     advancedOptions,
   ]);
 
@@ -1017,6 +1027,7 @@ export default function DynamicOffers({
   useEffect(() => {
     if (selectedBookmakers.length > 0) {
       // When a bookmaker is selected, show all bookmakers with their total counts
+      // This prevents the dropdown from disappearing when selecting a bookmaker with 0 offers
       setBookmakerOptions(originalBookmakerOptions);
     } else if (originalBookmakerOptions.length > 0 && filteredOffers.length > 0) {
       // Get unique bookmakers from filtered offers and recompute counts
@@ -1041,11 +1052,12 @@ export default function DynamicOffers({
       if (JSON.stringify(updatedBookmakerOptions) !== JSON.stringify(bookmakerOptions)) {
         setBookmakerOptions(updatedBookmakerOptions);
       }
-    } else if (originalBookmakerOptions.length > 0 && filteredOffers.length === 0) {
-      // If no offers match filters, show no bookmaker options
+    } else if (originalBookmakerOptions.length > 0 && filteredOffers.length === 0 && selectedBookmakers.length === 0) {
+      // Only clear bookmaker options if no bookmaker is selected AND no offers match
+      // This prevents clearing the dropdown when a bookmaker with 0 offers is selected
       setBookmakerOptions([]);
     }
-  }, [filteredOffers, originalBookmakerOptions, bookmakerOptions, selectedBookmakers]);
+  }, [filteredOffers, originalBookmakerOptions, selectedBookmakers]);
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -1102,15 +1114,10 @@ export default function DynamicOffers({
       <div className="sticky top-16 z-40 bg-white sm:static sm:bg-transparent">
         <div className="flex items-center justify-between my-4">
           <h1 className=" font-semibold text-[24px] leading-[100%] text-[#272932] whitespace-nowrap">
-            {/* {getDynamicHeaderText}{" "} */}
+            {getDynamicHeaderText}{" "}
             <span className=" font-medium text-[16px] leading-[100%] tracking-[1%] align-middle text-[#696969]">
               ({filteredOffers.length})
             </span>
-            {/* {totalPages > 1 && (
-              <span className=" font-medium text-[16px] leading-[100%] tracking-[1%] align-middle text-[#696969] ml-2">
-                (Page {currentPage} of {totalPages})
-              </span>
-            )} */}
           </h1>
           <div className="flex items-center gap-1">
             <label className="text-sm text-gray-500 mr-0">Sort By:</label>
