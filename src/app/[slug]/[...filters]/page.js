@@ -675,6 +675,8 @@ export default async function CountryFiltersPage({ params, searchParams }) {
           _id,
           _type,
           slug,
+          title,
+          bookmaker->{ name },
           draftPreview
         }`,
         { draftId }
@@ -700,6 +702,11 @@ export default async function CountryFiltersPage({ params, searchParams }) {
           <PreviewBanner expiryDate={draftOffer.draftPreview?.previewExpiry} />
           <div style={{ marginTop: '60px' }}>
             <CountryPageShell params={awaitedParams} isOfferDetailsPage={true}>
+              {draftOffer?.title && (
+                <div className="max-w-7xl mx-auto w-full px-4">
+                  <h1 className="text-2xl font-bold text-gray-900 mb-2">{draftOffer.title}</h1>
+                </div>
+              )}
               <Suspense
                 fallback={
                   <div className="flex justify-center items-center py-20">
@@ -737,9 +744,22 @@ export default async function CountryFiltersPage({ params, searchParams }) {
     if (!offer) {
       notFound();
     }
+    // Fetch minimal offer data for server-rendered H1
+    const offerForHeader = await client.fetch(
+      `*[_type == "offers" && slug.current == $slug][0]{
+        title,
+        bookmaker->{ name }
+      }`,
+      { slug: offerSlug }
+    );
     // Extract the offer slug from the last segment
     return (
       <CountryPageShell params={awaitedParams} isOfferDetailsPage={true}>
+        {offerForHeader?.title && (
+          <div className="max-w-7xl mx-auto w-full px-4">
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">{offerForHeader.title}</h1>
+          </div>
+        )}
         <Suspense
           fallback={
             <div className="flex justify-center items-center py-20">

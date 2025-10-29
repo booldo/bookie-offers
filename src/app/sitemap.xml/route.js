@@ -4,7 +4,7 @@ import { client } from "../../sanity/lib/client";
 
 export async function GET() {
   try {
-    const baseUrl = "https://booldo.com/";
+    const baseUrl = "https://booldo.com";
     const entries = await getAllSitemapEntries();
     const landingPage = await getLandingPageSettings();
     const extraUrls = landingPage?.sitemapExtraUrls || [];
