@@ -124,17 +124,8 @@ export async function GET() {
       let priority = "0.5";
       
       if (entry._type === "offers") {
-        // For offers, use the country from the offer data
-        const rawCountrySlug = entry.country?.slug;
-        const countrySlug = typeof rawCountrySlug === 'string' ? rawCountrySlug : (rawCountrySlug?.current || 'ng');
-        const offerSlug = typeof entry.slug === 'string' ? entry.slug : entry.slug?.current;
-        if (!offerSlug) {
-          console.warn('Offer missing slug:', entry);
-          isValid = false;
-        } else {
-          path = `/${countrySlug}/offers/${offerSlug}`;
-          priority = "0.8"; // Offers are high priority
-        }
+        // Skip offers - excluded from sitemap per client request
+        isValid = false;
       } else if (entry._type === "article") {
         const articleSlug = typeof entry.slug === 'string' ? entry.slug : entry.slug?.current;
         if (!articleSlug) {
