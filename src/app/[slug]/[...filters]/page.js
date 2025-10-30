@@ -149,10 +149,13 @@ export async function generateMetadata({ params }) {
   try {
     const segments = awaitedParams.filters || [];
     const prettyJoined = Array.isArray(segments) ? segments.join("/") : "";
+    const countrySlug = awaitedParams.slug;
+    
     if (prettyJoined) {
+      // Query with country validation to match the routing logic
       const affiliateLink = await client.fetch(
         `
-        *[_type == "affiliate" && prettyLink.current == $prettyLink && isActive == true][0]{
+        *[_type == "affiliate" && prettyLink.current == $prettyLink && isActive == true && bookmaker->country->slug.current == $countrySlug][0]{
           bookmaker->{
             name,
             logo,
@@ -160,16 +163,18 @@ export async function generateMetadata({ params }) {
             description,
             country->{ country, slug }
           },
-          bonusType->{ name, description }
+          bonusType->{ name, description },
+          metaTitle,
+          metaDescription
         }
       `,
-        { prettyLink: prettyJoined }
+        { prettyLink: prettyJoined, countrySlug }
       );
 
       if (affiliateLink) {
         const { bookmaker, bonusType } = affiliateLink;
-        const title = `${bonusType?.name} - ${bookmaker?.name} | Booldo`;
-        const description = `Get ${bonusType?.name} from ${bookmaker?.name}. ${bonusType?.description || ""}`;
+        const title = affiliateLink.metaTitle || `${bonusType?.name} - ${bookmaker?.name} | Booldo`;
+        const description = affiliateLink.metaDescription || `Get ${bonusType?.name} from ${bookmaker?.name}. ${bonusType?.description || ""}`;
         return {
           title,
           description,
@@ -337,10 +342,10 @@ export async function generateMetadata({ params }) {
         return metadata;
       }
 
-      // Pretty link handling
+      // Pretty link handling with country validation
       const affiliateLink = await client.fetch(
         `
-        *[_type == "affiliate" && prettyLink.current == $prettyLink && isActive == true][0]{
+        *[_type == "affiliate" && prettyLink.current == $prettyLink && isActive == true && bookmaker->country->slug.current == $countrySlug][0]{
           bookmaker->{
             name,
             logo,
@@ -354,16 +359,18 @@ export async function generateMetadata({ params }) {
           bonusType->{
             name,
             description
-          }
+          },
+          metaTitle,
+          metaDescription
         }
       `,
-        { prettyLink: singleFilter }
+        { prettyLink: singleFilter, countrySlug: awaitedParams.slug }
       );
 
       if (affiliateLink) {
         const { bookmaker, bonusType } = affiliateLink;
-        const title = `${bonusType?.name} - ${bookmaker?.name} | Booldo`;
-        const description = `Get ${bonusType?.name} from ${bookmaker?.name}. ${bonusType?.description || ""}`;
+        const title = affiliateLink.metaTitle || `${bonusType?.name} - ${bookmaker?.name} | Booldo`;
+        const description = affiliateLink.metaDescription || `Get ${bonusType?.name} from ${bookmaker?.name}. ${bonusType?.description || ""}`;
 
         return {
           title,
@@ -538,127 +545,55 @@ export default async function CountryFiltersPage({ params, searchParams }) {
     `/${awaitedParams.slug}/${(awaitedParams.filters || []).join("/")}`
   );
 
-  // Debug: Let's see what affiliate links exist in Sanity
-  try {
-    const allAffiliateLinks = await client.fetch(`
-      *[_type == "affiliate" && isActive == true]{
+  // Handle affiliate pretty links FIRST - before any other logic
+  const segments = awaitedParams.filters || [];
+  const countrySlug = awaitedParams.slug;
+
+  // Check for pretty links (e.g., "betika/welcome-bonus")
+  if (segments.length > 0) {
+    const prettyLinkPath = segments.join("/");
+    console.log("🔗 Checking pretty link:", prettyLinkPath, "for country:", countrySlug);
+
+    // Query for active affiliate links with this pretty link AND matching country
+    // This ensures the bookmaker's country matches the URL country code
+    const affiliateLink = await client.fetch(
+      `
+      *[_type == "affiliate" && isActive == true && prettyLink.current == $prettyLink && bookmaker->country->slug.current == $countrySlug][0]{
         _id,
         affiliateUrl,
         prettyLink,
-        bookmaker->{ name },
-        bonusType->{ name }
-      }
-    `);
-    console.log(
-      "DEBUG - All active affiliate links in Sanity:",
-      allAffiliateLinks
-    );
-  } catch (error) {
-    console.error("Error fetching all affiliate links:", error);
-  }
-
-  // Handle affiliate pretty links FIRST - before any other logic
-  const segments = awaitedParams.filters || [];
-
-  // Check for pretty links in different formats
-  if (segments.length > 0) {
-    // Try the full joined path first (e.g., "betika/welcome-bonus-2")
-    const fullPath = segments.join("/");
-    console.log("DEBUG - Checking full path:", fullPath);
-
-    // Query for active affiliate links with this pretty link
-    const affiliateLink = await client.fetch(
-      `
-      *[_type == "affiliate" && isActive == true && prettyLink.current == $prettyLink][0]{
-        _id,
-        affiliateUrl,
-        prettyLink
+        bookmaker->{
+          name,
+          country->{
+            country,
+            slug
+          }
+        },
+        bonusType->{
+          name
+        }
       }
     `,
-      { prettyLink: fullPath }
+      { prettyLink: prettyLinkPath, countrySlug }
     );
 
-    console.log("DEBUG - Affiliate link found for full path:", affiliateLink);
+    console.log("🔍 Pretty link query result:", affiliateLink ? {
+      prettyLink: affiliateLink.prettyLink?.current,
+      bookmaker: affiliateLink.bookmaker?.name,
+      bonusType: affiliateLink.bonusType?.name,
+      country: affiliateLink.bookmaker?.country?.country
+    } : "No match found");
 
     if (affiliateLink?.affiliateUrl) {
-      console.log(
-        "DEBUG - Redirecting to affiliate URL:",
-        affiliateLink.affiliateUrl
-      );
+      console.log("✅ Redirecting to affiliate URL:", affiliateLink.affiliateUrl);
       // Redirect to the affiliate URL - this will throw NEXT_REDIRECT and exit the function
       redirect(affiliateLink.affiliateUrl);
-    }
-
-    // If no match found, try single segment (for single-segment pretty links)
-    if (segments.length === 1) {
-      const singleSegment = segments[0];
-      console.log("DEBUG - Checking single segment:", singleSegment);
-
-      const singleAffiliateLink = await client.fetch(
-        `
-        *[_type == "affiliate" && isActive == true && prettyLink.current == $prettyLink][0]{
-          _id,
-          affiliateUrl,
-          prettyLink
-        }
-      `,
-        { prettyLink: singleSegment }
-      );
-
-      console.log(
-        "DEBUG - Single segment affiliate link:",
-        singleAffiliateLink
-      );
-
-      if (singleAffiliateLink?.affiliateUrl) {
-        console.log(
-          "DEBUG - Redirecting single segment to affiliate URL:",
-          singleAffiliateLink.affiliateUrl
-        );
-        // Redirect to the affiliate URL - this will throw NEXT_REDIRECT and exit the function
-        redirect(singleAffiliateLink.affiliateUrl);
-      }
-    }
-
-    // If still no match, check if this could be a bookmaker/bonus-type format
-    // Pretty links are stored as "bookmaker/bonus-type" in Sanity
-    if (segments.length === 2) {
-      const bookmakerBonusType = segments.join("/");
-      console.log(
-        "DEBUG - Checking bookmaker/bonus-type format:",
-        bookmakerBonusType
-      );
-
-      const bookmakerBonusTypeLink = await client.fetch(
-        `
-        *[_type == "affiliate" && isActive == true && prettyLink.current == $prettyLink][0]{
-          _id,
-          affiliateUrl,
-          prettyLink
-        }
-      `,
-        { prettyLink: bookmakerBonusType }
-      );
-
-      console.log(
-        "DEBUG - Bookmaker/bonus-type affiliate link:",
-        bookmakerBonusTypeLink
-      );
-
-      if (bookmakerBonusTypeLink?.affiliateUrl) {
-        console.log(
-          "DEBUG - Redirecting bookmaker/bonus-type to affiliate URL:",
-          bookmakerBonusTypeLink.affiliateUrl
-        );
-        // Redirect to the affiliate URL - this will throw NEXT_REDIRECT and exit the function
-        redirect(bookmakerBonusTypeLink.affiliateUrl);
-      }
+    } else {
+      console.log("❌ No matching pretty link found for:", prettyLinkPath, "in country:", countrySlug);
     }
   }
 
-  console.log(
-    "DEBUG - No affiliate redirect found, continuing with normal processing"
-  );
+  console.log("➡️ No affiliate redirect found, continuing with normal processing");
 
   // Check if this is an offer details page (has 2+ segments: country/bonus-type/offer-slug)
   const isOfferDetailsPage =
@@ -1162,14 +1097,16 @@ export default async function CountryFiltersPage({ params, searchParams }) {
     }
 
     console.log(
-      "DEBUG - Checking single filter for pretty link:",
-      singleFilter
+      "🔗 Checking single filter for pretty link:",
+      singleFilter,
+      "in country:",
+      awaitedParams.slug
     );
 
-    // Check if this is a pretty link for an affiliate
+    // Check if this is a pretty link for an affiliate with country validation
     const affiliateLink = await client.fetch(
       `
-      *[_type == "affiliate" && isActive == true && prettyLink.current == $prettyLink][0]{
+      *[_type == "affiliate" && isActive == true && prettyLink.current == $prettyLink && bookmaker->country->slug.current == $countrySlug][0]{
           _id,
           affiliateUrl,
           bookmaker->{
@@ -1189,14 +1126,18 @@ export default async function CountryFiltersPage({ params, searchParams }) {
           }
         }
       `,
-      { prettyLink: singleFilter }
+      { prettyLink: singleFilter, countrySlug: awaitedParams.slug }
     );
 
-    console.log("DEBUG - Single filter affiliate link found:", affiliateLink);
+    console.log("🔍 Single filter affiliate link found:", affiliateLink ? {
+      bookmaker: affiliateLink.bookmaker?.name,
+      bonusType: affiliateLink.bonusType?.name,
+      country: affiliateLink.bookmaker?.country?.country
+    } : "No match");
 
     if (affiliateLink && affiliateLink.affiliateUrl) {
       console.log(
-        "DEBUG - Redirecting single filter to affiliate URL:",
+        "✅ Redirecting single filter to affiliate URL:",
         affiliateLink.affiliateUrl
       );
       // Redirect to the affiliate URL - this will throw NEXT_REDIRECT and exit the function
