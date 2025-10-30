@@ -71,7 +71,7 @@ async function getOffersData({ countryName, countryId }) {
   }`;
 
   try {
-    const offers = await client.fetch(query, { countryName });
+    const offers = await client.fetch(query, { countryName }, {next: { revalidate: 300 }});
     console.log(
       "Offers fetched:",
       offers.length,
