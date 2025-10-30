@@ -355,7 +355,7 @@ const FAQItem = ({ question, answer, isOpen, onToggle }) => {
   );
 };
 
-function OfferDetailsInner({ slug, isPreview = false, draftId = null }) {
+function OfferDetailsInner({ slug, isPreview = false, draftId = null, initialOffer = null, initialMoreOffers = [], initialTotalOffers = 0, countrySlug = null, countryName = null }) {
   const {
     countryData,
     loading: countryLoading,
@@ -365,26 +365,43 @@ function OfferDetailsInner({ slug, isPreview = false, draftId = null }) {
     getCountrySlug,
   } = useCountryContext();
   const router = useRouter();
-  const [offer, setOffer] = useState(null);
-  const [moreOffers, setMoreOffers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [offer, setOffer] = useState(initialOffer);
+  const [moreOffers, setMoreOffers] = useState(initialMoreOffers);
+  const [loading, setLoading] = useState(!initialOffer);
   const [error, setError] = useState(null);
   const [loadMoreCount, setLoadMoreCount] = useState(10);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasClickedLoadMore, setHasClickedLoadMore] = useState(false);
   const [shouldRestoreScroll, setShouldRestoreScroll] = useState(false);
-  const [totalOffers, setTotalOffers] = useState(0);
+  const [totalOffers, setTotalOffers] = useState(initialTotalOffers);
   const [openFAQIndex, setOpenFAQIndex] = useState(null);
   const [isContentHidden, setIsContentHidden] = useState(false);
   const scrollPositionRef = useRef(0);
   const sentinelRef = useRef(null);
+  
+  // Use props if available, otherwise fallback to context
+  const effectiveCountrySlug = countrySlug || getCountrySlug();
+  const effectiveCountryName = countryName || getCountryName();
 
   useEffect(() => {
+    // Skip fetching if we already have server-fetched data (not preview mode)
+    if (initialOffer && !isPreview) {
+      // Check if offer is hidden and set state
+      if (
+        initialOffer &&
+        (initialOffer.noindex === true || initialOffer.sitemapInclude === false)
+      ) {
+        console.log("Offer is hidden, setting hidden state");
+        setIsContentHidden(true);
+      }
+      return;
+    }
+    
     if (!slug) return;
-    if (!isCountryLoaded()) return;
+    if (!effectiveCountryName && !isCountryLoaded()) return;
 
-    const countryName = getCountryName();
-    if (!countryName) return;
+    const fetchCountryName = effectiveCountryName || getCountryName();
+    if (!fetchCountryName) return;
 
     setLoading(true);
     // Fetch the main offer and more offers from Sanity - now dynamic by country
@@ -487,7 +504,7 @@ function OfferDetailsInner({ slug, isPreview = false, draftId = null }) {
             sitemapInclude,
             offerSummary
           }`;
-          queryParams = { slug, countryName };
+          queryParams = { slug, countryName: fetchCountryName };
         }
         
         const mainOffer = await client.fetch(mainOfferQuery, queryParams);
@@ -523,13 +540,13 @@ function OfferDetailsInner({ slug, isPreview = false, draftId = null }) {
         const moreOffersData = await client.fetch(moreOffersQuery, {
           slug,
           count: loadMoreCount,
-          countryName,
+          countryName: fetchCountryName,
         });
         setMoreOffers(moreOffersData);
 
         // Get total count for pagination - now dynamic (excluding hidden offers and expired offers)
         const totalQuery = `count(*[_type == "offers" && country->country == $countryName && slug.current != $slug && (noindex != true) && (sitemapInclude != false) && (!defined(expires) || expires > now())])`;
-        const total = await client.fetch(totalQuery, { slug, countryName });
+        const total = await client.fetch(totalQuery, { slug, countryName: fetchCountryName });
         setTotalOffers(total);
       } catch (err) {
         console.error("Error fetching offer data:", err);
@@ -540,7 +557,7 @@ function OfferDetailsInner({ slug, isPreview = false, draftId = null }) {
     };
 
     fetchData();
-  }, [slug, loadMoreCount, isCountryLoaded, getCountryName, isPreview, draftId]);
+  }, [slug, loadMoreCount, isCountryLoaded, getCountryName, isPreview, draftId, initialOffer]);
 
   // Restore scroll position when component mounts
   useLayoutEffect(() => {
@@ -562,8 +579,8 @@ function OfferDetailsInner({ slug, isPreview = false, draftId = null }) {
   const handleLoadMore = async () => {
     if (isLoadingMore || loadMoreCount >= totalOffers) return;
 
-    const countryName = getCountryName();
-    if (!countryName) return;
+    const loadMoreCountryName = effectiveCountryName || getCountryName();
+    if (!loadMoreCountryName) return;
 
     setIsLoadingMore(true);
     setHasClickedLoadMore(true);
@@ -587,7 +604,7 @@ function OfferDetailsInner({ slug, isPreview = false, draftId = null }) {
       const moreOffersData = await client.fetch(moreOffersQuery, {
         slug,
         count: loadMoreCount + 10,
-        countryName,
+        countryName: loadMoreCountryName,
       });
       setMoreOffers(moreOffersData);
       setLoadMoreCount((prev) => prev + 10);
@@ -628,8 +645,8 @@ function OfferDetailsInner({ slug, isPreview = false, draftId = null }) {
     setOpenFAQIndex(openFAQIndex === index ? null : index);
   };
 
-  // Show loading state while country is loading
-  if (countryLoading) {
+  // Show loading state while country is loading (skip if we have server props)
+  if (countryLoading && !effectiveCountrySlug) {
     return (
       <div className="min-h-screen bg-[#fafbfc] flex flex-col">
         <main className="max-w-7xl mx-auto w-full px-2 sm:px-4 flex-1">
@@ -659,7 +676,7 @@ function OfferDetailsInner({ slug, isPreview = false, draftId = null }) {
           expires: formatDate(offer.expires),
         }}
         embedded={true}
-        countrySlug={getCountrySlug()}
+        countrySlug={effectiveCountrySlug}
       />
     );
   }
@@ -670,9 +687,9 @@ function OfferDetailsInner({ slug, isPreview = false, draftId = null }) {
       <ExpiredOfferPage
         offer={null}
         embedded={true}
-        countrySlug={getCountrySlug()}
+        countrySlug={effectiveCountrySlug}
         isCountryEmpty={false}
-        countryName={getCountryName()}
+        countryName={effectiveCountryName}
         isHidden={true}
         contentType="offer"
       />
@@ -685,15 +702,15 @@ function OfferDetailsInner({ slug, isPreview = false, draftId = null }) {
       <ExpiredOfferPage
         offer={null}
         embedded={true}
-        countrySlug={getCountrySlug()}
+        countrySlug={effectiveCountrySlug}
         isCountryEmpty={false}
-        countryName={getCountryName()}
+        countryName={effectiveCountryName}
       />
     );
   }
 
-  // Show error state if country not found
-  if (countryError || !countryData) {
+  // Show error state if country not found (skip if we have server props)
+  if ((countryError || !countryData) && !effectiveCountrySlug) {
     return (
       <div className="min-h-screen bg-[#fafbfc] flex flex-col">
         <main className="max-w-7xl mx-auto w-full px-2 sm:px-4 flex-1">
@@ -720,339 +737,340 @@ function OfferDetailsInner({ slug, isPreview = false, draftId = null }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#FFFFFF] flex flex-col">
-      <main className="max-w-7xl mx-auto w-full px-0 sm:px-4 flex-1 pb-24 sm:pb-0">
-        {/* Updated Breadcrumb */}
-        <div className="mt-6 mb-4 flex items-center gap-2 text-sm text-gray-500 ml-2 flex-wrap">
-          <Link
-            href={`/${getCountrySlug()}`}
-            className="hover:underline flex items-center gap-1 flex-shrink-0 cursor-pointer text-gray-900"
-          >
-            <img
-              src="/assets/back-arrow.png"
-              alt="Back"
-              width="16"
-              height="16"
-            />
-            <span className="text-gray-900 font-medium cursor-pointer" >Home</span>
-          </Link>
-          <span className="mx-1 flex-shrink-0">/</span>
-          <Link
-            href={`/${getCountrySlug()}/${offer?.bonusType?.name?.toLowerCase().replace(/\s+/g, "-")}`}
-            className="hover:underline text-gray-900 font-medium cursor-pointer"
-          >
-            {offer?.bonusType?.name || "Bonus"}
-          </Link>
-          <span className="mx-1 flex-shrink-0">/</span>
-          <span className="text-gray-900 font-medium">
-            {offer?.title || "Offer"}
-          </span>
-        </div>
-
-        {loading && (
-          <div className="flex justify-center items-center py-6">
-            <div className="w-full max-w-7xl px-2">
-              {/* Banner skeleton - match final dimensions */}
-              {/* <div className="w-full h-24 sm:h-48 bg-gray-200 rounded-xl mb-6 animate-pulse"></div> */}
-              {/* Content skeleton */}
-              {/* <div className="h-6 bg-gray-200 rounded w-1/3 mb-4 animate-pulse"></div>
-              <div className="h-10 bg-gray-200 rounded w-2/3 mb-6 animate-pulse"></div>
-              <div className="h-6 bg-gray-200 rounded w-1/2 animate-pulse"></div> */}
+    <>
+      {/* Only show main offer content if no server-rendered content (for preview mode) */}
+      {!initialOffer && (
+        <div className="min-h-screen bg-[#FFFFFF] flex flex-col">
+          <main className="max-w-7xl mx-auto w-full px-0 sm:px-4 flex-1 pb-24 sm:pb-0">
+            {/* Updated Breadcrumb */}
+            <div className="mt-6 mb-4 flex items-center gap-2 text-sm text-gray-500 ml-2 flex-wrap">
+              <Link
+                href={`/${effectiveCountrySlug}`}
+                className="hover:underline flex items-center gap-1 flex-shrink-0 cursor-pointer text-gray-900"
+              >
+                <img
+                  src="/assets/back-arrow.png"
+                  alt="Back"
+                  width="16"
+                  height="16"
+                />
+                <span className="text-gray-900 font-medium cursor-pointer" >Home</span>
+              </Link>
+              <span className="mx-1 flex-shrink-0">/</span>
+              <Link
+                href={`/${effectiveCountrySlug}/${offer?.bonusType?.name?.toLowerCase().replace(/\s+/g, "-")}`}
+                className="hover:underline text-gray-900 font-medium cursor-pointer"
+              >
+                {offer?.bonusType?.name || "Bonus"}
+              </Link>
+              <span className="mx-1 flex-shrink-0">/</span>
+              <span className="text-gray-900 font-medium">
+                {offer?.title || "Offer"}
+              </span>
             </div>
-          </div>
-        )}
 
-        {/* Offer Card */}
-        {error && <div className="text-center text-red-500">{error}</div>}
-        {!error && offer && (
-          <>
-            {/* Offer Card */}
-            <div className="bg-white p-1 sm:p-6 mb-6 flex flex-col">
-              {/* Top row */}
-              <div className="flex justify-between items-center mb-4">
-                <div className="flex items-center gap-3">
-                  {offer.bookmaker?.logo &&
-                  isValidAssetRef(offer.bookmaker.logo) ? (
-                    <img
-                      src={offer.bookmaker.logo}
-                      alt={offer.bookmaker.logoAlt || offer.bookmaker.name}
-                      width="40"
-                      height="40"
-                      className="rounded-md"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 bg-gray-100 rounded-md" />
-                  )}
-                  <span className="font-semibold text-gray-900 text-lg">
-                    {offer.bookmaker?.name}
-                  </span>
+            {loading && (
+              <div className="flex justify-center items-center py-6">
+                <div className="w-full max-w-7xl px-2">
                 </div>
-                <span className="text-gray-500 text-sm">
-                  Published: {formatDate(offer.published)}
-                </span>
               </div>
+            )}
 
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                {offer.title}
-              </h2>
-
-              {/* Offer Summary */}
-              {offer.offerSummary && (
-                <div className="text-gray-700 mb-4">
-                  <PortableText
-                    value={offer.offerSummary}
-                    components={portableTextComponents}
-                  />
-                </div>
-              )}
-
-              {/* Expiry Date - only show if offer has expiry */}
-              {offer.expires && (
-                <div className="flex items-center gap-2 mb-6">
-                  <img
-                    src="/assets/calendar.png"
-                    alt="Calendar"
-                    width="18"
-                    height="18"
-                  />
-                  <span className="text-black text-sm">
-                    Expires: {formatDate(offer.expires)}
-                  </span>
-                </div>
-              )}
-
-              {/* Desktop Get Bonus Button */}
-              {offer.affiliateLink?.affiliateUrl &&
-                offer.affiliateLink?.isActive && (
-                  <TrackedLink
-                    href={offer.affiliateLink.affiliateUrl}
-                    linkId={offer._id}
-                    linkType="offer"
-                    linkTitle={offer.title}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    isAffiliate={true}
-                    prettyLink={offer.affiliateLink.prettyLink}
-                    className="hidden sm:flex sm:w-fit sm:px-6 bg-[#018651] hover:bg-[#017a4a] text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 items-center justify-center gap-2 mb-6"
-                  >
-                    Get Bonus
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                      />
-                    </svg>
-                  </TrackedLink>
-                )}
-
-              {/* How it works */}
-              {offer && offer.howItWorks && (
-                <div className="mb-6">
-                  <div className="text-gray-700 text-sm">
-                    <PortableText
-                      value={offer.howItWorks}
-                      components={portableTextComponents}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Payment Method */}
-              {offer &&
-                offer.bookmaker?.paymentMethods &&
-                offer.bookmaker.paymentMethods.length > 0 && (
-                  <div className="mb-6">
-                    <div className="font-semibold text-gray-900 mb-3">
-                      Payment Methods
-                    </div>
-                    <div className="flex flex-wrap gap-2 text-gray-700 text-sm">
-                      {offer.bookmaker.paymentMethods.map((pm, i) => (
-                        <span
-                          key={i}
-                          className="border border-gray-200 rounded px-2 py-1 bg-gray-50"
-                        >
-                          {typeof pm === "string" ? pm : pm.name}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-              {/* License */}
-              {offer &&
-                offer.bookmaker?.license &&
-                offer.bookmaker.license.length > 0 && (
-                  <div className="mb-6">
-                    <div className="font-semibold text-gray-900 mb-3">
-                      License
-                    </div>
-                    <ul className="list-disc list-inside text-gray-700 text-sm space-y-1 pl-4">
-                      {offer.bookmaker.license.map((license, i) => (
-                        <li key={i}>
-                          {typeof license === "string" ? license : license.name}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-              {/* Mobile Get Bonus Button (replaced by sticky bar) */}
-              {offer.affiliateLink?.affiliateUrl &&
-                offer.affiliateLink?.isActive && <div className="hidden"></div>}
-
-              {/* FAQ Section */}
-              {offer && offer.faq && offer.faq.length > 0 && (
-                <div>
-                  <div className="font-normal text-gray-900 mb-4">FAQ</div>
-                  <div className="space-y-3">
-                    {offer.faq.map((faqItem, index) => (
-                      <FAQItem
-                        key={index}
-                        question={faqItem.question}
-                        answer={faqItem.answer}
-                        isOpen={openFAQIndex === index}
-                        onToggle={() => handleFAQToggle(index)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* More Offers Section */}
-
-            {moreOffers.length > 0 && (
-              <div className="bg-white p-1 sm:p-6 mb-4">
-                <div className="font-semibold text-gray-900 mb-4">
-                  More Offers
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                  {moreOffers.map((moreOffer) => (
-                    <div
-                      key={moreOffer._id}
-                      className="relative border  border-gray-200 rounded-lg p-1mb-2 sm:p-4 hover:border-gray-300 transition-colors cursor-pointer h-full min-w-0"
-                    >
-                      {moreOffer.slug?.current && (
-                        <Link
-                          href={`/${getCountrySlug()}/${moreOffer.bonusType?.name?.toLowerCase().replace(/\s+/g, "-")}/${moreOffer.slug?.current}`}
-                          aria-label={moreOffer.title}
-                          className="  absolute inset-0 z-10"
+            {/* Offer Card */}
+            {error && <div className="text-center text-red-500">{error}</div>}
+            {!error && offer && (
+              <>
+                {/* Offer Card */}
+                <div className="bg-white p-1 sm:p-6 mb-6 flex flex-col">
+                  {/* Top row */}
+                  <div className="flex justify-between items-center mb-4">
+                    <div className="flex items-center gap-3">
+                      {offer.bookmaker?.logo &&
+                      isValidAssetRef(offer.bookmaker.logo) ? (
+                        <img
+                          src={offer.bookmaker.logo}
+                          alt={offer.bookmaker.logoAlt || offer.bookmaker.name}
+                          width="40"
+                          height="40"
+                          className="rounded-md"
                         />
+                      ) : (
+                        <div className="w-10 h-10 bg-gray-100 rounded-md" />
                       )}
-                      <div className="flex flex-col gap-3 p-2 ">
-                        {/* Top row: Logo, Bookmaker Name, and Published Date */}
-                        <div className="flex items-center justify-between min-w-0">
-                          <div className="flex items-center gap-3 min-w-0 flex-1">
-                            {moreOffer.bookmaker?.logo &&
-                            isValidAssetRef(moreOffer.bookmaker.logo) ? (
-                              <img
-                                src={moreOffer.bookmaker.logo}
-                                alt={moreOffer.bookmaker.name}
-                                width="88"
-                                height="88"
-                                className="w-[40px] h-[40px] sm:w-[60px] sm:h-[60px] rounded-[6px] flex-shrink-0"
-                              />
-                            ) : (
-                              <div className="w-[44px] h-[44px] sm:w-[60px] sm:h-[60px] bg-gray-100 rounded-[6px] flex-shrink-0" />
-                            )}
-                            <div className="font-['General_Sans'] font-semibold text-[16px] leading-[100%] tracking-[1%] text-[#272932] min-w-0">
-                              {moreOffer.bookmaker?.name}
-                            </div>
-                          </div>
-                          {/* Published Date - positioned on the far right */}
-                          {moreOffer.published && (
-                            <div className="text-sm text-gray-500 flex-shrink-0">
-                              <span className="font-['General_Sans'] font-medium text-xs leading-[100%] tracking-[1%] text-[#696969]">
-                                Published: {formatDate(moreOffer.published)}
-                              </span>
-                            </div>
-                          )}
-                        </div>
+                      <span className="font-semibold text-gray-900 text-lg">
+                        {offer.bookmaker?.name}
+                      </span>
+                    </div>
+                    <span className="text-gray-500 text-sm">
+                      Published: {formatDate(offer.published)}
+                    </span>
+                  </div>
 
-                        {/* Offer Title */}
-                        <div className="font-['General_Sans'] font-medium text-[16px] leading-[100%] tracking-[1%] text-[#272932]">
-                          {moreOffer.title}
-                        </div>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                    {offer.title}
+                  </h2>
 
-                        {/* Bookmaker and Bonus Type */}
-                        <div className="flex gap-2 ">
-                          {moreOffer.bookmaker?.name && (
-                            <span className="bg-gray-100 rounded-full px-3 py-2 text-sm font-medium text-gray-700 inline-block">
-                              {moreOffer.bookmaker.name}
-                            </span>
-                          )}
-                          {moreOffer.bonusType?.name && (
-                            <span className="bg-gray-100 rounded-full px-3 py-2 text-sm font-medium text-gray-700 inline-block">
-                              {moreOffer.bonusType.name}
-                            </span>
-                          )}
-                        </div>
+                  {/* Offer Summary */}
+                  {offer.offerSummary && (
+                    <div className="text-gray-700 mb-4">
+                      <PortableText
+                        value={offer.offerSummary}
+                        components={portableTextComponents}
+                      />
+                    </div>
+                  )}
 
-                        {/* Offer Summary */}
-                        {moreOffer.offerSummary && (
-                          <div className="font-['General_Sans'] font-normal text-[16px] leading-[20px] tracking-[1%] text-[#696969] line-clamp-2">
-                            <PortableText
-                              value={moreOffer.offerSummary}
-                              components={portableTextComponents}
-                            />
-                          </div>
-                        )}
+                  {/* Expiry Date - only show if offer has expiry */}
+                  {offer.expires && (
+                    <div className="flex items-center gap-2 mb-6">
+                      <img
+                        src="/assets/calendar.png"
+                        alt="Calendar"
+                        width="18"
+                        height="18"
+                      />
+                      <span className="text-black text-sm">
+                        Expires: {formatDate(offer.expires)}
+                      </span>
+                    </div>
+                  )}
 
-                        {/* Expiry Date */}
-                        {moreOffer.expires && (
-                          <div className="flex items-center gap-1 text-sm text-black mt-auto">
-                            <img
-                              src="/assets/calendar.png"
-                              alt="Calendar"
-                              width="16"
-                              height="16"
-                              className="flex-shrink-0"
-                            />
-                            <span className="text-xs">
-                              Expires: {formatDate(moreOffer.expires)}
-                            </span>
-                          </div>
-                        )}
+                  {/* Desktop Get Bonus Button */}
+                  {offer.affiliateLink?.affiliateUrl &&
+                    offer.affiliateLink?.isActive && (
+                      <TrackedLink
+                        href={offer.affiliateLink.affiliateUrl}
+                        linkId={offer._id}
+                        linkType="offer"
+                        linkTitle={offer.title}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        isAffiliate={true}
+                        prettyLink={offer.affiliateLink.prettyLink}
+                        className="hidden sm:flex sm:w-fit sm:px-6 bg-[#018651] hover:bg-[#017a4a] text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 items-center justify-center gap-2 mb-6"
+                      >
+                        Get Bonus
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                          />
+                        </svg>
+                      </TrackedLink>
+                    )}
+
+                  {/* How it works */}
+                  {offer && offer.howItWorks && (
+                    <div className="mb-6">
+                      <div className="text-gray-700 text-sm">
+                        <PortableText
+                          value={offer.howItWorks}
+                          components={portableTextComponents}
+                        />
                       </div>
                     </div>
-                  ))}
-                </div>
+                  )}
 
-                {/* Load More Button - shown initially */}
-                {!hasClickedLoadMore && totalOffers > loadMoreCount && (
-                  <div className="mt-4 text-center">
-                    <button
-                      onClick={handleLoadMore}
-                      disabled={isLoadingMore}
-                      className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-6 py-3 rounded-full font-medium transition-all duration-200 border border-gray-200 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isLoadingMore ? "Loading..." : "Load More"}
-                    </button>
-                  </div>
-                )}
-
-                {/* Sentinel for infinite scroll - shown after first load more click */}
-                {hasClickedLoadMore && totalOffers > loadMoreCount && (
-                  <div ref={sentinelRef} className="mt-4 text-center">
-                    {isLoadingMore && (
-                      <div className="text-gray-500">
-                        Loading more offers...
+                  {/* Payment Method */}
+                  {offer &&
+                    offer.bookmaker?.paymentMethods &&
+                    offer.bookmaker.paymentMethods.length > 0 && (
+                      <div className="mb-6">
+                        <div className="font-semibold text-gray-900 mb-3">
+                          Payment Methods
+                        </div>
+                        <div className="flex flex-wrap gap-2 text-gray-700 text-sm">
+                          {offer.bookmaker.paymentMethods.map((pm, i) => (
+                            <span
+                              key={i}
+                              className="border border-gray-200 rounded px-2 py-1 bg-gray-50"
+                            >
+                              {typeof pm === "string" ? pm : pm.name}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     )}
+
+                  {/* License */}
+                  {offer &&
+                    offer.bookmaker?.license &&
+                    offer.bookmaker.license.length > 0 && (
+                      <div className="mb-6">
+                        <div className="font-semibold text-gray-900 mb-3">
+                          License
+                        </div>
+                        <ul className="list-disc list-inside text-gray-700 text-sm space-y-1 pl-4">
+                          {offer.bookmaker.license.map((license, i) => (
+                            <li key={i}>
+                              {typeof license === "string" ? license : license.name}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                  {/* Mobile Get Bonus Button (replaced by sticky bar) */}
+                  {offer.affiliateLink?.affiliateUrl &&
+                    offer.affiliateLink?.isActive && <div className="hidden"></div>}
+
+                  {/* FAQ Section */}
+                  {offer && offer.faq && offer.faq.length > 0 && (
+                    <div>
+                      <div className="font-normal text-gray-900 mb-4">FAQ</div>
+                      <div className="space-y-3">
+                        {offer.faq.map((faqItem, index) => (
+                          <FAQItem
+                            key={index}
+                            question={faqItem.question}
+                            answer={faqItem.answer}
+                            isOpen={openFAQIndex === index}
+                            onToggle={() => handleFAQToggle(index)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </main>
+        </div>
+      )}
+
+      {/* More Offers Section - Always visible */}
+      {moreOffers.length > 0 && (
+        <div className="max-w-7xl mx-auto w-full px-0 sm:px-4 pb-24 sm:pb-0">
+          <div className="bg-white p-1 sm:p-6 mb-4">
+            <div className="font-semibold text-gray-900 mb-4">
+              More Offers
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+              {moreOffers.map((moreOffer) => (
+                <div
+                  key={moreOffer._id}
+                  className="relative border  border-gray-200 rounded-lg p-1mb-2 sm:p-4 hover:border-gray-300 transition-colors cursor-pointer h-full min-w-0"
+                >
+                  {moreOffer.slug?.current && (
+                    <Link
+                      href={`/${effectiveCountrySlug}/${moreOffer.bonusType?.name?.toLowerCase().replace(/\s+/g, "-")}/${moreOffer.slug?.current}`}
+                      aria-label={moreOffer.title}
+                      className="  absolute inset-0 z-10"
+                    />
+                  )}
+                  <div className="flex flex-col gap-3 p-2 ">
+                    {/* Top row: Logo, Bookmaker Name, and Published Date */}
+                    <div className="flex items-center justify-between min-w-0">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        {moreOffer.bookmaker?.logo &&
+                        isValidAssetRef(moreOffer.bookmaker.logo) ? (
+                          <img
+                            src={moreOffer.bookmaker.logo}
+                            alt={moreOffer.bookmaker.name}
+                            width="88"
+                            height="88"
+                            className="w-[40px] h-[40px] sm:w-[60px] sm:h-[60px] rounded-[6px] flex-shrink-0"
+                          />
+                        ) : (
+                          <div className="w-[44px] h-[44px] sm:w-[60px] sm:h-[60px] bg-gray-100 rounded-[6px] flex-shrink-0" />
+                        )}
+                        <div className="font-['General_Sans'] font-semibold text-[16px] leading-[100%] tracking-[1%] text-[#272932] min-w-0">
+                          {moreOffer.bookmaker?.name}
+                        </div>
+                      </div>
+                      {/* Published Date - positioned on the far right */}
+                      {moreOffer.published && (
+                        <div className="text-sm text-gray-500 flex-shrink-0">
+                          <span className="font-['General_Sans'] font-medium text-xs leading-[100%] tracking-[1%] text-[#696969]">
+                            Published: {formatDate(moreOffer.published)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Offer Title */}
+                    <div className="font-['General_Sans'] font-medium text-[16px] leading-[100%] tracking-[1%] text-[#272932]">
+                      {moreOffer.title}
+                    </div>
+
+                    {/* Bookmaker and Bonus Type */}
+                    <div className="flex gap-2 ">
+                      {moreOffer.bookmaker?.name && (
+                        <span className="bg-gray-100 rounded-full px-3 py-2 text-sm font-medium text-gray-700 inline-block">
+                          {moreOffer.bookmaker.name}
+                        </span>
+                      )}
+                      {moreOffer.bonusType?.name && (
+                        <span className="bg-gray-100 rounded-full px-3 py-2 text-sm font-medium text-gray-700 inline-block">
+                          {moreOffer.bonusType.name}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Offer Summary */}
+                    {moreOffer.offerSummary && (
+                      <div className="font-['General_Sans'] font-normal text-[16px] leading-[20px] tracking-[1%] text-[#696969] line-clamp-2">
+                        <PortableText
+                          value={moreOffer.offerSummary}
+                          components={portableTextComponents}
+                        />
+                      </div>
+                    )}
+
+                    {/* Expiry Date */}
+                    {moreOffer.expires && (
+                      <div className="flex items-center gap-1 text-sm text-black mt-auto">
+                        <img
+                          src="/assets/calendar.png"
+                          alt="Calendar"
+                          width="16"
+                          height="16"
+                          className="flex-shrink-0"
+                        />
+                        <span className="text-xs">
+                          Expires: {formatDate(moreOffer.expires)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Load More Button - shown initially */}
+            {!hasClickedLoadMore && totalOffers > loadMoreCount && (
+              <div className="mt-4 text-center">
+                <button
+                  onClick={handleLoadMore}
+                  disabled={isLoadingMore}
+                  className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-6 py-3 rounded-full font-medium transition-all duration-200 border border-gray-200 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoadingMore ? "Loading..." : "Load More"}
+                </button>
+              </div>
+            )}
+
+            {/* Sentinel for infinite scroll - shown after first load more click */}
+            {hasClickedLoadMore && totalOffers > loadMoreCount && (
+              <div ref={sentinelRef} className="mt-4 text-center">
+                {isLoadingMore && (
+                  <div className="text-gray-500">
+                    Loading more offers...
                   </div>
                 )}
               </div>
             )}
-          </>
-        )}
-      </main>
+          </div>
+        </div>
+      )}
+
       {/* Mobile sticky CTA bar */}
       {offer?.affiliateLink?.affiliateUrl && offer?.affiliateLink?.isActive && (
         <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 p-3">
@@ -1084,7 +1102,7 @@ function OfferDetailsInner({ slug, isPreview = false, draftId = null }) {
           </TrackedLink>
         </div>
       )}
-    </div>
+    </>
   );
 }
 
