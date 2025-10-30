@@ -23,6 +23,7 @@ export default async function RootLayout({ children }) {
   return (
     <html lang="en">
       <head>
+        <meta name="google-site-verification" content="Tf7OJjEAuhjBBSwECHzz_jqZsPXcnSUQ4_kVeXPDHCo" />
         <link rel="icon" href="/assets/favicon.ico" type="image/x-icon" />
         <link href="https://api.fontshare.com/v2/css?f[]=general-sans@300,400,500,600,700,800&display=swap" rel="stylesheet" />
       </head>
