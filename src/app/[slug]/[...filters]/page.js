@@ -1218,16 +1218,31 @@ export default async function CountryFiltersPage({ params, searchParams }) {
     if (country?.country) {
       // Check bookmaker
       const bookmaker = await client.fetch(
-        `*[_type == "bookmaker" && country->country == $country && name match $name][0]{_id}`,
+        `*[_type == "bookmaker" && country->country == $country && name match $name][0]{
+          _id,
+          comparison,
+          faqs
+        }`,
         { country: country.country, name: singleFilter.replace(/-/g, " ") }
       );
       if (bookmaker) {
-        // CRITICAL: Also check if this bookmaker has any active offers
-        const bookmakerWithOffers = await client.fetch(
-          `*[_type == "offers" && bookmaker._ref == $bmId && country->country == $country && (noindex != true) && (sitemapInclude != false) && (!defined(expires) || expires > now())][0]{_id}`,
-          { bmId: bookmaker._id, country: country.country }
-        );
-        if (bookmakerWithOffers) isValidFilter = true;
+        // Check if bookmaker has content (comparison or faqs)
+        const hasContent = (bookmaker.comparison && bookmaker.comparison.length > 0) || 
+                          (bookmaker.faqs && bookmaker.faqs.length > 0);
+        
+        // Only allow unique URL if bookmaker has content
+        if (hasContent) {
+          isValidFilter = true;
+        } else {
+          // No content: check if has active offers
+          const bookmakerWithOffers = await client.fetch(
+            `*[_type == "offers" && bookmaker._ref == $bmId && country->country == $country && (noindex != true) && (sitemapInclude != false) && (!defined(expires) || expires > now())][0]{_id}`,
+            { bmId: bookmaker._id, country: country.country }
+          );
+          // If no content and no offers, return 404
+          // If no content but has offers, still return 404 (they should use query params)
+          isValidFilter = false;
+        }
       }
       // Check bonus type
       if (!isValidFilter) {

@@ -303,12 +303,13 @@ export default function DynamicOffers({
       bonusTypes.length === 0 &&
       advanced.length === 0
     ) {
-      // Check if this bookmaker has 0 offers - if so, use query params to avoid 404
+      // Check if this bookmaker has content or offers
       const bookmakerOption = originalBookmakerOptions.find(
         opt => opt.name === bookmakers[0]
       );
-      if (bookmakerOption && bookmakerOption.count === 0) {
-        // Use query parameter format for bookmakers with 0 offers
+      // Use query params if bookmaker has no content OR has 0 offers
+      if (bookmakerOption && (!bookmakerOption.hasContent || bookmakerOption.count === 0)) {
+        // Use query parameter format for bookmakers without content or with 0 offers
         return `/${countrySlug}/offers?bookmakers=${slugify(bookmakers[0])}`;
       }
       return `/${countrySlug}/${slugify(bookmakers[0])}`;

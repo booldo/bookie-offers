@@ -12,24 +12,32 @@ export async function fetchBookmakersForCountry(countryId, countryName) {
     console.log("DEBUG: Fetching bookmakers for countryId:", countryId, "countryName:", countryName);
     
     try {
-      // Primary query: fetch by country reference
+      // Primary query: fetch by country reference with content check
       const bmList = await client.fetch(
-        `*[_type == "bookmaker" && country._ref == $cid] | order(name asc){ name, country }`,
+        `*[_type == "bookmaker" && country._ref == $cid] | order(name asc){ 
+          name, 
+          country,
+          "hasContent": (defined(comparison) && count(comparison) > 0) || (defined(faqs) && count(faqs) > 0)
+        }`,
         { cid: countryId }
       );
       console.log("DEBUG: Primary bmList result:", bmList);
       
-      allBookmakers = bmList?.map((b) => b.name).filter(Boolean) || [];
+      allBookmakers = bmList || [];
       
       // Fallback query: if no bookmakers found by reference, try by country name
       if (allBookmakers.length === 0 && countryName) {
         console.log("DEBUG: Primary query returned empty, trying fallback by country name");
         const bmListByName = await client.fetch(
-          `*[_type == "bookmaker" && country->country == $countryName] | order(name asc){ name, country }`,
+          `*[_type == "bookmaker" && country->country == $countryName] | order(name asc){ 
+            name, 
+            country,
+            "hasContent": (defined(comparison) && count(comparison) > 0) || (defined(faqs) && count(faqs) > 0)
+          }`,
           { countryName }
         );
         console.log("DEBUG: Fallback bmListByName result:", bmListByName);
-        allBookmakers = bmListByName?.map((b) => b.name).filter(Boolean) || [];
+        allBookmakers = bmListByName || [];
       }
     } catch (error) {
       console.error("Error fetching bookmakers:", error);
@@ -53,14 +61,27 @@ export function processBookmakerOptions(offers, allBookmakers) {
     bookmakerCount[bm] = (bookmakerCount[bm] || 0) + 1;
   });
   
+  // Create a map of bookmaker names to their hasContent status
+  const bookmakerContentMap = {};
+  allBookmakers.forEach((bm) => {
+    if (typeof bm === 'object' && bm.name) {
+      bookmakerContentMap[bm.name] = bm.hasContent || false;
+    }
+  });
+  
   // Merge with complete bookmaker list to include zero-offer bookmakers
+  const bookmakerNames = allBookmakers.map(bm => typeof bm === 'object' ? bm.name : bm).filter(Boolean);
   const bookmakerSet = new Set([
     ...Object.keys(bookmakerCount), 
-    ...allBookmakers
+    ...bookmakerNames
   ]);
   
   const bookmakerOptions = Array.from(bookmakerSet)
-    .map((name) => ({ name, count: bookmakerCount[name] || 0 }))
+    .map((name) => ({ 
+      name, 
+      count: bookmakerCount[name] || 0,
+      hasContent: bookmakerContentMap[name] || false
+    }))
     .sort((a, b) => a.name.localeCompare(b.name));
   
   console.log("DEBUG: Processed bookmakerOptions (including 0 offers):", bookmakerOptions);

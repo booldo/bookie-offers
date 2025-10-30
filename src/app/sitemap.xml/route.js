@@ -116,6 +116,35 @@ export async function GET() {
       console.error('Error fetching additional static pages:', error);
     }
 
+    // Fetch bookmakers with content for sitemap
+    try {
+      const bookmakersWithContent = await client.fetch(`
+        *[_type == "bookmaker" && (
+          (defined(comparison) && count(comparison) > 0) || 
+          (defined(faqs) && count(faqs) > 0)
+        ) && (noindex != true) && (sitemapInclude != false)]{
+          slug,
+          _updatedAt,
+          country->{slug}
+        }
+      `);
+
+      console.log('Fetched bookmakers with content:', bookmakersWithContent.length);
+
+      // Add bookmaker pages to sitemap
+      bookmakersWithContent.forEach(bookmaker => {
+        if (bookmaker.slug?.current) {
+          urls.push({
+            loc: `${baseUrl}/${bookmaker.slug.current}`,
+            lastmod: bookmaker._updatedAt ? new Date(bookmaker._updatedAt).toISOString() : new Date().toISOString(),
+            priority: "0.7"
+          });
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching bookmakers with content:', error);
+    }
+
     // Process dynamic entries from Sanity
     
     const dynamicUrls = entries.map((entry) => {
