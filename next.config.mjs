@@ -1,9 +1,11 @@
 /** @type {import('next').NextConfig} */
+module.exports = nextConfig;
 const nextConfig = {
   // experimental: {
   //   optimizePackageImports: ['@portabletext/react'],
   //   ppr: 'incremental',
   // },
+  trailingSlash: true
   images: {
     remotePatterns: [
       {
@@ -21,13 +23,13 @@ const nextConfig = {
       {
         source: '/gh/offers',
         has: [{ type: 'query', key: 'slug' }],
-        destination: '/gh/offers/:slug',
+        destination: '/gh/offers/:slug/',
         permanent: true,
       },
       {
-        source: '/ng/offers',
+        source: '/ng/offers/',
         has: [{ type: 'query', key: 'slug' }],
-        destination: '/ng/offers/:slug',
+        destination: '/ng/offers/:slug/',
         permanent: true,
       },
 
