@@ -823,9 +823,207 @@ export default async function CountryFiltersPage({ params, searchParams }) {
     const totalQuery = `count(*[_type == "offers" && country->country == $countryName && slug.current != $slug && (noindex != true) && (sitemapInclude != false) && (!defined(expires) || expires > now())])`;
     const totalOffers = await client.fetch(totalQuery, { slug: offerSlug, countryName });
     
+    // Check if offer is expired
+    const isExpired = serverOffer?.expires
+      ? new Date(serverOffer.expires) < new Date()
+      : false;
+    
+    // Check if offer is hidden
+    const isContentHidden = serverOffer && 
+      (serverOffer.noindex === true || serverOffer.sitemapInclude === false);
+    
     // Extract the offer slug from the last segment
     return (
       <CountryPageShell params={awaitedParams} isOfferDetailsPage={true}>
+        {/* Server-rendered SEO content */}
+        {serverOffer && !isExpired && !isContentHidden && (
+          <div className="min-h-screen bg-[#FFFFFF] flex flex-col">
+            <main className="max-w-7xl mx-auto w-full px-0 sm:px-4 flex-1 pb-24 sm:pb-0">
+              {/* Breadcrumb */}
+              <div className="mt-6 mb-4 flex items-center gap-2 text-sm text-gray-500 ml-2 flex-wrap">
+                <Link
+                  href={`/${awaitedParams.slug}`}
+                  className="hover:underline flex items-center gap-1 flex-shrink-0 cursor-pointer text-gray-900"
+                >
+                  <img
+                    src="/assets/back-arrow.png"
+                    alt="Back"
+                    width="16"
+                    height="16"
+                  />
+                  <span className="text-gray-900 font-medium cursor-pointer">Home</span>
+                </Link>
+                <span className="mx-1 flex-shrink-0">/</span>
+                <Link
+                  href={`/${awaitedParams.slug}/${serverOffer?.bonusType?.name?.toLowerCase().replace(/\s+/g, "-")}`}
+                  className="hover:underline text-gray-900 font-medium cursor-pointer"
+                >
+                  {serverOffer?.bonusType?.name || "Bonus"}
+                </Link>
+                <span className="mx-1 flex-shrink-0">/</span>
+                <span className="text-gray-900 font-medium">
+                  {serverOffer?.title || "Offer"}
+                </span>
+              </div>
+
+              {/* Offer Card - Server Rendered */}
+              <div className="bg-white p-1 sm:p-6 mb-6 flex flex-col">
+                {/* Top row */}
+                <div className="flex justify-between items-center mb-4">
+                  <div className="flex items-center gap-3">
+                    {serverOffer.bookmaker?.logo ? (
+                      <img
+                        src={serverOffer.bookmaker.logo}
+                        alt={serverOffer.bookmaker.logoAlt || serverOffer.bookmaker.name}
+                        width="40"
+                        height="40"
+                        className="rounded-md"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 bg-gray-100 rounded-md" />
+                    )}
+                    <span className="font-semibold text-gray-900 text-lg">
+                      {serverOffer.bookmaker?.name}
+                    </span>
+                  </div>
+                  <span className="text-gray-500 text-sm">
+                    Published: {serverOffer.published ? new Date(serverOffer.published).toLocaleDateString() : ''}
+                  </span>
+                </div>
+
+                <h1 className="text-2xl font-bold text-gray-900 mb-2">
+                  {serverOffer.title}
+                </h1>
+
+                {/* Offer Summary */}
+                {serverOffer.offerSummary && (
+                  <div className="text-gray-700 mb-4">
+                    <PortableText
+                      value={serverOffer.offerSummary}
+                      components={portableTextComponents}
+                    />
+                  </div>
+                )}
+
+                {/* Expiry Date */}
+                {serverOffer.expires && (
+                  <div className="flex items-center gap-2 mb-6">
+                    <img
+                      src="/assets/calendar.png"
+                      alt="Calendar"
+                      width="18"
+                      height="18"
+                    />
+                    <span className="text-black text-sm">
+                      Expires: {new Date(serverOffer.expires).toLocaleDateString()}
+                    </span>
+                  </div>
+                )}
+
+                {/* Desktop Get Bonus Button - Server Rendered */}
+                {serverOffer.affiliateLink?.affiliateUrl && serverOffer.affiliateLink?.isActive && (
+                  <a
+                    href={serverOffer.affiliateLink.affiliateUrl}
+                    target="_blank"
+                    rel="noopener noreferrer sponsored"
+                    className="hidden sm:flex sm:w-fit sm:px-6 bg-[#018651] hover:bg-[#017a4a] text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 items-center justify-center gap-2 mb-6"
+                  >
+                    Get Bonus
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                      />
+                    </svg>
+                  </a>
+                )}
+
+                {/* How it works */}
+                {serverOffer.howItWorks && (
+                  <div className="mb-6">
+                    <div className="text-gray-700 text-sm">
+                      <PortableText
+                        value={serverOffer.howItWorks}
+                        components={portableTextComponents}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Payment Methods */}
+                {serverOffer.bookmaker?.paymentMethods && serverOffer.bookmaker.paymentMethods.length > 0 && (
+                  <div className="mb-6">
+                    <div className="font-semibold text-gray-900 mb-3">
+                      Payment Methods
+                    </div>
+                    <div className="flex flex-wrap gap-2 text-gray-700 text-sm">
+                      {serverOffer.bookmaker.paymentMethods.map((pm, i) => (
+                        <span
+                          key={i}
+                          className="border border-gray-200 rounded px-2 py-1 bg-gray-50"
+                        >
+                          {typeof pm === "string" ? pm : pm.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* License */}
+                {serverOffer.bookmaker?.license && serverOffer.bookmaker.license.length > 0 && (
+                  <div className="mb-6">
+                    <div className="font-semibold text-gray-900 mb-3">
+                      License
+                    </div>
+                    <ul className="list-disc list-inside text-gray-700 text-sm space-y-1 pl-4">
+                      {serverOffer.bookmaker.license.map((license, i) => (
+                        <li key={i}>
+                          {typeof license === "string" ? license : license.name}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* FAQ Section - Server Rendered for SEO */}
+                {serverOffer.faq && serverOffer.faq.length > 0 && (
+                  <div>
+                    <div className="font-normal text-gray-900 mb-4">FAQ</div>
+                    <div className="space-y-3">
+                      {serverOffer.faq.map((faqItem, index) => (
+                        <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
+                          <div className="w-full px-4 py-3">
+                            <div className="font-medium text-gray-900 mb-2">
+                              <PortableText
+                                value={faqItem.question}
+                                components={portableTextComponents}
+                              />
+                            </div>
+                            <div className="text-gray-700 text-sm">
+                              <PortableText
+                                value={faqItem.answer}
+                                components={portableTextComponents}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </main>
+          </div>
+        )}
+        
+        {/* Client component for interactivity */}
         <OfferDetailsInner 
           slug={offerSlug} 
           initialOffer={serverOffer}
