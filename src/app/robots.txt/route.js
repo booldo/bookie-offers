@@ -1,8 +1,29 @@
 import { NextResponse } from "next/server";
 import { getLandingPageSettings } from "../../sanity/lib/seo";
 
-export async function GET() {
+export async function GET(request) {
   try {
+    // Check if this is a staging environment
+    const host = request.headers.get('host') || '';
+    const isStaging = host.includes('vercel.app') || 
+                     host.includes('staging') || 
+                     process.env.NEXT_PUBLIC_ENVIRONMENT === 'staging' ||
+                     process.env.VERCEL_ENV === 'preview';
+
+    // If staging, block all crawlers
+    if (isStaging) {
+      const stagingRobotsContent = `User-agent: *
+Disallow: /`;
+      
+      return new NextResponse(stagingRobotsContent, {
+        status: 200,
+        headers: {
+          "Content-Type": "text/plain",
+          "Cache-Control": "public, max-age=3600, s-maxage=3600",
+        },
+      });
+    }
+
     const landingPage = await getLandingPageSettings();
 
     // Default comprehensive robots.txt content
