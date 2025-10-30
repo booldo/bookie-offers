@@ -5,7 +5,7 @@ const nextConfig = {
   //   optimizePackageImports: ['@portabletext/react'],
   //   ppr: 'incremental',
   // },
-  trailingSlash: true
+  trailingSlash: true,
   images: {
     remotePatterns: [
       {
