@@ -355,7 +355,7 @@ const FAQItem = ({ question, answer, isOpen, onToggle }) => {
   );
 };
 
-function OfferDetailsInner({ slug, isPreview = false, draftId = null }) {
+function OfferDetailsInner({ slug, isPreview = false, draftId = null, initialOffer = null, initialMoreOffers = [], initialTotalOffers = 0, countrySlug = null, countryName = null }) {
   const {
     countryData,
     loading: countryLoading,
@@ -365,26 +365,43 @@ function OfferDetailsInner({ slug, isPreview = false, draftId = null }) {
     getCountrySlug,
   } = useCountryContext();
   const router = useRouter();
-  const [offer, setOffer] = useState(null);
-  const [moreOffers, setMoreOffers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [offer, setOffer] = useState(initialOffer);
+  const [moreOffers, setMoreOffers] = useState(initialMoreOffers);
+  const [loading, setLoading] = useState(!initialOffer);
   const [error, setError] = useState(null);
   const [loadMoreCount, setLoadMoreCount] = useState(10);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasClickedLoadMore, setHasClickedLoadMore] = useState(false);
   const [shouldRestoreScroll, setShouldRestoreScroll] = useState(false);
-  const [totalOffers, setTotalOffers] = useState(0);
+  const [totalOffers, setTotalOffers] = useState(initialTotalOffers);
   const [openFAQIndex, setOpenFAQIndex] = useState(null);
   const [isContentHidden, setIsContentHidden] = useState(false);
   const scrollPositionRef = useRef(0);
   const sentinelRef = useRef(null);
+  
+  // Use props if available, otherwise fallback to context
+  const effectiveCountrySlug = countrySlug || getCountrySlug();
+  const effectiveCountryName = countryName || getCountryName();
 
   useEffect(() => {
+    // Skip fetching if we already have server-fetched data (not preview mode)
+    if (initialOffer && !isPreview) {
+      // Check if offer is hidden and set state
+      if (
+        initialOffer &&
+        (initialOffer.noindex === true || initialOffer.sitemapInclude === false)
+      ) {
+        console.log("Offer is hidden, setting hidden state");
+        setIsContentHidden(true);
+      }
+      return;
+    }
+    
     if (!slug) return;
-    if (!isCountryLoaded()) return;
+    if (!effectiveCountryName && !isCountryLoaded()) return;
 
-    const countryName = getCountryName();
-    if (!countryName) return;
+    const fetchCountryName = effectiveCountryName || getCountryName();
+    if (!fetchCountryName) return;
 
     setLoading(true);
     // Fetch the main offer and more offers from Sanity - now dynamic by country
@@ -487,7 +504,7 @@ function OfferDetailsInner({ slug, isPreview = false, draftId = null }) {
             sitemapInclude,
             offerSummary
           }`;
-          queryParams = { slug, countryName };
+          queryParams = { slug, countryName: fetchCountryName };
         }
         
         const mainOffer = await client.fetch(mainOfferQuery, queryParams);
@@ -523,13 +540,13 @@ function OfferDetailsInner({ slug, isPreview = false, draftId = null }) {
         const moreOffersData = await client.fetch(moreOffersQuery, {
           slug,
           count: loadMoreCount,
-          countryName,
+          countryName: fetchCountryName,
         });
         setMoreOffers(moreOffersData);
 
         // Get total count for pagination - now dynamic (excluding hidden offers and expired offers)
         const totalQuery = `count(*[_type == "offers" && country->country == $countryName && slug.current != $slug && (noindex != true) && (sitemapInclude != false) && (!defined(expires) || expires > now())])`;
-        const total = await client.fetch(totalQuery, { slug, countryName });
+        const total = await client.fetch(totalQuery, { slug, countryName: fetchCountryName });
         setTotalOffers(total);
       } catch (err) {
         console.error("Error fetching offer data:", err);
@@ -540,7 +557,7 @@ function OfferDetailsInner({ slug, isPreview = false, draftId = null }) {
     };
 
     fetchData();
-  }, [slug, loadMoreCount, isCountryLoaded, getCountryName, isPreview, draftId]);
+  }, [slug, loadMoreCount, isCountryLoaded, getCountryName, isPreview, draftId, initialOffer]);
 
   // Restore scroll position when component mounts
   useLayoutEffect(() => {
@@ -562,8 +579,8 @@ function OfferDetailsInner({ slug, isPreview = false, draftId = null }) {
   const handleLoadMore = async () => {
     if (isLoadingMore || loadMoreCount >= totalOffers) return;
 
-    const countryName = getCountryName();
-    if (!countryName) return;
+    const loadMoreCountryName = effectiveCountryName || getCountryName();
+    if (!loadMoreCountryName) return;
 
     setIsLoadingMore(true);
     setHasClickedLoadMore(true);
@@ -587,7 +604,7 @@ function OfferDetailsInner({ slug, isPreview = false, draftId = null }) {
       const moreOffersData = await client.fetch(moreOffersQuery, {
         slug,
         count: loadMoreCount + 10,
-        countryName,
+        countryName: loadMoreCountryName,
       });
       setMoreOffers(moreOffersData);
       setLoadMoreCount((prev) => prev + 10);
@@ -628,8 +645,8 @@ function OfferDetailsInner({ slug, isPreview = false, draftId = null }) {
     setOpenFAQIndex(openFAQIndex === index ? null : index);
   };
 
-  // Show loading state while country is loading
-  if (countryLoading) {
+  // Show loading state while country is loading (skip if we have server props)
+  if (countryLoading && !effectiveCountrySlug) {
     return (
       <div className="min-h-screen bg-[#fafbfc] flex flex-col">
         <main className="max-w-7xl mx-auto w-full px-2 sm:px-4 flex-1">
@@ -659,7 +676,7 @@ function OfferDetailsInner({ slug, isPreview = false, draftId = null }) {
           expires: formatDate(offer.expires),
         }}
         embedded={true}
-        countrySlug={getCountrySlug()}
+        countrySlug={effectiveCountrySlug}
       />
     );
   }
@@ -670,9 +687,9 @@ function OfferDetailsInner({ slug, isPreview = false, draftId = null }) {
       <ExpiredOfferPage
         offer={null}
         embedded={true}
-        countrySlug={getCountrySlug()}
+        countrySlug={effectiveCountrySlug}
         isCountryEmpty={false}
-        countryName={getCountryName()}
+        countryName={effectiveCountryName}
         isHidden={true}
         contentType="offer"
       />
@@ -685,15 +702,15 @@ function OfferDetailsInner({ slug, isPreview = false, draftId = null }) {
       <ExpiredOfferPage
         offer={null}
         embedded={true}
-        countrySlug={getCountrySlug()}
+        countrySlug={effectiveCountrySlug}
         isCountryEmpty={false}
-        countryName={getCountryName()}
+        countryName={effectiveCountryName}
       />
     );
   }
 
-  // Show error state if country not found
-  if (countryError || !countryData) {
+  // Show error state if country not found (skip if we have server props)
+  if ((countryError || !countryData) && !effectiveCountrySlug) {
     return (
       <div className="min-h-screen bg-[#fafbfc] flex flex-col">
         <main className="max-w-7xl mx-auto w-full px-2 sm:px-4 flex-1">
@@ -725,7 +742,7 @@ function OfferDetailsInner({ slug, isPreview = false, draftId = null }) {
         {/* Updated Breadcrumb */}
         <div className="mt-6 mb-4 flex items-center gap-2 text-sm text-gray-500 ml-2 flex-wrap">
           <Link
-            href={`/${getCountrySlug()}`}
+            href={`/${effectiveCountrySlug}`}
             className="hover:underline flex items-center gap-1 flex-shrink-0 cursor-pointer text-gray-900"
           >
             <img
@@ -738,7 +755,7 @@ function OfferDetailsInner({ slug, isPreview = false, draftId = null }) {
           </Link>
           <span className="mx-1 flex-shrink-0">/</span>
           <Link
-            href={`/${getCountrySlug()}/${offer?.bonusType?.name?.toLowerCase().replace(/\s+/g, "-")}`}
+            href={`/${effectiveCountrySlug}/${offer?.bonusType?.name?.toLowerCase().replace(/\s+/g, "-")}`}
             className="hover:underline text-gray-900 font-medium cursor-pointer"
           >
             {offer?.bonusType?.name || "Bonus"}
@@ -941,7 +958,7 @@ function OfferDetailsInner({ slug, isPreview = false, draftId = null }) {
                     >
                       {moreOffer.slug?.current && (
                         <Link
-                          href={`/${getCountrySlug()}/${moreOffer.bonusType?.name?.toLowerCase().replace(/\s+/g, "-")}/${moreOffer.slug?.current}`}
+                          href={`/${effectiveCountrySlug}/${moreOffer.bonusType?.name?.toLowerCase().replace(/\s+/g, "-")}/${moreOffer.slug?.current}`}
                           aria-label={moreOffer.title}
                           className="  absolute inset-0 z-10"
                         />

@@ -704,21 +704,6 @@ export default async function CountryFiltersPage({ params, searchParams }) {
           <PreviewBanner expiryDate={draftOffer.draftPreview?.previewExpiry} />
           <div style={{ marginTop: '60px' }}>
             <CountryPageShell params={awaitedParams} isOfferDetailsPage={true}>
-              {/* {(draftOffer?.title || draftOffer?.offerSummary) && (
-                <div className="max-w-7xl mx-auto w-full px-4">
-                  {draftOffer?.title && (
-                    <h1 className="text-2xl font-bold text-gray-900 mb-2">{draftOffer.title}</h1>
-                  )}
-                  {draftOffer?.published && (
-                    <div className="text-sm text-gray-500 mb-3">Published: {new Date(draftOffer.published).toLocaleDateString()}</div>
-                  )}
-                  {draftOffer?.offerSummary && (
-                    <div className="text-gray-700 mb-4">
-                      <PortableText value={draftOffer.offerSummary} components={portableTextComponents} />
-                    </div>
-                  )}
-                </div>
-              )} */}
               <Suspense
                 fallback={
                   <div className="flex justify-center items-center py-20">
@@ -756,56 +741,99 @@ export default async function CountryFiltersPage({ params, searchParams }) {
     if (!offer) {
       notFound();
     }
-    // Fetch minimal offer data for server-rendered H1
-    const offerForHeader = await client.fetch(
-      `*[_type == "offers" && slug.current == $slug][0]{
-        title,
-        published,
-        offerSummary,
-        bookmaker->{ name }
-      }`,
-      { slug: offerSlug }
+    
+    // Fetch country name for server-side data fetching
+    const countryDoc = await client.fetch(
+      `*[_type == "countryPage" && slug.current == $slug][0]{country}`,
+      { slug: awaitedParams.slug }
     );
+    const countryName = countryDoc?.country;
+    
+    if (!countryName) {
+      notFound();
+    }
+    
+    // Fetch complete offer data server-side for SEO
+    const mainOfferQuery = `*[_type == "offers" && country->country == $countryName && slug.current == $slug && (!defined(expires) || expires > now())][0]{
+      _id,
+      title,
+      bonusType->{name},
+      slug,
+      bookmaker->{
+        _id,
+        name,
+        logo,
+        logoAlt,
+        logoUrl,
+        paymentMethods[]->{
+          _id,
+          name
+        },
+        license[]->{
+          _id,
+          name
+        },
+        country
+      },
+      maxBonus,
+      minDeposit,
+      expires,
+      published,
+      affiliateLink->{
+        _id,
+        name,
+        affiliateUrl,
+        isActive,
+        prettyLink
+      },
+      banner,
+      bannerAlt,
+      howItWorks,
+      faq,
+      metaTitle,
+      metaDescription,
+      noindex,
+      nofollow,
+      canonicalUrl,
+      sitemapInclude,
+      offerSummary
+    }`;
+    const serverOffer = await client.fetch(mainOfferQuery, { slug: offerSlug, countryName });
+    
+    // Fetch initial more offers server-side
+    const moreOffersQuery = `*[_type == "offers" && country->country == $countryName && slug.current != $slug && (noindex != true) && (sitemapInclude != false) && (!defined(expires) || expires > now())] | order(_createdAt desc) [0...10] {
+      _id,
+      bonusType->{name},
+      slug,
+      bookmaker->{
+        _id,
+        name,
+        logo,
+        logoAlt,
+        logoUrl
+      },
+      title,
+      offerSummary,
+      expires,
+      published
+    }`;
+    const serverMoreOffers = await client.fetch(moreOffersQuery, { slug: offerSlug, countryName });
+    
+    // Get total count for pagination
+    const totalQuery = `count(*[_type == "offers" && country->country == $countryName && slug.current != $slug && (noindex != true) && (sitemapInclude != false) && (!defined(expires) || expires > now())])`;
+    const totalOffers = await client.fetch(totalQuery, { slug: offerSlug, countryName });
+    
     // Extract the offer slug from the last segment
     return (
       <CountryPageShell params={awaitedParams} isOfferDetailsPage={true}>
-        {/* {(offerForHeader?.title || offerForHeader?.offerSummary) && (
-          <div className="max-w-7xl mx-auto w-full px-4">
-            {offerForHeader?.title && (
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">{offerForHeader.title}</h1>
-            )}
-            {offerForHeader?.published && (
-              <div className="text-sm text-gray-500 mb-3">Published: {new Date(offerForHeader.published).toLocaleDateString()}</div>
-            )}
-            {offerForHeader?.offerSummary && (
-              <div className="text-gray-700 mb-4">
-                <PortableText value={offerForHeader.offerSummary} components={portableTextComponents} />
-              </div>
-            )}
-          </div>
-        )} */}
-        <Suspense
-          fallback={
-            <div className="flex justify-center items-center py-20">
-              <div className="flex space-x-2">
-                <div
-                  className="w-3 h-3 bg-gray-500 rounded-full animate-bounce"
-                  style={{ animationDelay: "0ms" }}
-                ></div>
-                <div
-                  className="w-3 h-3 bg-gray-500 rounded-full animate-bounce"
-                  style={{ animationDelay: "150ms" }}
-                ></div>
-                <div
-                  className="w-3 h-3 bg-gray-500 rounded-full animate-bounce"
-                  style={{ animationDelay: "300ms" }}
-                ></div>
-              </div>
-            </div>
-          }
-        >
-          <OfferDetailsInner slug={offerSlug} />
-        </Suspense>
+        <OfferDetailsInner 
+          slug={offerSlug} 
+          initialOffer={serverOffer}
+          initialMoreOffers={serverMoreOffers}
+          initialTotalOffers={totalOffers}
+          countrySlug={awaitedParams.slug}
+          countryName={countryName}
+        />
       </CountryPageShell>
     );
   }
