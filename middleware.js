@@ -195,19 +195,25 @@ async function checkRedirectWithFetch(path) {
     console.log('🛠️ Normalized path:', normalizedPath);
 
     // GROQ query to find active redirects for this path
-    // Try both with and without trailing slash
-    const query = `*[_type == "redirects" && (sourcePath == $path || sourcePath == $pathWithSlash) && isActive == true][0] {
+    // If matchExact is false (default), try both with and without trailing slash
+    // If matchExact is true, only match the exact path
+    const query = `*[_type == "redirects" && isActive == true && (
+      (matchExact == true && sourcePath == $exactPath) ||
+      (matchExact != true && (sourcePath == $path || sourcePath == $pathWithSlash))
+    )][0] {
       targetUrl,
       redirectType,
-      sourcePath
+      sourcePath,
+      matchExact
     }`;
     
     // Use Sanity HTTP API directly with native fetch
     const pathWithSlash = normalizedPath + '/';
-    const url = `https://${projectId}.api.sanity.io/v${apiVersion}/data/query/${dataset}?query=${encodeURIComponent(query)}&$path=${encodeURIComponent(normalizedPath)}&$pathWithSlash=${encodeURIComponent(pathWithSlash)}`;
+    const url = `https://${projectId}.api.sanity.io/v${apiVersion}/data/query/${dataset}?query=${encodeURIComponent(query)}&$path=${encodeURIComponent(normalizedPath)}&$pathWithSlash=${encodeURIComponent(pathWithSlash)}&$exactPath=${encodeURIComponent(path)}`;
     
     console.log('🔎 Checking redirect for path:', normalizedPath);
     console.log('🔎 Also checking with slash:', pathWithSlash);
+    console.log('🔎 Exact path (for matchExact):', path);
     console.log('🌐 Sanity API URL:', url);
     
     const response = await fetch(url, {

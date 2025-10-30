@@ -7,7 +7,7 @@ export default {
       name: 'sourcePath',
       title: 'Old URL (Source Path)',
       type: 'string',
-      description: 'The OLD URL path from previous domain that users are visiting (e.g., "/old-page", "/ng/old-offer"). This is what gets redirected FROM.',
+      description: 'The OLD URL path from previous domain that users are visiting (e.g., "/old-page", "/ng/old-offer"). This is what gets redirected FROM. Note: By default, both "/path" and "/path/" will match unless "Exact Match Only" is enabled.',
       validation: Rule => Rule.required(),
       placeholder: '/old-url-path'
     },
@@ -45,6 +45,13 @@ export default {
       type: 'boolean',
       description: 'Whether this redirect is currently active',
       initialValue: true
+    },
+    {
+      name: 'matchExact',
+      title: 'Exact Match Only',
+      type: 'boolean',
+      description: 'If enabled, only match the exact path including trailing slash (e.g., "/path" will NOT match "/path/"). If disabled (default), both "/path" and "/path/" will match.',
+      initialValue: false
     },
     {
       name: 'description',
