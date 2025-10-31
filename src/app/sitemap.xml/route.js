@@ -116,6 +116,35 @@ export async function GET() {
       console.error('Error fetching additional static pages:', error);
     }
 
+    // Fetch bookmakers with content for sitemap
+    try {
+      const bookmakersWithContent = await client.fetch(`
+        *[_type == "bookmaker" && (
+          (defined(comparison) && count(comparison) > 0) || 
+          (defined(faqs) && count(faqs) > 0)
+        ) && (noindex != true) && (sitemapInclude != false)]{
+          slug,
+          _updatedAt,
+          country->{slug}
+        }
+      `);
+
+      console.log('Fetched bookmakers with content:', bookmakersWithContent.length);
+
+      // Add bookmaker pages to sitemap
+      bookmakersWithContent.forEach(bookmaker => {
+        if (bookmaker.slug?.current) {
+          urls.push({
+            loc: `${baseUrl}/${bookmaker.slug.current}`,
+            lastmod: bookmaker._updatedAt ? new Date(bookmaker._updatedAt).toISOString() : new Date().toISOString(),
+            priority: "0.7"
+          });
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching bookmakers with content:', error);
+    }
+
     // Process dynamic entries from Sanity
     
     const dynamicUrls = entries.map((entry) => {
@@ -124,17 +153,8 @@ export async function GET() {
       let priority = "0.5";
       
       if (entry._type === "offers") {
-        // For offers, use the country from the offer data
-        const rawCountrySlug = entry.country?.slug;
-        const countrySlug = typeof rawCountrySlug === 'string' ? rawCountrySlug : (rawCountrySlug?.current || 'ng');
-        const offerSlug = typeof entry.slug === 'string' ? entry.slug : entry.slug?.current;
-        if (!offerSlug) {
-          console.warn('Offer missing slug:', entry);
-          isValid = false;
-        } else {
-          path = `/${countrySlug}/offers/${offerSlug}`;
-          priority = "0.8"; // Offers are high priority
-        }
+        // Skip offers - excluded from sitemap per client request
+        isValid = false;
       } else if (entry._type === "article") {
         const articleSlug = typeof entry.slug === 'string' ? entry.slug : entry.slug?.current;
         if (!articleSlug) {

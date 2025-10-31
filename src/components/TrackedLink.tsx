@@ -41,8 +41,18 @@ export const TrackedLink: React.FC<TrackedLinkProps> = ({
   const { trackLinkClick } = useClickTracking();
   const pathname = usePathname();
 
-  // Extract country code from current pathname
-  const countryCodeFromPath = pathname.split('/')[1] || 'ng'; // e.g., "ng" from "/ng/..." with fallback
+  // Extract country code from current pathname or use provided countryCode prop
+  // Validate that it looks like a country code (2-3 lowercase letters)
+  const pathSegments = pathname.split('/').filter(Boolean);
+  let countryCodeFromPath = pathSegments[0] || 'ng';
+  
+  // Validate country code format (should be 2-3 lowercase letters)
+  if (!/^[a-z]{2,3}$/.test(countryCodeFromPath)) {
+    countryCodeFromPath = 'ng'; // fallback to Nigeria
+  }
+  
+  // Use provided countryCode prop if available, otherwise use extracted one
+  const finalCountryCode = countryCode || countryCodeFromPath;
   
   // Determine the display URL for hover tooltip
   let displayUrl = href;
@@ -51,11 +61,11 @@ export const TrackedLink: React.FC<TrackedLinkProps> = ({
     // Use the pretty link if provided (format: country/bookmaker/bonustype)
     const prettyLinkValue = typeof prettyLink === 'string' ? prettyLink : prettyLink?.current || '';
     if (prettyLinkValue && prettyLinkValue.trim()) {
-      displayUrl = `/${countryCodeFromPath}/${prettyLinkValue}`;
+      displayUrl = `/${finalCountryCode}/${prettyLinkValue}`;
     }
   } else if (isAffiliate && offerSlug) {
     // Fallback to existing offerSlug format
-    displayUrl = `/${countryCodeFromPath}/${offerSlug}`;
+    displayUrl = `/${finalCountryCode}/${offerSlug}`;
   }
 
   // For affiliate links, use the pretty link for the href so it shows in browser status bar
@@ -65,7 +75,7 @@ export const TrackedLink: React.FC<TrackedLinkProps> = ({
     const prettyLinkValue = typeof prettyLink === 'string' ? prettyLink : prettyLink?.current || '';
     if (prettyLinkValue && prettyLinkValue.trim()) {
       // Use pretty link for display in browser status bar (with country code)
-      linkHref = `/${countryCodeFromPath}/${prettyLinkValue}`;
+      linkHref = `/${finalCountryCode}/${prettyLinkValue}`;
     }
   }
 
