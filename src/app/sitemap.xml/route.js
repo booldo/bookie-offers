@@ -153,15 +153,19 @@ export async function GET() {
       let priority = "0.5";
       
       if (entry._type === "offers") {
-        // For offers, use the country from the offer data
+        // For offers, use the correct URL structure: /{countrySlug}/{bonusTypeSlug}/{offerSlug}
         const rawCountrySlug = entry.country?.slug;
         const countrySlug = typeof rawCountrySlug === 'string' ? rawCountrySlug : (rawCountrySlug?.current || 'ng');
         const offerSlug = typeof entry.slug === 'string' ? entry.slug : entry.slug?.current;
-        if (!offerSlug) {
-          console.warn('Offer missing slug:', entry);
+        const bonusTypeName = entry.bonusType?.name;
+        
+        if (!offerSlug || !bonusTypeName) {
+          console.warn('Offer missing slug or bonusType:', entry);
           isValid = false;
         } else {
-          path = `/${countrySlug}/offers/${offerSlug}`;
+          // Convert bonus type name to slug format (lowercase, replace spaces with hyphens)
+          const bonusTypeSlug = bonusTypeName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+          path = `/${countrySlug}/${bonusTypeSlug}/${offerSlug}`;
           priority = "0.8"; // Offers are high priority
         }
       } else if (entry._type === "article") {

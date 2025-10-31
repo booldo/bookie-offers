@@ -32,7 +32,7 @@ export async function getPageSeo(type, slug) {
 
 export async function getAllSitemapEntries() {
   try {
-    // Fetch all docs with sitemapInclude != false, including country info for offers
+    // Fetch all docs with sitemapInclude != false, including country and bonusType info for offers
     const query = `*[_type in ["offers","article","banner","faq","calculator"] && (sitemapInclude == true || !defined(sitemapInclude)) && (isActive == true || !defined(isActive))]{
       _type,
       slug,
@@ -42,6 +42,9 @@ export async function getAllSitemapEntries() {
       nofollow,
       country->{
         slug
+      },
+      bonusType->{
+        name
       }
     }`;
   
@@ -187,6 +190,9 @@ export async function getAllSitemapEntries() {
       _updatedAt,
       country->{
         slug
+      },
+      bonusType->{
+        name
       }
     }`;
     return client.fetch(fallbackQuery);
