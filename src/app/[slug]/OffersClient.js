@@ -179,15 +179,6 @@ export default function OffersClient({
       bonusTypes.length === 0 &&
       advanced.length === 0
     ) {
-      // Check if this bookmaker has content or offers
-      const bookmakerOption = bookmakerOptions.find(
-        opt => opt.name === bookmakers[0]
-      );
-      // Use query params if bookmaker has no content OR has 0 offers
-      if (bookmakerOption && (!bookmakerOption.hasContent || bookmakerOption.count === 0)) {
-        // Use query parameter format for bookmakers without content or with 0 offers
-        return `/${countrySlug}/offers?bookmakers=${slugify(bookmakers[0])}`;
-      }
       return `/${countrySlug}/${slugify(bookmakers[0])}`;
     }
     if (

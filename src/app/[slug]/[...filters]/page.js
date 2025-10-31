@@ -858,7 +858,11 @@ export default async function CountryFiltersPage({ params, searchParams }) {
                 {/* Desktop Get Bonus Button - Server Rendered */}
                 {serverOffer.affiliateLink?.affiliateUrl && serverOffer.affiliateLink?.isActive && (
                   <a
-                    href={serverOffer.affiliateLink.affiliateUrl}
+                    href={
+                      serverOffer.affiliateLink?.prettyLink?.current 
+                        ? `/${params.slug}/${serverOffer.affiliateLink.prettyLink.current}`
+                        : serverOffer.affiliateLink.affiliateUrl
+                    }
                     target="_blank"
                     rel="noopener noreferrer sponsored"
                     className="hidden sm:flex sm:w-fit sm:px-6 bg-[#018651] hover:bg-[#017a4a] text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 items-center justify-center gap-2 mb-6"
@@ -874,7 +878,7 @@ export default async function CountryFiltersPage({ params, searchParams }) {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={2}
-                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
                       />
                     </svg>
                   </a>
