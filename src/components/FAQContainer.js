@@ -2,8 +2,72 @@
 import React, { useState } from "react";
 import { PortableText } from '@portabletext/react';
 
+// Custom components for PortableText rendering
+const portableTextComponents = {
+  block: {
+    h1: ({ children }) => (
+      <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
+        {children}
+      </h1>
+    ),
+    h2: ({ children }) => (
+      <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-3">
+        {children}
+      </h2>
+    ),
+    h3: ({ children }) => (
+      <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
+        {children}
+      </h3>
+    ),
+    h4: ({ children }) => (
+      <h4 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">
+        {children}
+      </h4>
+    ),
+    normal: ({ children }) => (
+      <p className="mb-4 text-gray-800 leading-relaxed">{children}</p>
+    ),
+    blockquote: ({ children }) => (
+      <blockquote className="border-l-4 border-gray-300 pl-4 italic text-gray-700 mb-4">
+        {children}
+      </blockquote>
+    ),
+  },
+  list: {
+    bullet: ({ children }) => (
+      <ul className="list-disc list-inside mb-4 text-gray-800 space-y-1">
+        {children}
+      </ul>
+    ),
+    number: ({ children }) => (
+      <ol className="list-decimal list-inside mb-4 text-gray-800 space-y-1">
+        {children}
+      </ol>
+    ),
+  },
+  listItem: {
+    bullet: ({ children }) => <li className="mb-1">{children}</li>,
+    number: ({ children }) => <li className="mb-1">{children}</li>,
+  },
+  marks: {
+    strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+    em: ({ children }) => <em className="italic">{children}</em>,
+    link: ({ children, value }) => (
+      <a
+        href={value.href}
+        className="text-blue-600 hover:text-blue-800 underline"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        {children}
+      </a>
+    ),
+  },
+};
+
 // FAQ Item Component
-const FAQItem = ({ question, answer, isOpen, onToggle, portableTextComponents }) => {
+const FAQItem = ({ question, answer, isOpen, onToggle }) => {
   return (
     <div className="border border-gray-200 rounded-lg overflow-hidden">
       <button
@@ -42,7 +106,7 @@ const FAQItem = ({ question, answer, isOpen, onToggle, portableTextComponents })
 };
 
 // FAQ Container Component with state management
-export default function FAQContainer({ faqs, portableTextComponents }) {
+export default function FAQContainer({ faqs }) {
   const [openItems, setOpenItems] = useState({});
 
   const toggleItem = (index) => {
@@ -68,7 +132,6 @@ export default function FAQContainer({ faqs, portableTextComponents }) {
             answer={faq.answer}
             isOpen={openItems[idx] || false}
             onToggle={() => toggleItem(idx)}
-            portableTextComponents={portableTextComponents}
           />
         ))}
       </div>
