@@ -17,18 +17,18 @@ export async function GET() {
         priority: "1.0"
       },
       {
-        loc: `${baseUrl}/briefly`,
+        loc: `${baseUrl}/briefly/`,
         lastmod: new Date().toISOString(),
         priority: "0.8"
       },
       {
-        loc: `${baseUrl}/briefly/calculators`,
+        loc: `${baseUrl}/briefly/calculators/`,
         lastmod: new Date().toISOString(),
         priority: "0.8"
       },
 
       {
-        loc: `${baseUrl}/faq`,
+        loc: `${baseUrl}/faq/`,
         lastmod: new Date().toISOString(),
         priority: "0.7"
       }
@@ -55,7 +55,7 @@ export async function GET() {
         footer.bottomRowLinks?.links?.forEach(link => {
           if (link.isActive && link.slug?.current && !link.noindex && link.sitemapInclude !== false) {
             urls.push({
-              loc: `${baseUrl}/footer/${link.slug.current}`,
+              loc: `${baseUrl}/footer/${link.slug.current}/`,
               lastmod: (link.updatedAt || link._updatedAt) ? new Date(link.updatedAt || link._updatedAt).toISOString() : new Date().toISOString(),
               priority: "0.6"
             });
@@ -90,7 +90,7 @@ export async function GET() {
         if (shouldInclude) {
           // Add main hamburger menu page
           urls.push({
-            loc: `${baseUrl}/hamburger-menu/main`,
+            loc: `${baseUrl}/hamburger-menu/main/`,
             lastmod: (menu.updatedAt || menu._updatedAt) ? new Date(menu.updatedAt || menu._updatedAt).toISOString() : new Date().toISOString(),
             priority: "0.6"
           });
@@ -99,7 +99,7 @@ export async function GET() {
           const menuSlug = typeof menu.slug === 'string' ? menu.slug : menu.slug?.current;
           console.log('Menu slug extracted:', menuSlug);
           if (menuSlug) {
-            const menuUrl = `${baseUrl}/${menuSlug}`;
+            const menuUrl = `${baseUrl}/${menuSlug}/`;
             console.log('Adding menu URL to sitemap:', menuUrl);
             urls.push({
               loc: menuUrl,
@@ -135,7 +135,7 @@ export async function GET() {
       bookmakersWithContent.forEach(bookmaker => {
         if (bookmaker.slug?.current) {
           urls.push({
-            loc: `${baseUrl}/${bookmaker.slug.current}`,
+            loc: `${baseUrl}/${bookmaker.slug.current}/`,
             lastmod: bookmaker._updatedAt ? new Date(bookmaker._updatedAt).toISOString() : new Date().toISOString(),
             priority: "0.7"
           });
@@ -239,8 +239,11 @@ export async function GET() {
       
 
       
+      // Add trailing slash for consistency (except for root path)
+      const urlPath = path === '/' ? path : `${path}/`;
+      
       return {
-        loc: `${baseUrl}${path}`,
+        loc: `${baseUrl}${urlPath}`,
         lastmod: entry._updatedAt ? new Date(entry._updatedAt).toISOString() : undefined,
         priority: priority,
         sitemapInclude: entry.sitemapInclude,
