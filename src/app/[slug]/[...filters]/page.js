@@ -9,6 +9,7 @@ import Link from "next/link";
 import { client } from "../../../sanity/lib/client";
 import { urlFor } from "../../../sanity/lib/image";
 import { PortableText } from "@portabletext/react";
+import FAQContainer from "../../../components/FAQContainer";
 
 // Custom components for PortableText rendering
 const portableTextComponents = {
@@ -931,32 +932,8 @@ export default async function CountryFiltersPage({ params, searchParams }) {
                   </div>
                 )}
 
-                {/* FAQ Section - Server Rendered for SEO */}
-                {serverOffer.faq && serverOffer.faq.length > 0 && (
-                  <div>
-                    <div className="font-normal text-gray-900 mb-4">FAQ</div>
-                    <div className="space-y-3">
-                      {serverOffer.faq.map((faqItem, index) => (
-                        <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
-                          <div className="w-full px-4 py-3">
-                            <div className="font-medium text-gray-900 mb-2">
-                              <PortableText
-                                value={faqItem.question}
-                                components={portableTextComponents}
-                              />
-                            </div>
-                            <div className="text-gray-700 text-sm">
-                              <PortableText
-                                value={faqItem.answer}
-                                components={portableTextComponents}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                {/* FAQ Section - Collapsible for better UX */}
+                <FAQContainer faqs={serverOffer.faq} />
               </div>
             </main>
           </div>
