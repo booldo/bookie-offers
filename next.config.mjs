@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Force trailing slashes on all URLs
+  trailingSlash: true,
   // experimental: {
   //   optimizePackageImports: ['@portabletext/react'],
   //   ppr: 'incremental',

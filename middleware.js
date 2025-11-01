@@ -18,6 +18,20 @@ export async function middleware(request) {
     return NextResponse.next();
   }
 
+  // Add trailing slash redirect FIRST (before redirect checks)
+  // Only redirect if path doesn't end with slash, isn't root, and isn't a file
+  if (!pathname.endsWith('/') && pathname !== '/') {
+    console.log('🔄 Adding trailing slash redirect:', pathname);
+    const urlWithSlash = `${request.nextUrl.origin}${pathname}/`;
+    
+    // Preserve query parameters if they exist
+    const searchParams = request.nextUrl.search;
+    const finalUrl = searchParams ? `${urlWithSlash}${searchParams}` : urlWithSlash;
+    
+    console.log('🎯 Redirecting to URL with slash:', finalUrl);
+    return NextResponse.redirect(finalUrl, 301);
+  }
+
   try {
     console.log('🔍 Middleware checking path:', pathname);
     
