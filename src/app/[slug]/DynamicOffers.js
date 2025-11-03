@@ -993,7 +993,7 @@ export default function DynamicOffers({
     return { totalPages, currentOffers };
   }, [sortedOffers, currentPage, offersPerPage]);
 
-  Generate dynamic header text based on selected filters
+  // Generate dynamic header text based on selected filters
   const getDynamicHeaderText = useMemo(() => {
     const allSelectedFilters = [
       ...selectedBonusTypes,
