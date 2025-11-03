@@ -299,21 +299,21 @@ export default function OffersClient({
   };
 
   // Generate dynamic header text based on selected filters
-  // const getDynamicHeaderText = useMemo(() => {
-  //   const allSelectedFilters = [
-  //     ...selectedBonusTypes,
-  //     ...selectedBookmakers,
-  //     ...selectedAdvanced
-  //   ];
+  const getDynamicHeaderText = useMemo(() => {
+    const allSelectedFilters = [
+      ...selectedBonusTypes,
+      ...selectedBookmakers,
+      ...selectedAdvanced
+    ];
 
-  //   if (allSelectedFilters.length === 0) {
-  //     // No filters selected, use pageTitle from country data
-  //     return countryData?.pageTitle || pageTitle || "Best Offers";
-  //   }
+    if (allSelectedFilters.length === 0) {
+      // No filters selected, use pageTitle from country data
+      return countryData?.pageTitle || pageTitle || "Best Offers";
+    }
 
-  //   // Return comma-separated filter names
-  //   return allSelectedFilters.join(", ");
-  // }, [selectedBonusTypes, selectedBookmakers, selectedAdvanced, countryData, pageTitle]);
+    // Return comma-separated filter names
+    return allSelectedFilters.join(", ");
+  }, [selectedBonusTypes, selectedBookmakers, selectedAdvanced, countryData, pageTitle]);
 
   // Pre-compute lowercase versions of selected filters for better performance
   const selectedBookmakersLower = useMemo(() =>
@@ -414,9 +414,9 @@ export default function OffersClient({
       <div className="sticky top-16 z-40 bg-white sm:static sm:bg-transparent">
         <div className="flex items-center justify-between my-4">
           <h1 className=" font-semibold text-[24px] leading-[100%] text-[#272932] whitespace-nowrap">
-            // {getDynamicHeaderText}{" "}
+            {getDynamicHeaderText}{" "}
             <span className=" font-medium text-[16px] leading-[100%] tracking-[1%] align-middle text-[#696969]">
-              // ({filteredOffers.length})
+              ({filteredOffers.length})
             </span>
           </h1>
           <div className="flex items-center gap-1">
