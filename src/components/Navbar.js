@@ -8,6 +8,7 @@ import { urlFor } from "../sanity/lib/image";
 import Link from "next/link";
 import { formatDate } from "../utils/dateFormatter";
 import { PortableText } from "@portabletext/react";
+import { useGlobalData } from "../contexts/GlobalDataContext";
 
 // Helper function to get image URL from Sanity asset or URL string
 const getImageUrl = (asset) => {
@@ -34,9 +35,11 @@ const WORLD_WIDE_FLAG = {
 };
 
 export default function Navbar() {
+  // Get global data from context (no API calls needed!)
+  const { flags, hamburgerMenus, popularSearches, loading: globalDataLoading } = useGlobalData();
+  
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [flags, setFlags] = useState([WORLD_WIDE_FLAG]);
-  const [selectedFlag, setSelectedFlag] = useState(WORLD_WIDE_FLAG);
+  const [selectedFlag, setSelectedFlag] = useState(flags[0] || WORLD_WIDE_FLAG);
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
@@ -48,12 +51,9 @@ export default function Navbar() {
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState(null);
-  const [countriesLoading, setCountriesLoading] = useState(true);
   const [brieflyOpen, setBrieflyOpen] = useState(false);
-  const [popularSearches, setPopularSearches] = useState([]);
   const searchDebounceRef = useRef();
   const menuRef = useRef();
-  const [hamburgerMenus, setHamburgerMenus] = useState([]);
 
   // Load recent searches from localStorage on mount
   useEffect(() => {
@@ -81,145 +81,8 @@ export default function Navbar() {
     });
   };
 
-  // Load most searches from Sanity (country-specific first, then global fallback)
-  // Memoized to prevent excessive API calls
-  const fetchMostSearches = useCallback(async () => {
-      try {
-        let searches = [];
-
-        // First try to get country-specific searches
-        if (currentCountrySlug) {
-          const countryData = await client.fetch(
-            `*[_type == "countryPage" && slug.current == $countrySlug][0]{
-            mostSearches[]{
-              searchTerm,
-              isActive,
-              order
-            }
-          }`,
-            { countrySlug: currentCountrySlug }
-          );
-
-          if (
-            countryData?.mostSearches &&
-            countryData.mostSearches.length > 0
-          ) {
-            searches = countryData.mostSearches
-              .filter((search) => search.isActive)
-              .sort((a, b) => (a.order || 1) - (b.order || 1))
-              .map((search) => search.searchTerm);
-          }
-        }
-
-        // If no country-specific searches found, try global searches
-        if (searches.length === 0) {
-          const landingPageData =
-            await client.fetch(`*[_type == "landingPage"][0]{
-            mostSearches[]{
-              searchTerm,
-              isActive,
-              order
-            }
-          }`);
-
-          if (landingPageData?.mostSearches) {
-            searches = landingPageData.mostSearches
-              .filter((search) => search.isActive)
-              .sort((a, b) => (a.order || 1) - (b.order || 1))
-              .map((search) => search.searchTerm);
-          }
-        }
-
-        // If still no searches found, use default fallback
-        if (searches.length === 0) {
-          searches = [
-            "Welcome bonus",
-            "Deposit bonus",
-            "Best bonus",
-            "Best bookies",
-            "Free bets",
-          ];
-        }
-
-        setPopularSearches(searches);
-      } catch (error) {
-        console.error("Error fetching most searches:", error);
-        // Fallback to default searches on error
-        setPopularSearches([
-          "Welcome bonus",
-          "Deposit bonus",
-          "Best bonus",
-          "Best bookies",
-          "Free bets",
-        ]);
-      }
-  }, [currentCountrySlug]);
-
-  useEffect(() => {
-    fetchMostSearches();
-  }, [fetchMostSearches]);
-
-  // Load countries dynamically and build flags list (keep Worldwide)
-  useEffect(() => {
-    const fetchCountries = async () => {
-      try {
-        setCountriesLoading(true);
-        const countries =
-          await client.fetch(`*[_type == "countryPage" && isActive == true]{
-          country,
-          slug,
-          navigationBarFlag
-        } | order(country asc)`);
-        const dynamicFlags = countries.map((c) => ({
-          src: c.navigationBarFlag
-            ? urlFor(c.navigationBarFlag).width(24).height(24).url()
-            : "/assets/flags.png",
-          name: c.country,
-          path: `/${c.slug?.current || ""}`,
-          topIcon: c.navigationBarFlag
-            ? urlFor(c.navigationBarFlag).width(24).height(24).url()
-            : "/assets/dropdown.png",
-          slug: c.slug?.current || "",
-        }));
-        setFlags([WORLD_WIDE_FLAG, ...dynamicFlags]);
-      } catch (e) {
-        // ignore
-      } finally {
-        setCountriesLoading(false);
-      }
-    };
-    fetchCountries();
-  }, []);
-
-  // Load hamburger menu data from Sanity
-  // Memoized to prevent excessive API calls
-  const fetchHamburgerMenus = useCallback(async () => {
-      try {
-        const menuData = await client.fetch(
-          `*[_type == "hamburgerMenu" && selectedPage->slug.current == $countrySlug]{
-          _id,
-          title,
-          slug,
-          url,
-          content,
-          noindex,
-          sitemapInclude,
-          selectedPage->{
-            _type,
-            slug
-          }
-        } | order(title asc)`,
-          { countrySlug: currentCountrySlug }
-        );
-        setHamburgerMenus(menuData || []);
-      } catch (e) {
-        console.error("Failed to fetch hamburger menus:", e);
-      }
-  }, [currentCountrySlug]);
-
-  useEffect(() => {
-    fetchHamburgerMenus();
-  }, [fetchHamburgerMenus]);
+  // All data now comes from GlobalDataContext - NO API CALLS HERE! 🎉
+  // Note: Country-specific searches can be added later if needed
 
   // Update selected flag based on current path
   useEffect(() => {
@@ -657,7 +520,7 @@ export default function Navbar() {
             </button>
             {dropdownOpen && (
               <div className="absolute right-0 mt-2 w-56 bg-[#FFFFFF] rounded-xl shadow-xl border border-gray-100 py-2 z-[100]">
-                {countriesLoading
+                {globalDataLoading
                   ? // Skeleton loading for countries
                     Array.from({ length: 6 }).map((_, index) => (
                       <div
