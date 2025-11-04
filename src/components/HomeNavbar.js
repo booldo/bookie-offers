@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { client } from "../sanity/lib/client";
 import { urlFor } from "../sanity/lib/image";
@@ -73,38 +73,27 @@ export default function HomeNavbar() {
   };
 
   // Load most searches from Sanity
-  useEffect(() => {
-    const fetchMostSearches = async () => {
-      try {
-        const landingPageData = await client.fetch(`*[_type == "landingPage"][0]{
-          mostSearches[]{
-            searchTerm,
-            isActive,
-            order
-          }
-        }`);
-        
-        if (landingPageData?.mostSearches) {
-          // Filter active searches and sort by order
-          const activeSearches = landingPageData.mostSearches
-            .filter(search => search.isActive)
-            .sort((a, b) => (a.order || 1) - (b.order || 1))
-            .map(search => search.searchTerm);
-          
-          setPopularSearches(activeSearches);
-        } else {
-          // Fallback to default searches if none configured
-          setPopularSearches([
-            "Welcome bonus",
-            "Deposit bonus",
-            "Best bonus",
-            "Best bookies",
-            "Free bets"
-          ]);
+  // Memoized to prevent excessive API calls
+  const fetchMostSearches = useCallback(async () => {
+    try {
+      const landingPageData = await client.fetch(`*[_type == "landingPage"][0]{
+        mostSearches[]{
+          searchTerm,
+          isActive,
+          order
         }
-      } catch (error) {
-        console.error('Error fetching most searches:', error);
-        // Fallback to default searches on error
+      }`);
+      
+      if (landingPageData?.mostSearches) {
+        // Filter active searches and sort by order
+        const activeSearches = landingPageData.mostSearches
+          .filter(search => search.isActive)
+          .sort((a, b) => (a.order || 1) - (b.order || 1))
+          .map(search => search.searchTerm);
+        
+        setPopularSearches(activeSearches);
+      } else {
+        // Fallback to default searches if none configured
         setPopularSearches([
           "Welcome bonus",
           "Deposit bonus",
@@ -113,10 +102,22 @@ export default function HomeNavbar() {
           "Free bets"
         ]);
       }
-    };
-
-    fetchMostSearches();
+    } catch (error) {
+      console.error('Error fetching most searches:', error);
+      // Fallback to default searches on error
+      setPopularSearches([
+        "Welcome bonus",
+        "Deposit bonus",
+        "Best bonus",
+        "Best bookies",
+        "Free bets"
+      ]);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchMostSearches();
+  }, [fetchMostSearches]);
 
   // Load countries from Sanity and build flags
   useEffect(() => {
@@ -146,26 +147,27 @@ export default function HomeNavbar() {
   }, []);
 
   // Load hamburger menu data from Sanity
-  useEffect(() => {
-    const fetchHamburgerMenus = async () => {
-      try {
-        const menuData = await client.fetch(`*[_type == "hamburgerMenu" && selectedPage->_type == "landingPage"]{
-          _id,
-          title,
-          slug,
-          url,
-          content,
-          noindex,
-          sitemapInclude
-        } | order(title asc)`);
-        setHamburgerMenus(menuData || []);
-      } catch (e) {
-        console.error('Failed to fetch hamburger menus:', e);
-      }
-    };
-    fetchHamburgerMenus();
+  // Memoized to prevent excessive API calls
+  const fetchHamburgerMenus = useCallback(async () => {
+    try {
+      const menuData = await client.fetch(`*[_type == "hamburgerMenu" && selectedPage->_type == "landingPage"]{
+        _id,
+        title,
+        slug,
+        url,
+        content,
+        noindex,
+        sitemapInclude
+      } | order(title asc)`);
+      setHamburgerMenus(menuData || []);
+    } catch (e) {
+      console.error('Failed to fetch hamburger menus:', e);
+    }
   }, []);
 
+  useEffect(() => {
+    fetchHamburgerMenus();
+  }, [fetchHamburgerMenus]);
 
   // Update selected flag based on current path (dynamic)
   useEffect(() => {
@@ -179,8 +181,8 @@ export default function HomeNavbar() {
     setSelectedFlag(match || WORLD_WIDE_FLAG);
   }, [pathname, flags]);
 
-  // Search handler
-  const handleSearch = async (term) => {
+  // Search handler - memoized to prevent recreating on every render
+  const handleSearch = useCallback(async (term) => {
     const q = (term || '').trim();
     if (!q || q.length < 4) {
       setSearchResults([]);
@@ -346,7 +348,7 @@ export default function HomeNavbar() {
     } finally {
       setSearchLoading(false);
     }
-  };
+  }, []);
 
   // Debounced search effect
   useEffect(() => {
@@ -359,9 +361,9 @@ export default function HomeNavbar() {
     }
     searchDebounceRef.current = setTimeout(() => {
       handleSearch(searchValue);
-    }, 300);
+    }, 1000);
     return () => clearTimeout(searchDebounceRef.current);
-  }, [searchValue, searchOpen]);
+  }, [searchValue, searchOpen, handleSearch]);
 
   const handleFlagSelect = (flag) => {
     setSelectedFlag(flag);

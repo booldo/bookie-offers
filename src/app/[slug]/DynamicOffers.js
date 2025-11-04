@@ -214,7 +214,8 @@ export default function DynamicOffers({
     }
   };
 
-  const getFiltersFromUrl = () => {
+  // Memoize getFiltersFromUrl to prevent recreating on every render
+  const getFiltersFromUrl = useCallback(() => {
     if (!countrySlug || !countryData)
       return { bonusTypes: [], bookmakers: [], advanced: [] };
 
@@ -276,8 +277,9 @@ export default function DynamicOffers({
       }
     }
     return { bonusTypes, bookmakers, advanced };
-  };
+  }, [pathname, searchParams, countrySlug, countryData, bonusTypeOptions, bookmakerOptions, advancedOptions]);
 
+  // Memoize buildUrl to prevent recreating on every render
   const buildUrl = useCallback(({ bonusTypes, bookmakers, advanced }) => {
     if (!countrySlug || !countryData) return "/";
 
@@ -327,7 +329,7 @@ export default function DynamicOffers({
     } else {
       return `/${countrySlug}`;
     }
-  }, [countrySlug, countryData, originalBookmakerOptions]);
+  }, [countrySlug, countryData]);
 
   // Apply initial filter when options are loaded
   useEffect(() => {
@@ -521,7 +523,7 @@ export default function DynamicOffers({
     loadCountryData();
   }, [countrySlug]);
 
-  // URL/Filter sync effect
+  // URL/Filter sync effect - memoized to prevent excessive updates
   useEffect(() => {
     // Only sync from URL when we have the original options loaded
     // Don't depend on bookmakerOptions to prevent flickering when it updates
@@ -535,15 +537,7 @@ export default function DynamicOffers({
     setSelectedBonusTypes(bonusTypes);
     setSelectedBookmakers(bookmakers);
     setSelectedAdvanced(advanced);
-  }, [
-    pathname,
-    searchParams,
-    bonusTypeOptions,
-    originalBookmakerOptions,
-    advancedOptions,
-    countrySlug,
-    countryData,
-  ]);
+  }, [getFiltersFromUrl, bonusTypeOptions, originalBookmakerOptions, advancedOptions]);
 
   // Apply initial filter when component loads
   useEffect(() => {

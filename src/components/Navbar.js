@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { client } from "../sanity/lib/client";
 import { urlFor } from "../sanity/lib/image";
@@ -82,8 +82,8 @@ export default function Navbar() {
   };
 
   // Load most searches from Sanity (country-specific first, then global fallback)
-  useEffect(() => {
-    const fetchMostSearches = async () => {
+  // Memoized to prevent excessive API calls
+  const fetchMostSearches = useCallback(async () => {
       try {
         let searches = [];
 
@@ -153,10 +153,11 @@ export default function Navbar() {
           "Free bets",
         ]);
       }
-    };
-
-    fetchMostSearches();
   }, [currentCountrySlug]);
+
+  useEffect(() => {
+    fetchMostSearches();
+  }, [fetchMostSearches]);
 
   // Load countries dynamically and build flags list (keep Worldwide)
   useEffect(() => {
@@ -191,8 +192,8 @@ export default function Navbar() {
   }, []);
 
   // Load hamburger menu data from Sanity
-  useEffect(() => {
-    const fetchHamburgerMenus = async () => {
+  // Memoized to prevent excessive API calls
+  const fetchHamburgerMenus = useCallback(async () => {
       try {
         const menuData = await client.fetch(
           `*[_type == "hamburgerMenu" && selectedPage->slug.current == $countrySlug]{
@@ -214,9 +215,11 @@ export default function Navbar() {
       } catch (e) {
         console.error("Failed to fetch hamburger menus:", e);
       }
-    };
-    fetchHamburgerMenus();
   }, [currentCountrySlug]);
+
+  useEffect(() => {
+    fetchHamburgerMenus();
+  }, [fetchHamburgerMenus]);
 
   // Update selected flag based on current path
   useEffect(() => {
@@ -234,8 +237,8 @@ export default function Navbar() {
 
   // Determine country from pathname (moved above to avoid TDZ)
 
-  // Search handler
-  const handleSearch = async (term) => {
+  // Search handler - memoized to prevent recreating on every render
+  const handleSearch = useCallback(async (term) => {
     const q = (term || "").trim();
     if (!q || q.length < 4) {
       setSearchResults([]);
@@ -475,7 +478,7 @@ export default function Navbar() {
     } finally {
       setSearchLoading(false);
     }
-  };
+  }, [currentCountrySlug]);
 
   // Debounced search effect
   useEffect(() => {
@@ -488,9 +491,9 @@ export default function Navbar() {
     }
     searchDebounceRef.current = setTimeout(() => {
       handleSearch(searchValue);
-    }, 300);
+    }, 500);
     return () => clearTimeout(searchDebounceRef.current);
-  }, [searchValue, searchOpen]);
+  }, [searchValue, searchOpen, handleSearch]);
 
   // Close menu when clicking outside
   useEffect(() => {
