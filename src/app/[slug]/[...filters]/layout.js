@@ -224,7 +224,7 @@ export async function generateMetadata({ params }) {
   }
 }
 
-export const revalidate = 60;
+export const revalidate = 3600;
 
 export default function FilterLayout({ children }) {
   return children;
