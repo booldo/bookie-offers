@@ -19,7 +19,7 @@ export async function generateMetadata({ params }) {
   };
 }
 
-export const revalidate = 60;
+export const revalidate = 3600;
 
 import { getVisibleDocOrNull } from '../../../sanity/lib/checkGoneStatus';
 
