@@ -5,6 +5,8 @@ import { PortableText } from "@portabletext/react";
 import OffersClient from "./OffersClient";
 import ExpiredOfferPage from "./[...filters]/ExpiredOfferPage";
 
+export const revalidate = 3600;
+
 // Server-side data fetching for offers and aggregations
 async function getOffersData({ countryName, countryId }) {
   if (!countryName) {
