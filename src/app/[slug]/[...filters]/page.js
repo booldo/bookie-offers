@@ -81,11 +81,13 @@ const portableTextComponents = {
       if (!value?.asset) return null;
       return (
         <div className="my-4">
-          <img
-            src={urlFor(value).width(800).height(400).url()}
-            alt={value.alt || ""}
-            className="w-full h-auto rounded-lg shadow-sm"
-          />
+<img
+  src={urlFor(value).width(800).height(400).url()}
+  alt={value.alt || ""}
+  className="w-full md:w-[80%] lg:w-[60%] h-auto rounded-lg shadow-sm"
+/>
+
+
           {value.caption && (
             <p className="text-sm text-gray-600 mt-2 text-center italic">
               {value.caption}
