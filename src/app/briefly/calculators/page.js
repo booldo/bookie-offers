@@ -14,7 +14,6 @@ function urlFor(source) {
   return builder.image(source).url();
 }
 
-
 export default function CalculatorsPage() {
   const [articles, setArticles] = useState([]);
   const [calculators, setCalculators] = useState([]);
@@ -133,7 +132,7 @@ export default function CalculatorsPage() {
                       <h3 className="text-xl font-bold text-gray-900 mb-2 leading-tight">
                         {calculator.title}
                       </h3>
-                      <p>Rendered at: {new Date().toISOString()}</p>
+                      
                       {/* Description*/}
                       {calculator.briefDescription && (
                         <p className="text-gray-600 text-sm leading-relaxed mb-3 line-clamp-2">
