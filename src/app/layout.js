@@ -7,8 +7,6 @@ import { draftMode } from "next/headers";
 import { DisableDraftMode } from "../components/DisableDraftMode";
 
 
-export const revalidate = 3600;
-
 export async function generateMetadata() {
   const landingPage = await getLandingPageSettings();
   return {

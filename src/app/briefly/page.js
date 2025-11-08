@@ -14,7 +14,6 @@ function urlFor(source) {
   return builder.image(source).url();
 }
 
-
 export default function BrieflyPage() {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
