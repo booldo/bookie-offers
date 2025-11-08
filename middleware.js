@@ -1,276 +1,391 @@
-import { NextResponse } from 'next/server';
+// import { NextResponse } from 'next/server';
 
-// Edge Runtime configuration for proper middleware execution
-export const runtime = 'edge';
+// // Edge Runtime configuration for proper middleware execution
+// export const runtime = 'edge';
+
+// export async function middleware(request) {
+//   const { pathname } = request.nextUrl;
+  
+//   // Skip middleware for static files, API routes, and Studio
+//   if (
+//     pathname.startsWith('/_next') ||
+//     pathname.startsWith('/api') ||
+//     pathname.startsWith('/static') ||
+//     pathname.startsWith('/studio') ||
+//     pathname === '/410' ||
+//     pathname.includes('.')
+//   ) {
+//     return NextResponse.next();
+//   }
+
+//   // Add trailing slash redirect FIRST (before redirect checks)
+//   // Only redirect if path doesn't end with slash, isn't root, and isn't a file
+//   if (!pathname.endsWith('/') && pathname !== '/') {
+//     console.log('🔄 Adding trailing slash redirect:', pathname);
+//     const urlWithSlash = `${request.nextUrl.origin}${pathname}/`;
+    
+//     // Preserve query parameters if they exist
+//     const searchParams = request.nextUrl.search;
+//     const finalUrl = searchParams ? `${urlWithSlash}${searchParams}` : urlWithSlash;
+    
+//     console.log('🎯 Redirecting to URL with slash:', finalUrl);
+//     return NextResponse.redirect(finalUrl, 301);
+//   }
+
+//   try {
+//     console.log('🔍 Middleware checking path:', pathname);
+    
+//     // For article paths (/briefly/*), completely skip redirect handling
+//     // Let Next.js handle routing naturally (including 404s)
+//     if (pathname.startsWith('/briefly/') && pathname !== '/briefly') {
+//       console.log('📝 Article path detected, skipping redirects and letting Next.js handle:', pathname);
+//       return NextResponse.next();
+//     }
+    
+//     // For non-article paths, check redirects using native fetch (Edge Runtime compatible)
+//     const redirect = await checkRedirectWithFetch(pathname);
+    
+//     if (redirect) {
+//       console.log('✅ Redirect found:', redirect);
+      
+//       // If explicitly marked as 410, return a 410 response instead of redirecting
+//       if (redirect.type === '410') {
+//         const html = `<!doctype html>
+// <html lang="en">
+//   <head>
+//     <meta charset="utf-8" />
+//     <meta name="viewport" content="width=device-width, initial-scale=1" />
+//     <meta name="robots" content="noindex, nofollow" />
+//     <title>410 Gone</title>
+//     <style>
+//       body { margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji"; background:#fafbfc; color:#111827; }
+//       .container { max-width: 72rem; margin: 0 auto; padding: 1.5rem; min-height: 100vh; display:flex; flex-direction:column; }
+//       .main { flex:1; display:flex; align-items:center; justify-content:center; }
+//       .card { text-align:center; }
+//       .iconWrap { width: 6rem; height: 6rem; margin: 0 auto 1rem; background:#fee2e2; border-radius:9999px; display:flex; align-items:center; justify-content:center; }
+//       .h1 { font-size: 3rem; font-weight:700; color:#dc2626; margin: 0 0 0.75rem; }
+//       .h2 { font-size: 1.5rem; font-weight:600; margin: 0 0 1rem; }
+//       .p { color:#4b5563; margin: 0 0 2rem; }
+//       .btn { display:inline-flex; align-items:center; gap:.5rem; background:#16a34a; color:white; padding:.75rem 1.25rem; border-radius:.5rem; text-decoration:none; font-weight:600; }
+//       .btn:hover { background:#15803d; }
+//       .muted { margin-top:2rem; font-size:.875rem; color:#6b7280; }
+//       svg { color:#dc2626; }
+//     </style>
+//   </head>
+//   <body>
+//     <div class="container">
+//       <main class="main">
+//         <div class="card">
+//           <div class="iconWrap">
+//             <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+//               <circle cx="12" cy="12" r="10" />
+//               <line x1="15" y1="9" x2="9" y2="15" />
+//               <line x1="9" y1="9" x2="15" y2="15" />
+//             </svg>
+//           </div>
+//           <div class="h1">410</div>
+//           <div class="h2">Content No Longer Available</div>
+//           <p class="p">This resource has been intentionally removed and is no longer accessible.</p>
+//           <a class="btn" href="/">
+//             <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+//               <path d="M15 19l-7-7 7-7" />
+//             </svg>
+//             Go Home
+//           </a>
+//           <div class="muted">If you believe this is an error, please contact support.</div>
+//         </div>
+//       </main>
+//     </div>
+//   </body>
+// </html>`;
+//         return new Response(html, {
+//           status: 410,
+//           headers: { 'content-type': 'text/html; charset=utf-8' }
+//         });
+//       }
+
+//       // Construct proper redirect URL
+//       let targetUrl = redirect.url;
+//       if (targetUrl) {
+//         // Treat redirects pointing to the 410 page as true 410 responses
+//         const normalizedTarget = targetUrl.trim().toLowerCase();
+//         if (normalizedTarget === '/410' || normalizedTarget.endsWith('/410')) {
+//           const html = `<!doctype html>
+// <html lang="en">
+//   <head>
+//     <meta charset="utf-8" />
+//     <meta name="viewport" content="width=device-width, initial-scale=1" />
+//     <meta name="robots" content="noindex, nofollow" />
+//     <title>410 Gone</title>
+//     <style>
+//       body { margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji"; background:#fafbfc; color:#111827; }
+//       .container { max-width: 72rem; margin: 0 auto; padding: 1.5rem; min-height: 100vh; display:flex; flex-direction:column; }
+//       .main { flex:1; display:flex; align-items:center; justify-content:center; }
+//       .card { text-align:center; }
+//       .iconWrap { width: 6rem; height: 6rem; margin: 0 auto 1rem; background:#fee2e2; border-radius:9999px; display:flex; align-items:center; justify-content:center; }
+//       .h1 { font-size: 3rem; font-weight:700; color:#dc2626; margin: 0 0 0.75rem; }
+//       .h2 { font-size: 1.5rem; font-weight:600; margin: 0 0 1rem; }
+//       .p { color:#4b5563; margin: 0 0 2rem; }
+//       .btn { display:inline-flex; align-items:center; gap:.5rem; background:#16a34a; color:white; padding:.75rem 1.25rem; border-radius:.5rem; text-decoration:none; font-weight:600; }
+//       .btn:hover { background:#15803d; }
+//       .muted { margin-top:2rem; font-size:.875rem; color:#6b7280; }
+//       svg { color:#dc2626; }
+//     </style>
+//   </head>
+//   <body>
+//     <div class="container">
+//       <main class="main">
+//         <div class="card">
+//           <div class="iconWrap">
+//             <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+//               <circle cx="12" cy="12" r="10" />
+//               <line x1="15" y1="9" x2="9" y2="15" />
+//               <line x1="9" y1="9" x2="15" y2="15" />
+//             </svg>
+//           </div>
+//           <div class="h1">410</div>
+//           <div class="h2">Content No Longer Available</div>
+//           <p class="p">This resource has been intentionally removed and is no longer accessible.</p>
+//           <a class="btn" href="/">
+//             <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+//               <path d="M15 19l-7-7 7-7" />
+//             </svg>
+//             Go Home
+//           </a>
+//           <div class="muted">If you believe this is an error, please contact support.</div>
+//         </div>
+//       </main>
+//     </div>
+//   </body>
+// </html>`;
+//           return new Response(html, {
+//             status: 410,
+//             headers: { 'content-type': 'text/html; charset=utf-8' }
+//           });
+//         }
+//         // If target URL is relative, make it absolute
+//         if (targetUrl.startsWith('/')) {
+//           targetUrl = `${request.nextUrl.origin}${targetUrl}`;
+//         } else if (!targetUrl.startsWith('http')) {
+//           targetUrl = `${request.nextUrl.origin}/${targetUrl}`;
+//         }
+
+//         console.log('🎯 Redirecting to:', targetUrl);
+//         console.log('🔢 Redirect type from Sanity:', redirect.type);
+        
+//         // Perform redirect with the specified type
+//         // Use explicit status codes: 301 for permanent, 302 for temporary
+//         const statusCode = redirect.type === '302' ? 302 : 301;
+//         console.log('🔢 Using status code:', statusCode);
+        
+//         return NextResponse.redirect(targetUrl, { status: statusCode });
+//       }
+//     } else {
+//       console.log('❌ No redirect found for:', pathname);
+//     }
+//   } catch (error) {
+//     console.error('❌ Middleware redirect error:', error);
+//   }
+
+//   return NextResponse.next();
+// }
+
+// // Inline redirect check using native fetch API (100% Edge Runtime compatible)
+// // This avoids importing Sanity client which has Node.js dependencies
+// async function checkRedirectWithFetch(path) {
+//   try {
+//     const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID;
+//     const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET;
+//     const apiVersion = process.env.NEXT_PUBLIC_SANITY_API_VERSION || '2025-07-13';
+    
+//     if (!projectId || !dataset) {
+//       console.error('❌ Missing Sanity environment variables');
+//       return null;
+//     }
+
+//     // Normalize path: remove trailing slash for consistency
+//     const normalizedPath = path.endsWith('/') && path !== '/' ? path.slice(0, -1) : path;
+//     console.log('🛠️ Original path:', path);
+//     console.log('🛠️ Normalized path:', normalizedPath);
+
+//     // GROQ query to find active redirects for this path
+//     // If matchExact is false (default), try both with and without trailing slash
+//     // If matchExact is true, only match the exact path
+//     const query = `*[_type == "redirects" && isActive == true && (
+//       (matchExact == true && sourcePath == $exactPath) ||
+//       (matchExact != true && (sourcePath == $path || sourcePath == $pathWithSlash))
+//     )][0] {
+//       targetUrl,
+//       redirectType,
+//       sourcePath,
+//       matchExact
+//     }`;
+    
+//     // Use Sanity HTTP API directly with native fetch
+//     const pathWithSlash = normalizedPath + '/';
+//     const url = `https://${projectId}.api.sanity.io/v${apiVersion}/data/query/${dataset}?query=${encodeURIComponent(query)}&$path=${encodeURIComponent(normalizedPath)}&$pathWithSlash=${encodeURIComponent(pathWithSlash)}&$exactPath=${encodeURIComponent(path)}`;
+    
+//     console.log('🔎 Checking redirect for path:', normalizedPath);
+//     console.log('🔎 Also checking with slash:', pathWithSlash);
+//     console.log('🔎 Exact path (for matchExact):', path);
+//     console.log('🌐 Sanity API URL:', url);
+    
+//     const response = await fetch(url, {
+//       headers: {
+//         'Content-Type': 'application/json',
+//       },
+//     });
+    
+//     if (!response.ok) {
+//       console.error('❌ Sanity API error:', response.status);
+//       return null;
+//     }
+    
+//     const data = await response.json();
+//     const redirect = data.result;
+    
+//     console.log('📊 Sanity response data:', JSON.stringify(data, null, 2));
+//     console.log('🎯 Redirect result:', redirect);
+    
+//     if (redirect?.redirectType === '410') {
+//       console.log('⚠️ Returning 410 type');
+//       return { type: '410' };
+//     }
+//     if (redirect?.targetUrl) {
+//       console.log('✅ Returning redirect:', redirect.targetUrl);
+//       return {
+//         url: redirect.targetUrl,
+//         type: redirect.redirectType || '301'
+//       };
+//     }
+    
+//     console.log('❌ No redirect found in Sanity');
+//     return null;
+//   } catch (error) {
+//     console.error('❌ Error checking redirects:', error);
+//     return null;
+//   }
+// }
+
+// export const config = {
+//   matcher: [
+//     '/((?!api|_next/static|_next/image|favicon.ico).*)',
+//   ],
+// };
+
+
+import { NextResponse } from 'next/server'
+import { checkRedirect } from './lib/redirects'
+import { generate410Html, checkOfferStatus } from './lib/gone410'
+import { checkGoneStatus } from './lib/checkGoneStatus'
 
 export async function middleware(request) {
-  const { pathname } = request.nextUrl;
-  
-  // Skip middleware for static files, API routes, and Studio
+  const { pathname } = request.nextUrl
+
+  // Skip middleware for excluded or static routes
+  const excludedRoutes = [
+    '/briefly',
+    '/briefly/calculators',
+    '/faq',
+    '/footer',
+    '/analytics',
+    '/robots.txt',
+    '/sitemap.xml',
+    '/sitemap-index.xml'
+  ]
   if (
+    excludedRoutes.includes(pathname) ||
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api') ||
     pathname.startsWith('/static') ||
-    pathname.startsWith('/studio') ||
-    pathname === '/410' ||
     pathname.includes('.')
   ) {
-    return NextResponse.next();
+    return NextResponse.next()
   }
 
-  // Add trailing slash redirect FIRST (before redirect checks)
-  // Only redirect if path doesn't end with slash, isn't root, and isn't a file
-  if (!pathname.endsWith('/') && pathname !== '/') {
-    console.log('🔄 Adding trailing slash redirect:', pathname);
-    const urlWithSlash = `${request.nextUrl.origin}${pathname}/`;
-    
-    // Preserve query parameters if they exist
-    const searchParams = request.nextUrl.search;
-    const finalUrl = searchParams ? `${urlWithSlash}${searchParams}` : urlWithSlash;
-    
-    console.log('🎯 Redirecting to URL with slash:', finalUrl);
-    return NextResponse.redirect(finalUrl, 301);
-  }
-
-  try {
-    console.log('🔍 Middleware checking path:', pathname);
-    
-    // For article paths (/briefly/*), completely skip redirect handling
-    // Let Next.js handle routing naturally (including 404s)
-    if (pathname.startsWith('/briefly/') && pathname !== '/briefly') {
-      console.log('📝 Article path detected, skipping redirects and letting Next.js handle:', pathname);
-      return NextResponse.next();
+  // ✅ STEP 1: Check for redirects (cached)
+  const redirect = await checkRedirect(pathname)
+  if (redirect) {
+    if (redirect.type === '410') {
+      const html = generate410Html({ isExpired: false, isHidden: true })
+      return new Response(html, {
+        status: 410,
+        headers: { 'content-type': 'text/html; charset=utf-8' }
+      })
     }
-    
-    // For non-article paths, check redirects using native fetch (Edge Runtime compatible)
-    const redirect = await checkRedirectWithFetch(pathname);
-    
-    if (redirect) {
-      console.log('✅ Redirect found:', redirect);
-      
-      // If explicitly marked as 410, return a 410 response instead of redirecting
-      if (redirect.type === '410') {
-        const html = `<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="robots" content="noindex, nofollow" />
-    <title>410 Gone</title>
-    <style>
-      body { margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji"; background:#fafbfc; color:#111827; }
-      .container { max-width: 72rem; margin: 0 auto; padding: 1.5rem; min-height: 100vh; display:flex; flex-direction:column; }
-      .main { flex:1; display:flex; align-items:center; justify-content:center; }
-      .card { text-align:center; }
-      .iconWrap { width: 6rem; height: 6rem; margin: 0 auto 1rem; background:#fee2e2; border-radius:9999px; display:flex; align-items:center; justify-content:center; }
-      .h1 { font-size: 3rem; font-weight:700; color:#dc2626; margin: 0 0 0.75rem; }
-      .h2 { font-size: 1.5rem; font-weight:600; margin: 0 0 1rem; }
-      .p { color:#4b5563; margin: 0 0 2rem; }
-      .btn { display:inline-flex; align-items:center; gap:.5rem; background:#16a34a; color:white; padding:.75rem 1.25rem; border-radius:.5rem; text-decoration:none; font-weight:600; }
-      .btn:hover { background:#15803d; }
-      .muted { margin-top:2rem; font-size:.875rem; color:#6b7280; }
-      svg { color:#dc2626; }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <main class="main">
-        <div class="card">
-          <div class="iconWrap">
-            <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="15" y1="9" x2="9" y2="15" />
-              <line x1="9" y1="9" x2="15" y2="15" />
-            </svg>
-          </div>
-          <div class="h1">410</div>
-          <div class="h2">Content No Longer Available</div>
-          <p class="p">This resource has been intentionally removed and is no longer accessible.</p>
-          <a class="btn" href="/">
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path d="M15 19l-7-7 7-7" />
-            </svg>
-            Go Home
-          </a>
-          <div class="muted">If you believe this is an error, please contact support.</div>
-        </div>
-      </main>
-    </div>
-  </body>
-</html>`;
-        return new Response(html, {
-          status: 410,
-          headers: { 'content-type': 'text/html; charset=utf-8' }
-        });
+
+    // Build full redirect URL
+    let targetUrl = redirect.url
+    if (targetUrl) {
+      if (targetUrl.startsWith('/')) {
+        targetUrl = `${request.nextUrl.origin}${targetUrl}`
+      } else if (!targetUrl.startsWith('http')) {
+        targetUrl = `${request.nextUrl.origin}/${targetUrl}`
       }
 
-      // Construct proper redirect URL
-      let targetUrl = redirect.url;
-      if (targetUrl) {
-        // Treat redirects pointing to the 410 page as true 410 responses
-        const normalizedTarget = targetUrl.trim().toLowerCase();
-        if (normalizedTarget === '/410' || normalizedTarget.endsWith('/410')) {
-          const html = `<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="robots" content="noindex, nofollow" />
-    <title>410 Gone</title>
-    <style>
-      body { margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji"; background:#fafbfc; color:#111827; }
-      .container { max-width: 72rem; margin: 0 auto; padding: 1.5rem; min-height: 100vh; display:flex; flex-direction:column; }
-      .main { flex:1; display:flex; align-items:center; justify-content:center; }
-      .card { text-align:center; }
-      .iconWrap { width: 6rem; height: 6rem; margin: 0 auto 1rem; background:#fee2e2; border-radius:9999px; display:flex; align-items:center; justify-content:center; }
-      .h1 { font-size: 3rem; font-weight:700; color:#dc2626; margin: 0 0 0.75rem; }
-      .h2 { font-size: 1.5rem; font-weight:600; margin: 0 0 1rem; }
-      .p { color:#4b5563; margin: 0 0 2rem; }
-      .btn { display:inline-flex; align-items:center; gap:.5rem; background:#16a34a; color:white; padding:.75rem 1.25rem; border-radius:.5rem; text-decoration:none; font-weight:600; }
-      .btn:hover { background:#15803d; }
-      .muted { margin-top:2rem; font-size:.875rem; color:#6b7280; }
-      svg { color:#dc2626; }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <main class="main">
-        <div class="card">
-          <div class="iconWrap">
-            <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="15" y1="9" x2="9" y2="15" />
-              <line x1="9" y1="9" x2="15" y2="15" />
-            </svg>
-          </div>
-          <div class="h1">410</div>
-          <div class="h2">Content No Longer Available</div>
-          <p class="p">This resource has been intentionally removed and is no longer accessible.</p>
-          <a class="btn" href="/">
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path d="M15 19l-7-7 7-7" />
-            </svg>
-            Go Home
-          </a>
-          <div class="muted">If you believe this is an error, please contact support.</div>
-        </div>
-      </main>
-    </div>
-  </body>
-</html>`;
-          return new Response(html, {
-            status: 410,
-            headers: { 'content-type': 'text/html; charset=utf-8' }
-          });
-        }
-        // If target URL is relative, make it absolute
-        if (targetUrl.startsWith('/')) {
-          targetUrl = `${request.nextUrl.origin}${targetUrl}`;
-        } else if (!targetUrl.startsWith('http')) {
-          targetUrl = `${request.nextUrl.origin}/${targetUrl}`;
-        }
-
-        console.log('🎯 Redirecting to:', targetUrl);
-        console.log('🔢 Redirect type from Sanity:', redirect.type);
-        
-        // Perform redirect with the specified type
-        // Use explicit status codes: 301 for permanent, 302 for temporary
-        const statusCode = redirect.type === '302' ? 302 : 301;
-        console.log('🔢 Using status code:', statusCode);
-        
-        return NextResponse.redirect(targetUrl, { status: statusCode });
-      }
-    } else {
-      console.log('❌ No redirect found for:', pathname);
+      const statusCode = redirect.type === '302' ? 302 : 301
+      return NextResponse.redirect(targetUrl, statusCode)
     }
-  } catch (error) {
-    console.error('❌ Middleware redirect error:', error);
   }
 
-  return NextResponse.next();
-}
+  // ✅ STEP 2: Check for 410 status (only if no redirect)
+  const dynamicPatterns = [
+    { regex: /^\/footer\/([^\/]+)$/, type: 'footer' },
+    { regex: /^\/([^\/]+)\/[^\/]+\/([^\/]+)$/, type: 'offers' },
+    { regex: /^\/([^\/]+)$/, type: 'countryPage' }
+  ]
 
-// Inline redirect check using native fetch API (100% Edge Runtime compatible)
-// This avoids importing Sanity client which has Node.js dependencies
-async function checkRedirectWithFetch(path) {
-  try {
-    const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID;
-    const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET;
-    const apiVersion = process.env.NEXT_PUBLIC_SANITY_API_VERSION || '2025-07-13';
-    
-    if (!projectId || !dataset) {
-      console.error('❌ Missing Sanity environment variables');
-      return null;
+  for (const { regex, type } of dynamicPatterns) {
+    const match = pathname.match(regex)
+    if (!match) continue
+
+    const slug = type === 'offers' ? match[2] : match[1]
+
+    if (type === 'countryPage') {
+      const isValidCountry = await fetch(`${request.nextUrl.origin}/api/country-exists?slug=${slug}`)
+        .then(res => (res.ok ? res.json() : { exists: false }))
+        .then(res => res.exists)
+
+      if (!isValidCountry) continue
     }
 
-    // Normalize path: remove trailing slash for consistency
-    const normalizedPath = path.endsWith('/') && path !== '/' ? path.slice(0, -1) : path;
-    console.log('🛠️ Original path:', path);
-    console.log('🛠️ Normalized path:', normalizedPath);
-
-    // GROQ query to find active redirects for this path
-    // If matchExact is false (default), try both with and without trailing slash
-    // If matchExact is true, only match the exact path
-    const query = `*[_type == "redirects" && isActive == true && (
-      (matchExact == true && sourcePath == $exactPath) ||
-      (matchExact != true && (sourcePath == $path || sourcePath == $pathWithSlash))
-    )][0] {
-      targetUrl,
-      redirectType,
-      sourcePath,
-      matchExact
-    }`;
-    
-    // Use Sanity HTTP API directly with native fetch
-    const pathWithSlash = normalizedPath + '/';
-    const url = `https://${projectId}.api.sanity.io/v${apiVersion}/data/query/${dataset}?query=${encodeURIComponent(query)}&$path=${encodeURIComponent(normalizedPath)}&$pathWithSlash=${encodeURIComponent(pathWithSlash)}&$exactPath=${encodeURIComponent(path)}`;
-    
-    console.log('🔎 Checking redirect for path:', normalizedPath);
-    console.log('🔎 Also checking with slash:', pathWithSlash);
-    console.log('🔎 Exact path (for matchExact):', path);
-    console.log('🌐 Sanity API URL:', url);
-    
-    const response = await fetch(url, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-    
-    if (!response.ok) {
-      console.error('❌ Sanity API error:', response.status);
-      return null;
+    const { shouldReturn410, doc } = await checkGoneStatus(type, slug)
+    if (shouldReturn410) {
+      const html = generate410Html({ offer: doc, isExpired: false, isHidden: true })
+      return new Response(html, {
+        status: 410,
+        headers: {
+          'content-type': 'text/html; charset=utf-8',
+          'cache-control': 'no-cache, no-store, must-revalidate'
+        }
+      })
     }
-    
-    const data = await response.json();
-    const redirect = data.result;
-    
-    console.log('📊 Sanity response data:', JSON.stringify(data, null, 2));
-    console.log('🎯 Redirect result:', redirect);
-    
-    if (redirect?.redirectType === '410') {
-      console.log('⚠️ Returning 410 type');
-      return { type: '410' };
-    }
-    if (redirect?.targetUrl) {
-      console.log('✅ Returning redirect:', redirect.targetUrl);
-      return {
-        url: redirect.targetUrl,
-        type: redirect.redirectType || '301'
-      };
-    }
-    
-    console.log('❌ No redirect found in Sanity');
-    return null;
-  } catch (error) {
-    console.error('❌ Error checking redirects:', error);
-    return null;
   }
+
+  // ✅ STEP 3: Offer-specific 410 fallback
+  const offerPageMatch = pathname.match(/^\/([^\/]+)\/[^\/]+\/([^\/]+)$/)
+  if (offerPageMatch && !pathname.includes('/calculator/')) {
+    const [, countrySlug, offerSlug] = offerPageMatch
+    const offerStatus = await checkOfferStatus(countrySlug, offerSlug)
+    if (offerStatus.shouldReturn410) {
+      const html = generate410Html(offerStatus)
+      return new Response(html, {
+        status: 410,
+        headers: {
+          'content-type': 'text/html; charset=utf-8',
+          'cache-control': 'no-cache, no-store, must-revalidate'
+        }
+      })
+    }
+  }
+
+  return NextResponse.next()
 }
 
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
-  ],
-};
+    '/((?!api|_next/static|_next/image|favicon.ico).*)'
+  ]
+}
 
 
