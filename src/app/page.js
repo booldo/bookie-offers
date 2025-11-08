@@ -6,6 +6,9 @@ import { urlFor } from "../sanity/lib/image";
 import { Suspense } from "react";
 import { PortableText } from "@portabletext/react";
 
+
+export const revalidate = 3600;
+
 // Static data fetching for PPR
 async function getCountries() {
   try {

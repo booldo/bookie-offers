@@ -1,4 +1,5 @@
-export const dynamic = "force-dynamic";
+// export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 import CountryPageShell from "../CountryPageShell";
 import DynamicOffers from "../DynamicOffers";

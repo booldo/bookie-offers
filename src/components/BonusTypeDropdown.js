@@ -3,7 +3,7 @@ import { useState, useRef, useEffect, useMemo, useCallback, memo } from "react";
 
 // Memoized checkbox item component to prevent unnecessary re-renders
 const CheckboxItem = memo(({ item, selected, onToggle, showCount, isProcessing }) => {
-  if (item.count === 0) return null;
+  // if (item.count === 0) return null;
   const isSelected = selected.includes(item.name);
   const isCurrentlyProcessing = isProcessing === item.name;
   
