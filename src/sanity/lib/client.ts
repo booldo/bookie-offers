@@ -6,7 +6,7 @@ export const client = createClient({
   projectId,
   dataset,
   apiVersion,
-  useCdn: false, // Always fetch fresh data from Sanity, disables CDN caching
+  useCdn: true, // Always fetch fresh data from Sanity, disables CDN caching
   token: process.env.SANITY_VIEWER_TOKEN, // For draft content
   stega: {
     studioUrl:
