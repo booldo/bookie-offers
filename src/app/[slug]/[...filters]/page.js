@@ -82,10 +82,17 @@ const portableTextComponents = {
       return (
         <div className="my-4">
 <img
-  src={urlFor(value).width(800).height(400).url()}
+  src={urlFor(value).url()}
   alt={value.alt || ""}
-  className="w-full md:w-[80%] lg:w-[60%] h-auto rounded-lg shadow-sm"
-/>
+  className="w-full md:w-[80%] lg:w-[60%] h-auto object-contain rounded-lg shadow-sm block"
+ />
+
+{/* <img
+  src={urlFor(value).url()}
+  alt={value.alt || ""}
+  className="w-full md:w-[80%] lg:w-[60%] h-auto object-contain rounded-lg shadow-sm float-left mr-4"
+/> */}
+
 
 
           {value.caption && (
