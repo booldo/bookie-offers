@@ -11,6 +11,7 @@ import { urlFor } from "../../../sanity/lib/image";
 import { PortableText } from "@portabletext/react";
 import FAQContainer from "../../../components/FAQContainer";
 
+
 // Custom components for PortableText rendering
 const portableTextComponents = {
   block: {
@@ -86,14 +87,6 @@ const portableTextComponents = {
   alt={value.alt || ""}
   className="w-full md:w-[80%] lg:w-[60%] h-auto object-contain rounded-lg shadow-sm block"
  />
-
-{/* <img
-  src={urlFor(value).url()}
-  alt={value.alt || ""}
-  className="w-full md:w-[80%] lg:w-[60%] h-auto object-contain rounded-lg shadow-sm float-left mr-4"
-/> */}
-
-
 
           {value.caption && (
             <p className="text-sm text-gray-600 mt-2 text-center italic">

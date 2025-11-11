@@ -73,7 +73,7 @@ export default function FAQPage() {
                   onClick={() => setOpenIndex(openIndex === idx ? null : idx)}
                   aria-expanded={openIndex === idx}
                 >
-                  <span className=" text-lg sm:text-xl font-semibold text-gray-900">
+                  <span className=" text-lg sm:text-xl text-gray-900">
                     {faq.question}
                   </span>
                   <svg
