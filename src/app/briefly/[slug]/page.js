@@ -3,6 +3,8 @@ import ArticleInner from "./ArticleInner";
 import { notFound } from 'next/navigation';
 import { client } from '../../../sanity/lib/client';
 
+export const revalidate = 3600;
+
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   const seo = await getPageSeo("article", slug);
@@ -19,7 +21,6 @@ export async function generateMetadata({ params }) {
   };
 }
 
-export const revalidate = 3600;
 
 import { getVisibleDocOrNull } from '../../../sanity/lib/checkGoneStatus';
 

@@ -3,6 +3,8 @@ import CalculatorInner from "./CalculatorInner";
 import { getVisibleDocOrNull } from "../../../../sanity/lib/checkGoneStatus";
 import { notFound } from 'next/navigation';
 
+export const revalidate = 3600;
+
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   const seo = await getPageSeo("calculator", slug);
@@ -18,8 +20,6 @@ export async function generateMetadata({ params }) {
     },
   };
 }
-
-export const revalidate = 3600;
 
 export default async function CalculatorPage({ params }) {
   const awaitedParams = await params;

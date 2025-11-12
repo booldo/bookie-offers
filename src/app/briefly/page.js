@@ -13,6 +13,7 @@ const builder = imageUrlBuilder(client);
 function urlFor(source) {
   return builder.image(source).url();
 }
+export const revalidate = 3600;
 
 export default function BrieflyPage() {
   const [articles, setArticles] = useState([]);
