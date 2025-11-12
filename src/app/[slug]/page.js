@@ -211,7 +211,7 @@ export async function generateMetadata({ params }) {
 }
 
 // Force dynamic rendering so middleware can intercept and return 410 when needed
-export const dynamic = 'force-dynamic';
+// export const dynamic = 'force-dynamic';
 export const revalidate = 3600;
 
 export default async function CountryPage({ params, searchParams }) {

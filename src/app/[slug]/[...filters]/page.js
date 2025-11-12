@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 import CountryPageShell from "../CountryPageShell";
 import DynamicOffers from "../DynamicOffers";
 import OfferDetailsInner from "./OfferDetailsInner";
@@ -143,7 +141,7 @@ const portableTextComponents = {
 };
 
 // Dynamic route - no static generation needed
-
+export const revalidate = 3600;
 // Generate metadata for filter pages and pretty links
 export async function generateMetadata({ params }) {
   const awaitedParams = await params;
