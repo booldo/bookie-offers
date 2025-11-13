@@ -2,6 +2,8 @@ import { client } from "../../sanity/lib/client";
 import { urlFor } from "../../sanity/lib/image";
 import OfferDetailsClient from "./OfferDetailsClient";
 
+export const revalidate = 3600;
+
 // Server-side offer details fetching for PPR
 async function getOfferDetailsData(slug, countryName) {
   try {

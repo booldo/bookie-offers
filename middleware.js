@@ -223,7 +223,7 @@ async function checkRedirectWithFetch(path) {
     
     // Use Sanity HTTP API directly with native fetch
     const pathWithSlash = normalizedPath + '/';
-    const url = `https://${projectId}.api.sanity.io/v${apiVersion}/data/query/${dataset}?query=${encodeURIComponent(query)}&$path=${encodeURIComponent(normalizedPath)}&$pathWithSlash=${encodeURIComponent(pathWithSlash)}&$exactPath=${encodeURIComponent(path)}`;
+    const url = `https://${projectId}.apicdn.sanity.io/v${apiVersion}/data/query/${dataset}?query=${encodeURIComponent(query)}&$path=${encodeURIComponent(normalizedPath)}&$pathWithSlash=${encodeURIComponent(pathWithSlash)}&$exactPath=${encodeURIComponent(path)}`;
     
     console.log('🔎 Checking redirect for path:', normalizedPath);
     console.log('🔎 Also checking with slash:', pathWithSlash);

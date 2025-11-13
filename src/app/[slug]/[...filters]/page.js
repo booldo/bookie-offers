@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 import CountryPageShell from "../CountryPageShell";
 import DynamicOffers from "../DynamicOffers";
 import OfferDetailsInner from "./OfferDetailsInner";
@@ -10,6 +8,7 @@ import { client } from "../../../sanity/lib/client";
 import { urlFor } from "../../../sanity/lib/image";
 import { PortableText } from "@portabletext/react";
 import FAQContainer from "../../../components/FAQContainer";
+
 
 // Custom components for PortableText rendering
 const portableTextComponents = {
@@ -81,11 +80,12 @@ const portableTextComponents = {
       if (!value?.asset) return null;
       return (
         <div className="my-4">
-          <img
-            src={urlFor(value).width(800).height(400).url()}
-            alt={value.alt || ""}
-            className="w-full h-auto rounded-lg shadow-sm"
-          />
+<img
+  src={urlFor(value).url()}
+  alt={value.alt || ""}
+  className="w-full md:w-[80%] lg:w-[60%] h-auto object-contain rounded-lg shadow-sm block"
+ />
+
           {value.caption && (
             <p className="text-sm text-gray-600 mt-2 text-center italic">
               {value.caption}
@@ -141,7 +141,7 @@ const portableTextComponents = {
 };
 
 // Dynamic route - no static generation needed
-
+export const revalidate = 3600;
 // Generate metadata for filter pages and pretty links
 export async function generateMetadata({ params }) {
   const awaitedParams = await params;
