@@ -6,6 +6,7 @@ import { VisualEditing } from "next-sanity";
 import { draftMode } from "next/headers";
 import { DisableDraftMode } from "../components/DisableDraftMode";
 import { GlobalDataProvider } from "../contexts/GlobalDataContext";
+import { RedirectsProvider } from "../contexts/RedirectsContext";
 
 
 export async function generateMetadata() {
@@ -30,16 +31,18 @@ export default async function RootLayout({ children }) {
       </head>
       <body className={`antialiased`} style={{ fontFamily: "var(--font-sans)" }}>
         <GlobalDataProvider>
-          {children}
-          <CookieBanner />
-          <AnalyticsInitializer />
+          <RedirectsProvider>
+            {children}
+            <CookieBanner />
+            <AnalyticsInitializer />
 
-          {isEnabled && (
-            <>
-              <VisualEditing  />
-              <DisableDraftMode />
-            </>
-          )}
+            {isEnabled && (
+              <>
+                <VisualEditing  />
+                <DisableDraftMode />
+              </>
+            )}
+          </RedirectsProvider>
         </GlobalDataProvider>
       </body>
     </html>
