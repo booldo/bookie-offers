@@ -5,8 +5,6 @@ import AnalyticsInitializer from "../components/AnalyticsInitializer";
 import { VisualEditing } from "next-sanity";
 import { draftMode } from "next/headers";
 import { DisableDraftMode } from "../components/DisableDraftMode";
-import { GlobalDataProvider } from "../contexts/GlobalDataContext";
-import { RedirectsProvider } from "../contexts/RedirectsContext";
 
 
 export async function generateMetadata() {
@@ -30,20 +28,16 @@ export default async function RootLayout({ children }) {
         <link href="https://api.fontshare.com/v2/css?f[]=general-sans@300,400,500,600,700,800&display=swap" rel="stylesheet" />
       </head>
       <body className={`antialiased`} style={{ fontFamily: "var(--font-sans)" }}>
-        <GlobalDataProvider>
-          <RedirectsProvider>
-            {children}
-            <CookieBanner />
-            <AnalyticsInitializer />
+        {children}
+        <CookieBanner />
+        <AnalyticsInitializer />
 
-            {isEnabled && (
-              <>
-                <VisualEditing  />
-                <DisableDraftMode />
-              </>
-            )}
-          </RedirectsProvider>
-        </GlobalDataProvider>
+        {isEnabled && (
+          <>
+            <VisualEditing  />
+            <DisableDraftMode />
+          </>
+        )}
       </body>
     </html>
   );

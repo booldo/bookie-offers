@@ -587,8 +587,8 @@ export default async function CountryFiltersPage({ params, searchParams }) {
 
     if (affiliateLink?.affiliateUrl) {
       console.log("✅ Redirecting to affiliate URL:", affiliateLink.affiliateUrl);
-      // Redirect to the affiliate URL with status code 302 (temporary redirect)
-      redirect(affiliateLink.affiliateUrl, { type: 'push', statusCode: 302 });
+      // Redirect to the affiliate URL - this will throw NEXT_REDIRECT and exit the function
+      redirect(affiliateLink.affiliateUrl);
     } else {
       console.log("❌ No matching pretty link found for:", prettyLinkPath, "in country:", countrySlug);
     }
@@ -823,7 +823,7 @@ export default async function CountryFiltersPage({ params, searchParams }) {
                     </span>
                   </div>
                   <span className="text-gray-500 text-sm">
-                    Published: {serverOffer.published ? new Date(serverOffer.published).toLocaleDateString('en-GB') : ''}
+                    Published: {serverOffer.published ? new Date(serverOffer.published).toLocaleDateString() : ''}
                   </span>
                 </div>
 
@@ -851,7 +851,7 @@ export default async function CountryFiltersPage({ params, searchParams }) {
                       height="18"
                     />
                     <span className="text-black text-sm">
-                      Expires: {new Date(serverOffer.expires).toLocaleDateString('en-GB')}
+                      Expires: {new Date(serverOffer.expires).toLocaleDateString()}
                     </span>
                   </div>
                 )}
@@ -1121,8 +1121,8 @@ export default async function CountryFiltersPage({ params, searchParams }) {
         "✅ Redirecting single filter to affiliate URL:",
         affiliateLink.affiliateUrl
       );
-      // Redirect to the affiliate URL with status code 302 (temporary redirect)
-      redirect(affiliateLink.affiliateUrl, { type: 'push', statusCode: 302 });
+      // Redirect to the affiliate URL - this will throw NEXT_REDIRECT and exit the function
+      redirect(affiliateLink.affiliateUrl);
     }
   }
 

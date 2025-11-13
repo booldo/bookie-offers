@@ -1,4 +1,4 @@
-import { checkRedirectFromCache } from './redirectCache';
+import { client } from '../sanity/lib/client';
 
 // In-memory cache for redirects
 let redirectCache = [];

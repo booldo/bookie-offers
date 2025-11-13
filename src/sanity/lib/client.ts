@@ -8,7 +8,6 @@ export const client = createClient({
   apiVersion,
   useCdn: true, // Always fetch fresh data from Sanity, disables CDN caching
   token: process.env.SANITY_VIEWER_TOKEN, // For draft content
-  perspective: 'published', // Only fetch published content for better caching
   stega: {
     studioUrl:
       process.env.NEXT_PUBLIC_SANITY_STUDIO_URL ||
