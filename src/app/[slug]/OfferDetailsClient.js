@@ -253,7 +253,7 @@ export default function OfferDetailsClient({
                   Bookmaker: {offer.bookmaker?.name}
                 </p>
                 <p className="text-red-600 text-sm font-medium">
-                  Expired: {new Date(offer.expires).toLocaleDateString()}
+                  Expired: {new Date(offer.expires).toLocaleDateString('en-GB')}
                 </p>
               </div>
 

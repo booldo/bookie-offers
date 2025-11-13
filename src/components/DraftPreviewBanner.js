@@ -83,7 +83,7 @@ export default function DraftPreviewBanner({
               <div className="flex items-center space-x-2">
                 <span className="text-sm opacity-90">Expires:</span>
                 <span className="px-2 py-1 bg-white bg-opacity-20 rounded text-sm">
-                  {new Date(previewExpiry).toLocaleDateString()}
+                  {new Date(previewExpiry).toLocaleDateString('en-GB')}
                 </span>
               </div>
             )}

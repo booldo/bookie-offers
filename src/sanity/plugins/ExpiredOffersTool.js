@@ -664,7 +664,7 @@ export function ExpiredOffersTool() {
   // Format date
   const formatDate = (dateString) => {
     if (!dateString) return 'No date';
-    return new Date(dateString).toLocaleDateString();
+    return new Date(dateString).toLocaleDateString('en-GB');
   };
 
   // Get accurate counts for each filter

@@ -247,7 +247,7 @@ export default async function OfferDetailsServer({ slug, countryName }) {
                   Bookmaker: {offerData.mainOffer.bookmaker?.name}
                 </p>
                 <p className="text-red-600 text-sm font-medium">
-                  Expired: {new Date(offerData.mainOffer.expires).toLocaleDateString()}
+                  Expired: {new Date(offerData.mainOffer.expires).toLocaleDateString('en-GB')}
                 </p>
               </div>
               
