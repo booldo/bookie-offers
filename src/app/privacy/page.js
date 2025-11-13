@@ -17,7 +17,7 @@ export default function PrivacyPolicy() {
           
           <div className="prose prose-gray max-w-none font-['General_Sans']">
             <p className="text-gray-600 mb-6">
-              <strong>Last updated:</strong> {new Date().toLocaleDateString('en-GB')}
+              <strong>Last updated:</strong> {new Date().toLocaleDateString()}
             </p>
 
             <section className="mb-8">
