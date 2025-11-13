@@ -103,8 +103,8 @@ export async function GET(request) {
         return new Response(`Preview not supported for type: ${draft._type}`, { status: 400 });
     }
 
-    // Redirect to the preview page with query params
-    redirect(previewUrl);
+    // Redirect to the preview page with query params (using 302 redirect)
+    redirect(previewUrl, { type: 'push', statusCode: 302 });
   } catch (error) {
     console.error('Error fetching draft:', error);
     return new Response('Error fetching draft', { status: 500 });
