@@ -36,7 +36,7 @@ export default {
           {title: '410 (Gone)', value: '410'}
         ]
       },
-      initialValue: '301',
+      initialValue: '302', // Using 302 (temporary) redirects for tracking links
       description: 'Type of redirect to perform'
     },
     {

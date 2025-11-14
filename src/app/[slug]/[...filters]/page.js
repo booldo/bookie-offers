@@ -165,7 +165,7 @@ export async function generateMetadata({ params }) {
   // Affiliate pretty link metadata (supports multi-segment pretty links like bookmaker/bonus-type[-n])
   try {
     const segments = awaitedParams.filters || [];
-    const prettyJoined = Array.isArray(segments) ? segments.join("/") : "";
+    const prettyJoined = Array.isArray(segments) && segments.length === 2 ? segments.join("/") : "";
     const countrySlug = awaitedParams.slug;
     
     if (prettyJoined) {
@@ -567,7 +567,7 @@ export default async function CountryFiltersPage({ params, searchParams }) {
   const countrySlug = awaitedParams.slug;
 
   // Check for pretty links (e.g., "betika/welcome-bonus")
-  if (segments.length > 0) {
+  if (segments.length === 2) {
     const prettyLinkPath = segments.join("/");
     console.log("🔗 Checking pretty link:", prettyLinkPath, "for country:", countrySlug);
 
