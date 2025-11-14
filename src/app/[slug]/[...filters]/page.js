@@ -4,6 +4,22 @@ import OfferDetailsInner from "./OfferDetailsInner";
 import { Suspense } from "react";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
+// Format date helper function (for server component)
+function formatServerDate(dateString) {
+  if (!dateString) return '';
+  
+  const date = new Date(dateString);
+  
+  // Check if the date is valid
+  if (isNaN(date.getTime())) return dateString;
+  
+  // Format as dd/mm/yyyy
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+  
+  return `${day}/${month}/${year}`;
+}
 import { client } from "../../../sanity/lib/client";
 import { urlFor } from "../../../sanity/lib/image";
 import { PortableText } from "@portabletext/react";
@@ -823,7 +839,7 @@ export default async function CountryFiltersPage({ params, searchParams }) {
                     </span>
                   </div>
                   <span className="text-gray-500 text-sm">
-                    Published: {serverOffer.published ? new Date(serverOffer.published).toLocaleDateString() : ''}
+                    Published: {serverOffer.published ? formatServerDate(serverOffer.published) : ''}
                   </span>
                 </div>
 
@@ -851,7 +867,7 @@ export default async function CountryFiltersPage({ params, searchParams }) {
                       height="18"
                     />
                     <span className="text-black text-sm">
-                      Expires: {new Date(serverOffer.expires).toLocaleDateString()}
+                      Expires: {formatServerDate(serverOffer.expires)}
                     </span>
                   </div>
                 )}
@@ -861,7 +877,7 @@ export default async function CountryFiltersPage({ params, searchParams }) {
                   <a
                     href={
                       serverOffer.affiliateLink?.prettyLink?.current 
-                        ? `/${params.slug}/${serverOffer.affiliateLink.prettyLink.current}`
+                        ? `/${awaitedParams.slug}/${serverOffer.affiliateLink.prettyLink.current}`
                         : serverOffer.affiliateLink.affiliateUrl
                     }
                     target="_blank"
