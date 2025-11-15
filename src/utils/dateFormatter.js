@@ -6,11 +6,10 @@ export function formatDate(dateString) {
   // Check if the date is valid
   if (isNaN(date.getTime())) return dateString;
   
-  const options = { 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
-  };
+  // Format as dd/mm/yyyy
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
   
-  return date.toLocaleDateString('en-US', options);
-} 
+  return `${day}/${month}/${year}`;
+}
