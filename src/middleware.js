@@ -34,9 +34,8 @@ export async function middleware(request) {
         console.log('🎯 Redirecting to:', targetUrl);
         
         // Perform redirect with the specified type
-        // All tracking links should use 302 temporary redirects, not 307
         const statusCode = redirect.type === '302' ? 302 : 301;
-        return NextResponse.redirect(targetUrl, { status: statusCode });
+        return NextResponse.redirect(targetUrl, statusCode);
       }
     }
     
@@ -164,9 +163,8 @@ export async function middleware(request) {
         console.log('🎯 Redirecting to:', targetUrl);
         
         // Perform redirect with the specified type
-        // All tracking links should use 302 temporary redirects, not 307
         const statusCode = redirect.type === '302' ? 302 : 301;
-        return NextResponse.redirect(targetUrl, { status: statusCode });
+        return NextResponse.redirect(targetUrl, statusCode);
       }
     } else {
       console.log('❌ No redirect found for:', pathname);
