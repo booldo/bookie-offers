@@ -173,7 +173,37 @@ export async function middleware(request) {
     console.error('❌ Middleware redirect error:', error);
   }
 
-  return NextResponse.next();
+  // Set cache headers for all successful responses
+  const response = NextResponse.next();
+  
+  // Set CDN cache headers for Vercel
+  // s-maxage: CDN cache duration (1 hour)
+  // stale-while-revalidate: Serve stale content while revalidating (24 hours)
+  // max-age=0: Browser should always revalidate with CDN
+  const cacheHeader = 'public, max-age=0, s-maxage=3600, stale-while-revalidate=86400';
+  
+  // Cache homepage
+  if (pathname === '/') {
+    response.headers.set('Cache-Control', cacheHeader);
+    response.headers.set('CDN-Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+  }
+  // Cache country pages (e.g., /gh, /ke, /ng)
+  else if (pathname.match(/^\/[^\/]+$/)) {
+    response.headers.set('Cache-Control', cacheHeader);
+    response.headers.set('CDN-Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+  }
+  // Cache offer pages (e.g., /ke/jackpot/offer-slug)
+  else if (pathname.match(/^\/[^\/]+\/[^\/]+\/[^\/]+$/)) {
+    response.headers.set('Cache-Control', cacheHeader);
+    response.headers.set('CDN-Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+  }
+  // Cache other dynamic pages
+  else {
+    response.headers.set('Cache-Control', cacheHeader);
+    response.headers.set('CDN-Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+  }
+  
+  return response;
 }
 
 export const config = {
