@@ -44,6 +44,42 @@ export async function middleware(request) {
     console.error('❌ Error checking redirects in src/middleware:', error);
   }
 
+  // ✅ STEP 1.5: Check for affiliate/pretty link redirects
+  // Pattern: /{country}/{prettyLink} or /{country}/{segment1}/{segment2}
+  const affiliateLinkMatch = pathname.match(/^\/([^\/]+)\/(.+)$/);
+  if (affiliateLinkMatch) {
+    let [, countrySlug, prettyLinkPath] = affiliateLinkMatch;
+    // Remove trailing slash if present
+    prettyLinkPath = prettyLinkPath.endsWith('/') ? prettyLinkPath.slice(0, -1) : prettyLinkPath;
+    
+    // Only check if it looks like a pretty link (not other routes like /briefly, /faq, etc.)
+    const skipPaths = ['briefly', 'faq', 'footer', 'analytics', 'api', '_next', 'static'];
+    if (!skipPaths.includes(countrySlug)) {
+      try {
+        console.log('🔗 Checking for affiliate pretty link:', prettyLinkPath, 'in country:', countrySlug);
+        
+        // Dynamic import to avoid circular dependencies
+        const { client } = await import('./sanity/lib/client');
+        
+        const affiliateLink = await client.fetch(
+          `*[_type == "affiliate" && isActive == true && prettyLink.current == $prettyLink && bookmaker->country->slug.current == $countrySlug][0]{
+            affiliateUrl
+          }`,
+          { prettyLink: prettyLinkPath, countrySlug }
+        );
+        
+        if (affiliateLink?.affiliateUrl) {
+          console.log('✅ Affiliate link found, redirecting with 302 to:', affiliateLink.affiliateUrl);
+          return NextResponse.redirect(affiliateLink.affiliateUrl, 302);
+        } else {
+          console.log('❌ No affiliate link found for:', prettyLinkPath, 'in country:', countrySlug);
+        }
+      } catch (error) {
+        console.error('❌ Error checking affiliate link:', error);
+      }
+    }
+  }
+
   // ✅ STEP 2: Check for 410 status ONLY if no redirect was found
   console.log('🔍 STEP 2: Checking for 410 status:', pathname);
   const dynamicPatterns = [
@@ -173,7 +209,37 @@ export async function middleware(request) {
     console.error('❌ Middleware redirect error:', error);
   }
 
-  return NextResponse.next();
+  // Set cache headers for all successful responses
+  const response = NextResponse.next();
+  
+  // Set CDN cache headers for Vercel
+  // s-maxage: CDN cache duration (1 hour)
+  // stale-while-revalidate: Serve stale content while revalidating (24 hours)
+  // max-age=0: Browser should always revalidate with CDN
+  const cacheHeader = 'public, max-age=0, s-maxage=3600, stale-while-revalidate=86400';
+  
+  // Cache homepage
+  if (pathname === '/') {
+    response.headers.set('Cache-Control', cacheHeader);
+    response.headers.set('CDN-Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+  }
+  // Cache country pages (e.g., /gh, /ke, /ng)
+  else if (pathname.match(/^\/[^\/]+$/)) {
+    response.headers.set('Cache-Control', cacheHeader);
+    response.headers.set('CDN-Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+  }
+  // Cache offer pages (e.g., /ke/jackpot/offer-slug)
+  else if (pathname.match(/^\/[^\/]+\/[^\/]+\/[^\/]+$/)) {
+    response.headers.set('Cache-Control', cacheHeader);
+    response.headers.set('CDN-Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+  }
+  // Cache other dynamic pages
+  else {
+    response.headers.set('Cache-Control', cacheHeader);
+    response.headers.set('CDN-Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+  }
+  
+  return response;
 }
 
 export const config = {

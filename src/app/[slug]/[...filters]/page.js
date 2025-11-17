@@ -2,7 +2,7 @@ import CountryPageShell from "../CountryPageShell";
 import DynamicOffers from "../DynamicOffers";
 import OfferDetailsInner from "./OfferDetailsInner";
 import { Suspense } from "react";
-import { redirect, notFound } from "next/navigation";
+import { notFound } from "next/navigation";
 import Link from "next/link";
 // Format date helper function (for server component)
 function formatServerDate(dateString) {
@@ -562,55 +562,8 @@ export default async function CountryFiltersPage({ params, searchParams }) {
     `/${awaitedParams.slug}/${(awaitedParams.filters || []).join("/")}`
   );
 
-  // Handle affiliate pretty links FIRST - before any other logic
-  const segments = awaitedParams.filters || [];
-  const countrySlug = awaitedParams.slug;
-
-  // Check for pretty links (e.g., "betika/welcome-bonus")
-  if (segments.length > 0) {
-    const prettyLinkPath = segments.join("/");
-    console.log("🔗 Checking pretty link:", prettyLinkPath, "for country:", countrySlug);
-
-    // Query for active affiliate links with this pretty link AND matching country
-    // This ensures the bookmaker's country matches the URL country code
-    const affiliateLink = await client.fetch(
-      `
-      *[_type == "affiliate" && isActive == true && prettyLink.current == $prettyLink && bookmaker->country->slug.current == $countrySlug][0]{
-        _id,
-        affiliateUrl,
-        prettyLink,
-        bookmaker->{
-          name,
-          country->{
-            country,
-            slug
-          }
-        },
-        bonusType->{
-          name
-        }
-      }
-    `,
-      { prettyLink: prettyLinkPath, countrySlug }
-    );
-
-    console.log("🔍 Pretty link query result:", affiliateLink ? {
-      prettyLink: affiliateLink.prettyLink?.current,
-      bookmaker: affiliateLink.bookmaker?.name,
-      bonusType: affiliateLink.bonusType?.name,
-      country: affiliateLink.bookmaker?.country?.country
-    } : "No match found");
-
-    if (affiliateLink?.affiliateUrl) {
-      console.log("✅ Redirecting to affiliate URL:", affiliateLink.affiliateUrl);
-      // Redirect to the affiliate URL - this will throw NEXT_REDIRECT and exit the function
-      redirect(affiliateLink.affiliateUrl);
-    } else {
-      console.log("❌ No matching pretty link found for:", prettyLinkPath, "in country:", countrySlug);
-    }
-  }
-
-  console.log("➡️ No affiliate redirect found, continuing with normal processing");
+  // Note: Affiliate/pretty link redirects are now handled in middleware with 302 status
+  // This allows proper HTTP redirect control without Server Component serialization issues
 
   // Check if this is an offer details page (has 2+ segments: country/bonus-type/offer-slug)
   const isOfferDetailsPage =
@@ -1100,46 +1053,7 @@ export default async function CountryFiltersPage({ params, searchParams }) {
       awaitedParams.slug
     );
 
-    // Check if this is a pretty link for an affiliate with country validation
-    const affiliateLink = await client.fetch(
-      `
-      *[_type == "affiliate" && isActive == true && prettyLink.current == $prettyLink && bookmaker->country->slug.current == $countrySlug][0]{
-          _id,
-          affiliateUrl,
-          bookmaker->{
-            _id,
-            name,
-            logo,
-            logoAlt,
-            description,
-            country->{
-              country,
-              slug
-            }
-          },
-          bonusType->{
-            name,
-            description
-          }
-        }
-      `,
-      { prettyLink: singleFilter, countrySlug: awaitedParams.slug }
-    );
-
-    console.log("🔍 Single filter affiliate link found:", affiliateLink ? {
-      bookmaker: affiliateLink.bookmaker?.name,
-      bonusType: affiliateLink.bonusType?.name,
-      country: affiliateLink.bookmaker?.country?.country
-    } : "No match");
-
-    if (affiliateLink && affiliateLink.affiliateUrl) {
-      console.log(
-        "✅ Redirecting single filter to affiliate URL:",
-        affiliateLink.affiliateUrl
-      );
-      // Redirect to the affiliate URL - this will throw NEXT_REDIRECT and exit the function
-      redirect(affiliateLink.affiliateUrl);
-    }
+    // Note: Affiliate/pretty link redirects are now handled in middleware with 302 status
   }
 
   // For single filters that don't match special cases, allow them to be processed as regular filters
