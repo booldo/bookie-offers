@@ -2,7 +2,7 @@
 import React, { useLayoutEffect, useRef, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { client } from "../../../sanity/lib/client";
+import { client, previewClient } from "../../../sanity/lib/client";
 import { urlFor } from "../../../sanity/lib/image";
 import imageUrlBuilder from "@sanity/image-url";
 import { PortableText } from "@portabletext/react";
@@ -411,6 +411,9 @@ function OfferDetailsInner({ slug, isPreview = false, draftId = null, initialOff
         let mainOfferQuery;
         let queryParams;
         
+        // Use appropriate client based on preview mode
+        const activeClient = (isPreview && draftId) ? previewClient : client;
+        
         if (isPreview && draftId) {
           console.log('👁️ Fetching draft offer by ID:', draftId);
           mainOfferQuery = `*[_id == $draftId][0]{
@@ -507,7 +510,7 @@ function OfferDetailsInner({ slug, isPreview = false, draftId = null, initialOff
           queryParams = { slug, countryName: fetchCountryName };
         }
         
-        const mainOffer = await client.fetch(mainOfferQuery, queryParams);
+        const mainOffer = await activeClient.fetch(mainOfferQuery, queryParams);
 
         // Check if offer is hidden and set state
         if (

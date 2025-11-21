@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { client } from '../../../sanity/lib/client';
+import { previewClient } from '../../../sanity/lib/client';
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -27,17 +27,17 @@ export async function GET(request) {
     console.log('🔍 Normalized draftId:', normalizedDraftId);
     
     // First, let's see what drafts exist in Sanity - try multiple query approaches
-    const allDrafts1 = await client.fetch(`*[_id in path("drafts.**")] | order(_createdAt desc)[0...10] { _id, _type, title }`);
+    const allDrafts1 = await previewClient.fetch(`*[_id in path("drafts.**")] | order(_createdAt desc)[0...10] { _id, _type, title }`);
     console.log('📄 All drafts (path query):', allDrafts1.map(d => ({ _id: d._id, _type: d._type, title: d.title })));
     
-    const allDrafts2 = await client.fetch(`*[_id match "drafts.*"] | order(_createdAt desc)[0...10] { _id, _type, title }`);
+    const allDrafts2 = await previewClient.fetch(`*[_id match "drafts.*"] | order(_createdAt desc)[0...10] { _id, _type, title }`);
     console.log('📄 All drafts (match query):', allDrafts2.map(d => ({ _id: d._id, _type: d._type, title: d.title })));
     
-    const allOffers = await client.fetch(`*[_type == "offers"] | order(_createdAt desc)[0...10] { _id, _type, title }`);
+    const allOffers = await previewClient.fetch(`*[_type == "offers"] | order(_createdAt desc)[0...10] { _id, _type, title }`);
     console.log('📄 All offers (any status):', allOffers.map(d => ({ _id: d._id, _type: d._type, title: d.title })));
     
     // Fetch minimal draft data needed for preview URL construction
-    const draft = await client.fetch(`
+    const draft = await previewClient.fetch(`
       *[_id == $draftId][0]{
         _id,
         _type,
@@ -55,7 +55,7 @@ export async function GET(request) {
       console.log('🔍 Check if the ID exists with different format...');
       
       // Try searching by just the ID without drafts prefix
-      const publishedVersion = await client.fetch(`*[_id == $id][0] { _id, _type }`, { id: normalizedDraftId.replace('drafts.', '') });
+      const publishedVersion = await previewClient.fetch(`*[_id == $id][0] { _id, _type }`, { id: normalizedDraftId.replace('drafts.', '') });
       console.log('📄 Published version found:', publishedVersion ? { _id: publishedVersion._id, _type: publishedVersion._type } : 'null');
       
       return new Response('Draft not found', { status: 404 });

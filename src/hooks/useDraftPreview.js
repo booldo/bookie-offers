@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { client } from '../sanity/lib/client';
+import { previewClient } from '../sanity/lib/client';
 
 export const useDraftPreview = () => {
   const [searchParams] = useSearchParams();
@@ -33,7 +33,7 @@ export const useDraftPreview = () => {
     setError(null);
 
     try {
-      const draft = await client.fetch(`
+      const draft = await previewClient.fetch(`
         *[_id == $draftId && _type == "offers"][0]{
           _id,
           _type,

@@ -20,7 +20,7 @@ function formatServerDate(dateString) {
   
   return `${day}/${month}/${year}`;
 }
-import { client } from "../../../sanity/lib/client";
+import { client, previewClient } from "../../../sanity/lib/client";
 import { urlFor } from "../../../sanity/lib/image";
 import { PortableText } from "@portabletext/react";
 import FAQContainer from "../../../components/FAQContainer";
@@ -156,8 +156,9 @@ const portableTextComponents = {
   },
 };
 
-// Dynamic route - no static generation needed
-export const revalidate = 3600;
+// ISR: Revalidate every 24 hours (reduced CPU usage vs 1 hour)
+// For a content site with infrequent updates, this significantly reduces server load
+export const revalidate = 86400; // 24 hours
 // Generate metadata for filter pages and pretty links
 export async function generateMetadata({ params }) {
   const awaitedParams = await params;
@@ -575,7 +576,8 @@ export default async function CountryFiltersPage({ params, searchParams }) {
     if (isPreview && draftId) {
       console.log('👁️ Preview mode: Fetching draft offer by draftId:', draftId);
       
-      const draftOffer = await client.fetch(
+      // Use previewClient for draft content
+      const draftOffer = await previewClient.fetch(
         `*[_id == $draftId][0]{
           _id,
           _type,
