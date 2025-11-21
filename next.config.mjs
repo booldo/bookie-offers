@@ -18,6 +18,33 @@ const nextConfig = {
       },
     ],
   },
+  async headers() {
+    return [
+      {
+        // Apply caching headers to all pages (reduces CPU by enabling CDN caching)
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            // public: can be cached by CDN
+            // s-maxage=3600: CDN caches for 1 hour
+            // stale-while-revalidate=86400: serve stale content while revalidating for 24 hours
+            value: 'public, s-maxage=3600, stale-while-revalidate=86400',
+          },
+        ],
+      },
+      {
+        // Longer cache for static assets
+        source: '/assets/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+    ];
+  },
   async redirects() {
     return [
       {
