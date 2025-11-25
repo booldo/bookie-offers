@@ -5,6 +5,7 @@ import AnalyticsInitializer from "../components/AnalyticsInitializer";
 import { VisualEditing } from "next-sanity";
 import { draftMode } from "next/headers";
 import { DisableDraftMode } from "../components/DisableDraftMode";
+import Script from 'next/script';
 
 
 export async function generateMetadata() {
@@ -38,6 +39,14 @@ export default async function RootLayout({ children }) {
             <DisableDraftMode />
           </>
         )}
+
+         <Script src="https://www.googletagmanager.com/gtag/js?id=G-0KX3WGKZ7J" strategy="afterInteractive" />
+     <Script id="gtag-init" strategy="afterInteractive">
+       {`window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-0KX3WGKZ7J');`}
+     </Script>
       </body>
     </html>
   );

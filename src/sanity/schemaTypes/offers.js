@@ -19,38 +19,73 @@ function CanonicalUrlInput(props) {
   };
 
   const generateCanonicalUrl = async () => {
-    if (!document?.country?._ref || !document?.bonusType?._ref || !document?.slug?.current) {
-      setGeneratedUrl('');
-      return;
-    }
+  if (!document?.country?._ref || !document?.bonusType?._ref || !document?.slug?.current) {
+    setGeneratedUrl('');
+    return;
+  }
 
-    setIsGenerating(true);
-    try {
-      // Fetch country and bonus type data
-      const [countryData, bonusTypeData] = await Promise.all([
-        client.fetch(`*[_type == "countryPage" && _id == $id][0]{slug}`, { id: document.country._ref }),
-        client.fetch(`*[_type == "bonusType" && _id == $id][0]{name}`, { id: document.bonusType._ref })
-      ]);
+  setIsGenerating(true);
 
-      if (countryData?.slug?.current && bonusTypeData?.name && document.slug.current) {
-        const countrySlug = countryData.slug.current;
-        const bonusTypeSlug = slugify(bonusTypeData.name);
-        const offerSlug = document.slug.current;
-        
-        const url = `https://booldo.com/${countrySlug}/${bonusTypeSlug}/${offerSlug}`;
-        setGeneratedUrl(url);
-        
-        // Auto-set the canonical URL if it's empty
-        if (!value) {
-          onChange(url);
-        }
-      }
-    } catch (error) {
-      console.error('Error generating canonical URL:', error);
-    } finally {
-      setIsGenerating(false);
+  try {
+    const [countryData, bonusTypeData] = await Promise.all([
+      client.fetch(`*[_type == "countryPage" && _id == $id][0]{slug}`, { id: document.country._ref }),
+      client.fetch(`*[_type == "bonusType" && _id == $id][0]{slug}`, { id: document.bonusType._ref })
+    ]);
+
+    if (countryData?.slug?.current && bonusTypeData?.slug?.current && document.slug.current) {
+      const countrySlug   = countryData.slug.current;
+      
+      // REMOVE the "ng/" part
+      const bonusTypeSlug = bonusTypeData.slug.current.split('/').slice(1).join('/');
+      
+      const offerSlug     = document.slug.current;
+
+      const url = `https://booldo.com/${countrySlug}/${bonusTypeSlug}/${offerSlug}`;
+      setGeneratedUrl(url);
+
+      if (!value) onChange(url);
     }
-  };
+  } catch (error) {
+    console.error('Error generating canonical URL:', error);
+  } finally {
+    setIsGenerating(false);
+  }
+};
+
+
+  // const generateCanonicalUrl = async () => {
+  //   if (!document?.country?._ref || !document?.bonusType?._ref || !document?.slug?.current) {
+  //     setGeneratedUrl('');
+  //     return;
+  //   }
+
+  //   setIsGenerating(true);
+  //   try {
+  //     // Fetch country and bonus type data
+  //     const [countryData, bonusTypeData] = await Promise.all([
+  //       client.fetch(`*[_type == "countryPage" && _id == $id][0]{slug}`, { id: document.country._ref }),
+  //       client.fetch(`*[_type == "bonusType" && _id == $id][0]{name}`, { id: document.bonusType._ref })
+  //     ]);
+
+  //     if (countryData?.slug?.current && bonusTypeData?.name && document.slug.current) {
+  //       const countrySlug = countryData.slug.current;
+  //       const bonusTypeSlug = slugify(bonusTypeData.name);
+  //       const offerSlug = document.slug.current;
+        
+  //       const url = `https://booldo.com/${countrySlug}/${bonusTypeSlug}/${offerSlug}`;
+  //       setGeneratedUrl(url);
+        
+  //       // Auto-set the canonical URL if it's empty
+  //       if (!value) {
+  //         onChange(url);
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.error('Error generating canonical URL:', error);
+  //   } finally {
+  //     setIsGenerating(false);
+  //   }
+  // };
 
   useEffect(() => {
     generateCanonicalUrl();
