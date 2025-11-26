@@ -281,7 +281,7 @@ export default {
       title: "Include in Sitemap",
       type: "boolean",
       description: "SEO: Should this page be included in sitemap.xml?",
-      initialValue: true
+      initialValue: false
     }
 
   ]

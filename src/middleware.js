@@ -50,7 +50,7 @@ export async function middleware(request) {
   if (affiliateLinkMatch) {
     let [, countrySlug, prettyLinkPath] = affiliateLinkMatch;
     // Remove trailing slash if present
-    prettyLinkPath = prettyLinkPath.endsWith('/') ? prettyLinkPath.slice(0, -1) : prettyLinkPath;
+    // prettyLinkPath = prettyLinkPath.endsWith('/') ? prettyLinkPath.slice(0, -1) : prettyLinkPath;
     
     // Only check if it looks like a pretty link (not other routes like /briefly, /faq, etc.)
     const skipPaths = ['briefly', 'faq', 'footer', 'analytics', 'api', '_next', 'static'];
