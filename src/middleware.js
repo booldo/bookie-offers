@@ -44,7 +44,8 @@ export async function middleware(request) {
     console.error('❌ Error checking redirects in src/middleware:', error);
   }
 
-  // ✅ STEP 1.5: Check for affiliate/pretty link redirects
+
+    // ✅ STEP 1.5: Check for affiliate/pretty link redirects
   // Pattern: /{country}/{prettyLink} or /{country}/{segment1}/{segment2}
   const affiliateLinkMatch = pathname.match(/^\/([^\/]+)\/(.+)$/);
   if (affiliateLinkMatch) {
@@ -52,6 +53,11 @@ export async function middleware(request) {
     // Remove trailing slash if present
     // prettyLinkPath = prettyLinkPath.endsWith('/') ? prettyLinkPath.slice(0, -1) : prettyLinkPath;
     
+    if (!prettyLinkPath.endsWith('/')) {
+        prettyLinkPath += '/';
+      }
+      console.log('Normalized prettyLinkPath:', prettyLinkPath);
+
     // Only check if it looks like a pretty link (not other routes like /briefly, /faq, etc.)
     const skipPaths = ['briefly', 'faq', 'footer', 'analytics', 'api', '_next', 'static'];
     if (!skipPaths.includes(countrySlug)) {
@@ -79,6 +85,42 @@ export async function middleware(request) {
       }
     }
   }
+
+  // ✅ STEP 1.5: Check for affiliate/pretty link redirects
+  // Pattern: /{country}/{prettyLink} or /{country}/{segment1}/{segment2}
+  // const affiliateLinkMatch = pathname.match(/^\/([^\/]+)\/(.+)$/);
+  // if (affiliateLinkMatch) {
+  //   let [, countrySlug, prettyLinkPath] = affiliateLinkMatch;
+  //   // Remove trailing slash if present
+  //   // prettyLinkPath = prettyLinkPath.endsWith('/') ? prettyLinkPath.slice(0, -1) : prettyLinkPath;
+    
+  //   // Only check if it looks like a pretty link (not other routes like /briefly, /faq, etc.)
+  //   const skipPaths = ['briefly', 'faq', 'footer', 'analytics', 'api', '_next', 'static'];
+  //   if (!skipPaths.includes(countrySlug)) {
+  //     try {
+  //       console.log('🔗 Checking for affiliate pretty link:', prettyLinkPath, 'in country:', countrySlug);
+        
+  //       // Dynamic import to avoid circular dependencies
+  //       const { client } = await import('./sanity/lib/client');
+        
+  //       const affiliateLink = await client.fetch(
+  //         `*[_type == "affiliate" && isActive == true && prettyLink.current == $prettyLink && bookmaker->country->slug.current == $countrySlug][0]{
+  //           affiliateUrl
+  //         }`,
+  //         { prettyLink: prettyLinkPath, countrySlug }
+  //       );
+        
+  //       if (affiliateLink?.affiliateUrl) {
+  //         console.log('✅ Affiliate link found, redirecting with 302 to:', affiliateLink.affiliateUrl);
+  //         return NextResponse.redirect(affiliateLink.affiliateUrl, 302);
+  //       } else {
+  //         console.log('❌ No affiliate link found for:', prettyLinkPath, 'in country:', countrySlug);
+  //       }
+  //     } catch (error) {
+  //       console.error('❌ Error checking affiliate link:', error);
+  //     }
+  //   }
+  // }
 
   // ✅ STEP 2: Check for 410 status ONLY if no redirect was found
   console.log('🔍 STEP 2: Checking for 410 status:', pathname);

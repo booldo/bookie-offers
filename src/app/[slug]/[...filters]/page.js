@@ -542,6 +542,7 @@ export default async function CountryFiltersPage({ params, searchParams }) {
     `*[_type == "countryPage" && slug.current == $slug][0]{_id}`,
     { slug: awaitedParams.slug }
   );
+  console.log(validCountry, " Country validation result");
   if (!validCountry) {
     console.log(" Invalid country slug, returning 404:", awaitedParams.slug);
     return notFound(); // This will render the Next.js 404 page
