@@ -26,7 +26,20 @@ export default async function RootLayout({ children }) {
       <head>
         <meta name="google-site-verification" content="Tf7OJjEAuhjBBSwECHzz_jqZsPXcnSUQ4_kVeXPDHCo" />
         <link rel="icon" href="/assets/favicon.ico" type="image/x-icon" />
-        <link href="https://api.fontshare.com/v2/css?f[]=general-sans@300,400,500,600,700,800&display=swap" rel="stylesheet" />
+        {/* font share load */}
+        <link rel="preconnect" href="https://api.fontshare.com" />
+        {/* <link rel="preconnect" href="https://fontshare.com" />
+        <link rel="preconnect"
+      href="https://fonts.gstatic.com"
+      crossorigin /> */}
+
+<link rel="preload"
+      as="style"
+      href="https://api.fontshare.com/v2/css?f[]=general-sans@300,400,500,600,700,800&display=swap" />
+
+  <link rel="stylesheet"
+        href="https://api.fontshare.com/v2/css?f[]=general-sans@300,400,500,600,700,800&display=swap" />
+
       </head>
       <body className={`antialiased`} style={{ fontFamily: "var(--font-sans)" }}>
         {children}
