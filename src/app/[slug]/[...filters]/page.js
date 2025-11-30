@@ -248,14 +248,15 @@ export async function generateMetadata({ params }) {
       );
 
       if (offerData) {
+        const slugifiedBonusType = offerData.bonusType?.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-\/]/g, '');
         const title =
           offerData.metaTitle ||
           `${offerData.title} - ${offerData.bookmaker?.name} | Booldo`;
         const description =
           offerData.metaDescription ||
           `Get ${offerData.bonusType?.name || "exclusive"} bonus from ${offerData.bookmaker?.name}. ${offerData.title}`;
-
-        // Build metadata object with SEO fields
+        
+         // Build metadata object with SEO fields
         const metadata = {
           title,
           description,
@@ -286,7 +287,7 @@ export async function generateMetadata({ params }) {
         } else {
           // Use dynamic canonical URL based on country and offer
           metadata.alternates = {
-            canonical: `https://booldo.com/${countrySlug}/offers/${offerSlug}`,
+            canonical: `https://booldo.com/${countrySlug}/${slugifiedBonusType}/${offerSlug}`,
           };
         }
 
