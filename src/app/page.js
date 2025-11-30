@@ -57,7 +57,7 @@ async function CountryCards() {
       {countries.map((country) => (
         <a
           key={country.slug.current}
-          href={`/${country.slug.current}`}
+          href={`/${country.slug.current}/`}
           className="flex flex-col bg-[#F5F5F7] rounded-xl p-3 sm:p-4 shadow-sm border border-gray-100 transition-all duration-300 hover:scale-[1.01] hover:shadow-md hover:border-gray-200 cursor-pointer block sm:h-[92px] sm:w-[758px] sm:mx-auto"
         >
           {/* Flag and Country Name Row */}
