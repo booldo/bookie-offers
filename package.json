@@ -21,10 +21,10 @@
     "@sanity/visual-editing": "^2.15.4",
     "code-input": "^1.0.0",
     "js-cookie": "^3.0.5",
-    "next": "15.4.2-canary.35",
+    "next": "^16.0.7",
     "next-sanity": "^9.12.3",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
     "rxjs": "^7.8.2",
     "sanity": "^3.99.0",
     "styled-components": "^6.1.19"
@@ -32,7 +32,8 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^24.0.13",
-    "@types/react": "^19.1.8",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
     "tailwindcss": "^4",
     "typescript": "^5.8.3"
   }

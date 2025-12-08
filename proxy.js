@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 // Edge Runtime configuration for proper middleware execution
 export const runtime = 'edge';
 
-export async function middleware(request) {
+export async function proxy(request) {
   const { pathname } = request.nextUrl;
   
   // Skip middleware for static files, API routes, and Studio
