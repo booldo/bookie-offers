@@ -3,7 +3,7 @@ import { checkRedirect } from './lib/redirects';
 import { generate410Html, checkOfferStatus } from './lib/gone410';
 import { checkGoneStatus } from './lib/checkGoneStatus';
 
-export async function middleware(request) {
+export async function proxy(request) {
   const { pathname } = request.nextUrl;
   
   // Skip middleware for excluded routes
