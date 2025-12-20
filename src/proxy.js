@@ -253,7 +253,7 @@ export async function proxy(request) {
 
   // Set cache headers for all successful responses
   const response = NextResponse.next();
-  
+    
   // Set CDN cache headers for Vercel
   // s-maxage: CDN cache duration (1 hour)
   // stale-while-revalidate: Serve stale content while revalidating (24 hours)
@@ -281,6 +281,7 @@ export async function proxy(request) {
     response.headers.set('CDN-Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
   }
   
+
   return response;
 }
 
