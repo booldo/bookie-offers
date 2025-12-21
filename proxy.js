@@ -130,6 +130,7 @@ export async function proxy(request) {
 }
 
 async function checkRedirectWithFetch(path) {
+  console.log('🔍 Checking redirect via fetch for path:', path);
   try {
     const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID;
     const dataset = process.env.NEXT_PUBLIC_SANITY_DATASET;
