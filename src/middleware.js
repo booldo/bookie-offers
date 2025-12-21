@@ -3,7 +3,7 @@ import { checkRedirect } from './lib/redirects';
 import { generate410Html, checkOfferStatus } from './lib/gone410';
 import { checkGoneStatus } from './lib/checkGoneStatus';
 
-export async function proxy(request) {
+export async function middleware(request) {
   const { pathname } = request.nextUrl;
   
   // Skip middleware for excluded routes
@@ -259,7 +259,18 @@ export async function proxy(request) {
   // stale-while-revalidate: Serve stale content while revalidating (24 hours)
   // max-age=0: Browser should always revalidate with CDN
   const cacheHeader = 'public, max-age=0, s-maxage=3600, stale-while-revalidate=86400';
-  
+    
+    if (pathname.includes('/offers/')) {
+      const segments = pathname.split('/').filter(Boolean);
+      if (segments.length >= 2) {
+        const country = segments[0]; 
+        const slug = segments[segments.length - 1];
+
+        // Apply SEO headers to the response object
+        response.headers.set('X-Robots-Tag', 'noindex, follow');
+      }
+    }
+
   // Cache homepage
   if (pathname === '/') {
     response.headers.set('Cache-Control', cacheHeader);
