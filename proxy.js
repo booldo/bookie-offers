@@ -30,10 +30,20 @@ function generate410Response() {
     <div class="container">
       <main class="main">
         <div class="card">
-          <div class="iconWrap"><svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" /></svg></div>
-          <div class="h1">410</div><div class="h2">Content No Longer Available</div>
+          <div class="iconWrap">
+            <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="15" y1="9" x2="9" y2="15" />
+              <line x1="9" y1="9" x2="15" y2="15" />
+            </svg>
+          </div>
+          <div class="h1">410</div>
+          <div class="h2">Content No Longer Available</div>
           <p class="p">This resource has been intentionally removed and is no longer accessible.</p>
-          <a class="btn" href="/">Go Home</a>
+          <a class="btn" href="/">
+            Go Home
+          </a>
+          <div class="muted">If you believe this is an error, please contact support.</div>
         </div>
       </main>
     </div>
@@ -73,11 +83,14 @@ export async function proxy(request) {
 
   try {
     // 4. Check Sanity for Redirects or 410s
+    console.log(`🔍 Checking redirects for path: ${pathname}`);
     const redirectData = await checkRedirectWithFetch(pathname);
+    console.log('➡️ Redirect Data:', redirectData);
 
     if (redirectData) {
       if (redirectData.type === '410') {
         return generate410Response();
+        return { type: '410' };
       }
 
       let targetUrl = redirectData.url;
@@ -128,19 +141,27 @@ async function checkRedirectWithFetch(path) {
     const normalizedPath = path.endsWith('/') && path !== '/' ? path.slice(0, -1) : path;
     const pathWithSlash = normalizedPath + '/';
 
+
     const query = `*[_type == "redirects" && isActive == true && (
       (matchExact == true && sourcePath == $exactPath) ||
       (matchExact != true && (sourcePath == $path || sourcePath == $pathWithSlash))
     )][0] { targetUrl, redirectType }`;
+
+    // Wrap the values in double quotes before encoding
+const url = `https://${projectId}.apicdn.sanity.io/v${apiVersion}/data/query/${dataset}?query=${encodeURIComponent(query)}` +
+    `&$path=${encodeURIComponent(`"${normalizedPath}"`)}` + 
+    `&$pathWithSlash=${encodeURIComponent(`"${pathWithSlash}"`)}` + 
+    `&$exactPath=${encodeURIComponent(`"${path}"`)}`;
     
-    const url = `https://${projectId}.apicdn.sanity.io/v${apiVersion}/data/query/${dataset}?query=${encodeURIComponent(query)}&$path=${encodeURIComponent(normalizedPath)}&$pathWithSlash=${encodeURIComponent(pathWithSlash)}&$exactPath=${encodeURIComponent(path)}`;
+    // const url = `https://${projectId}.apicdn.sanity.io/v${apiVersion}/data/query/${dataset}?query=${encodeURIComponent(query)}&$path=${encodeURIComponent(normalizedPath)}&$pathWithSlash=${encodeURIComponent(pathWithSlash)}&$exactPath=${encodeURIComponent(path)}`;
     
     const res = await fetch(url);
+    console.log('🔍 Fetching Redirect from Sanity:', res);
     if (!res.ok) return null;
     
     const data = await res.json();
     const result = data.result;
-
+    console.log('🔍 Redirect Query Result:', result);
     if (!result) return null;
 
     if (result.redirectType === '410') {
